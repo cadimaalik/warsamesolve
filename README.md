@@ -46,8 +46,8 @@ Your contribution will be live within hours and you'll be credited.
 
 ## 🎓 About
 
-**Started by:** Ali Warsame, 3rd year METU CE student  
-**Inspired by:** KDY (that 50% English dude everyone knows)
+**Started by:** Me, 3rd year METU CE student  
+**Inspired by:** KDY (aka Rosto Kofte)
 
 **Goal:** Help CE students spend less time on calculations and more time doing literally anything else.
 
