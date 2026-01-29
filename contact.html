@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İletişim - WarsameSolve</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Spectral:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4ade80;
+            --primary-light: #86efac;
+            --accent: #fbbf24;
+            --bg: #0a0a0a;
+            --surface: #171717;
+            --text: #e5e5e5;
+            --text-muted: #a3a3a3;
+            --border: #404040;
+            --grid: 8px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Spectral', serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: calc(var(--grid) * 6);
+            text-align: center;
+        }
+        
+        .back-link {
+            display: inline-block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            margin-bottom: calc(var(--grid) * 4);
+            transition: color 0.2s;
+        }
+        
+        .back-link:hover {
+            color: var(--primary);
+        }
+        
+        h1 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: calc(var(--grid) * 2);
+        }
+        
+        .subtitle {
+            font-size: 1.125rem;
+            color: var(--text-muted);
+            margin-bottom: calc(var(--grid) * 6);
+        }
+        
+        .contact-box {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            padding: calc(var(--grid) * 6);
+            margin-bottom: calc(var(--grid) * 3);
+        }
+        
+        .contact-item {
+            margin-bottom: calc(var(--grid) * 3);
+        }
+        
+        .contact-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: calc(var(--grid) * 1);
+        }
+        
+        .contact-value {
+            font-size: 1.25rem;
+            color: var(--text);
+        }
+        
+        .contact-value a {
+            color: var(--primary);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .contact-value a:hover {
+            color: var(--primary-light);
+        }
+        
+        .note {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: calc(var(--grid) * 4);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-link">← Back to Home</a>
+        
+        <h1>İletişim</h1>
+        <div class="subtitle">Get in Touch</div>
+        
+        <div class="contact-box">
+            <div class="contact-item">
+                <div class="contact-label">Email</div>
+                <div class="contact-value">
+                    <a href="mailto:e265705@metu.edu.tr">e265705@metu.edu.tr</a>
+                </div>
+            </div>
+            
+            <div class="contact-item">
+                <div class="contact-label">WhatsApp</div>
+                <div class="contact-value">
+                    <a href="https://wa.me/905052627005" target="_blank">+90 505 262 7005</a>
+                

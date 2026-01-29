@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contribution Hub - WarsameSolve</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Spectral:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4ade80;
+            --primary-light: #86efac;
+            --accent: #fbbf24;
+            --bg: #0a0a0a;
+            --surface: #171717;
+            --text: #e5e5e5;
+            --text-muted: #a3a3a3;
+            --border: #404040;
+            --grid: 8px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Spectral', serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: calc(var(--grid) * 6);
+        }
+        
+        .back-link {
+            display: inline-block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            margin-bottom: calc(var(--grid) * 3);
+            transition: color 0.2s;
+        }
+        
+        .back-link:hover {
+            color: var(--primary);
+        }
+        
+        header {
+            text-align: center;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: calc(var(--grid) * 4);
+            margin-bottom: calc(var(--grid) * 8);
+        }
+        
+        h1 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: -0.02em;
+            margin-bottom: calc(var(--grid) * 1);
+        }
+        
+        .subtitle {
+            font-size: 1.125rem;
+            color: var(--text-muted);
+        }
+        
+        .section {
+            margin-bottom: calc(var(--grid) * 10);
+        }
+        
+        h2 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: calc(var(--grid) * 4);
+            padding-bottom: calc(var(--grid) * 2);
+            border-bottom: 2px solid var(--accent);
+        }
+        
+        .proverb-box {
+            background: var(--surface);
+            border-left: 4px solid var(--accent);
+            padding: calc(var(--grid) * 4);
+            margin: calc(var(--grid) * 4) 0;
+        }
+        
+        .proverb {
+            font-size: 1.25rem;
+            font-style: italic;
+            margin-bottom: calc(var(--grid) * 2);
+            line-height: 1.8;
+        }
+        
+        .proverb-translation {
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin-bottom: calc(var(--grid) * 1);
+        }
+        
+        .proverb-turkish {
+            font-size: 1rem;
+            color: var(--accent);
+        }
+        
+        p {
+            margin-bottom: calc(var(--grid) * 3);
+            line-height: 1.8;
+        }
+        
+        .steps {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            padding: calc(var(--grid) * 4);
+            margin: calc(var(--grid) * 3) 0;
+        }
+        
+        .step-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: calc(var(--grid) * 2);
+            font-size: 1.125rem;
+        }
+        
+        .step-content {
+            margin-bottom: calc(var(--grid) * 3);
+        }
+        
+        ul {
+            margin-left: calc(var(--grid) * 4);
+            margin-bottom: calc(var(--grid) * 2);
+        }
+        
+        li {
+            margin-bottom: calc(var(--grid) * 1);
+            color: var(--text-muted);
+        }
+        
+        .pseudocode-note {
+            background: var(--bg);
+            border-left: 4px solid var(--primary);
+            padding: calc(var(--grid) * 2);
+            margin: calc(var(--grid) * 2) 0;
+            font-size: 0.9rem;
+        }
+        
+        .contact-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: calc(var(--grid) * 3);
+            margin: calc(var(--grid) * 3) 0;
+        }
+        
+        .contact-box {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            padding: calc(var(--grid) * 3);
+            text-align: center;
+        }
+        
+        .contact-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: calc(var(--grid) * 2);
+            text-transform: uppercase;
+            font-size: 0.875rem;
+        }
+        
+        .contact-link {
+            color: var(--text);
+            text-decoration: none;
+            word-break: break-all;
+        }
+        
+        .contact-link:hover {
+            color: var(--primary);
+        }
+        
+        .contributors-grid {
+            display: grid;
+            gap: calc(var(--grid) * 3);
+        }
+        
+        .contributor-card {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            padding: calc(var(--grid) * 3);
+            display: grid;
+            grid-template-columns: 120px 1fr;
+            gap: calc(var(--grid) * 3);
+            align-items: center;
+        }
+        
+        .contributor-photo {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--accent);
+        }
+        
+        .contributor-info {
+            flex: 1;
+        }
+        
+        .contributor-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: calc(var(--grid) * 1);
+        }
+        
+        .contributor-work {
+            color: var(--text);
+            margin-bottom: calc(var(--grid) * 0.5);
+        }
+        
+        .contributor-date {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+        
+        .example-note {
+            text-align: center;
+            color: var(--accent);
+            font-style: italic;
+            margin-top: calc(var(--grid) * 3);
+            font-size: 0.9rem;
+        }
+        
+        footer {
+            text-align: center;
+            padding-top: calc(var(--grid) * 8);
+            margin-top: calc(var(--grid) * 10);
+            border-top: 2px solid var(--border);
+        }
+        
+        footer h3 {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--primary);
+            margin-bottom: calc(var(--grid) * 2);
+        }
+        
+        footer p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .contact-options {
+                grid-template-columns: 1fr;
+            }
+            
+            .contributor-card {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+            
+            .contributor-photo {
+                margin: 0 auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-link">← Back to Home</a>
+        
+        <header>
+            <h1>Contribution Hub</h1>
+            <div class="subtitle">Shape the Future of Engineering Education</div>
+        </header>
+        
+        <!-- Vision Section -->
+        <section class="section">
+            <h2>The Vision</h2>
+            
+            <p>
+                There's a saying in my mother tongue that captures the essence of what we're building here:
+            </p>
+            
+            <div class="proverb-box">
+                <div class="proverb">"Waari meysid, war hakaa haro"</div>
+                <div class="proverb-translation">"Your lifespan is finite; Why not forge what shall outlast time"</div>
+                <div class="proverb-turkish">"Ömrün sınırlı; neden zamana meydan okuyacak bir şey yaratmayasın"</div>
+            </div>
+            
+            <p>
+                This is your chance to impact future ODTÜ CE students and leave a legacy that outlives us all. Every calculator you build saves countless hours for students who haven't even started university yet.
+            </p>
+        </section>
+        
+        <!-- How to Contribute -->
+        <section class="section">
+            <h2>How to Contribute</h2>
+            
+            <div class="steps">
+                <div class="step-title">STEP 1: Choose Your Topic</div>
+                <div class="step-content">
+                    <p>Pick a course, chapter, or specific problem you want to automate. It can be anything from CE 372 Hydromechanics to structures, transportation, geotechnical — any calculation that wastes students' time.</p>
+                </div>
+                
+                <div class="step-title">STEP 2: Write Your Code</div>
+                <div class="step-content">
+                    <p>Submit in any format that works for you:</p>
+                    <ul>
+                        <li><strong>Raw code:</strong> Python, C++, MATLAB, JavaScript, or any language</li>
+                        <li><strong>Pseudocode:</strong> Step-by-step logic in plain language</li>
+                        <li><strong>Language:</strong> Turkish or English — farketmez</li>
+                    </ul>
+                    
+                    <div class="pseudocode-note">
+                        <strong>What is pseudocode?</strong> Step-by-step instructions in plain language that describe how to solve a problem, without actual programming syntax.<br><br>
+                        <strong>Example:</strong><br>
+                        1. Get pipe diameter and flow rate from user<br>
+                        2. Calculate velocity = flow rate / area<br>
+                        3. Calculate Reynolds number = velocity × diameter / viscosity<br>
+                        4. If Reynolds > 4000, use turbulent flow formula<br>
+                        5. Display results
+                    </div>
+                </div>
+                
+                <div class="step-title">STEP 3: Submit Your Work</div>
+                <div class="step-content">
+                    <div class="contact-options">
+                        <div class="contact-box">
+                            <div class="contact-title">Option A: GitHub</div>
+                            <p>Fork the repository, add your contribution, submit a pull request</p>
+                            <a href="https://github.com/cadimaalik/warsamesolve" target="_blank" class="contact-link">github.com/cadimaalik/warsamesolve</a>
+                        </div>
+                        
+                        <div class="contact-box">
+                            <div class="contact-title">Option B: Direct Contact</div>
+                            <p>Email or WhatsApp with your name, contribution details, and photo (optional)</p>
+                            <a href="mailto:e265705@metu.edu.tr" class="contact-link">e265705@metu.edu.tr</a><br>
+                            <a href="https://wa.me/905052627005" target="_blank" class="contact-link">+90 505 262 7005</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="step-title">STEP 4: Get Credit</div>
+                <div class="step-content">
+                    <p>Your contribution will be live within hours. Your name and work will be permanently displayed in the Contributors section below.</p>
+                </div>
+            </div>
+        </section>
+        
+        <!-- What We're Looking For -->
+        <section class="section">
+            <h2>What We're Looking For</h2>
+            
+            <p>Any engineering calculation that steals hours from students:</p>
+            
+            <ul>
+                <li><strong>Hydromechanics:</strong> Open channel flow, pump systems, pipe networks</li>
+                <li><strong>Numeric Methods:</strong> Root finding, integration, differential equations</li>
+                <li><strong>Transportation:</strong> Traffic flow analysis, level of service, capacity</li>
+                <li><strong>Structures:</strong> Moment distribution, truss analysis, beam design</li>
+                <li><strong>Geotechnical:</strong> Bearing capacity, settlement, slope stability</li>
+                <li><strong>Environmental:</strong> Water treatment, air quality calculations</li>
+                <li><strong>Any ODTÜ CE course:</strong> If it involves repetitive calculations, we want it</li>
+            </ul>
+            
+            <p style="margin-top: calc(var(--grid) * 3);">
+                <strong>Remember:</strong> "Coming soon" doesn't mean nothing. If you have an idea, share it — don't wait for someone else to do it.
+            </p>
+        </section>
+        
+        <!-- Contributors -->
+        <section class="section">
+            <h2>Contributors</h2>
+            
+            <p>All contributors will be featured here with their photo, name, and contribution.</p>
+            
+            <div class="contributors-grid">
+                <!-- Example Contributor -->
+                <div class="contributor-card">
+                    <div style="width: 120px; height: 120px; border-radius: 50%; background: var(--surface); border: 3px solid var(--accent); display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 3rem; font-weight: bold;">CY</div>
+                    <div class="contributor-info">
+                        <div class="contributor-name">Cem Yılmaz</div>
+                        <div class="contributor-work">Numeric Methods</div>
+                        <div class="contributor-work">Gauss Quadrature on Legendre Polynomials</div>
+                        <div class="contributor-date">January 2026</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="example-note">
+                (This is an example of how contributors will be displayed)
+            </div>
+        </section>
+        
+        <!-- Footer -->
+        <footer>
+            <h3>Questions? Reach Out</h3>
+            <p>
+                <a href="mailto:e265705@metu.edu.tr" style="color: var(--primary); text-decoration: none;">e265705@metu.edu.tr</a><br>
+                <a href="https://wa.me/905052627005" target="_blank" style="color: var(--primary); text-decoration: none;">+90 505 262 7005</a>
+            </p>
+        </footer>
+    </div>
+</body>
+</html>

@@ -1,0 +1,1713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Darcy-Weisbach Calculator - Type I, II, III</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Spectral:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4ade80;
+            --primary-light: #86efac;
+            --accent: #fbbf24;
+            --bg: #0a0a0a;
+            --surface: #171717;
+            --text: #e5e5e5;
+            --text-muted: #a3a3a3;
+            --border: #404040;
+            --error: #ef4444;
+            --success: #22c55e;
+            --grid: 8px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Spectral', serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        .app-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: calc(var(--grid) * 6);
+        }
+        
+        header {
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: calc(var(--grid) * 3);
+            margin-bottom: calc(var(--grid) * 6);
+        }
+        
+        h1 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: -0.02em;
+            margin-bottom: calc(var(--grid) * 1);
+        }
+        
+        .subtitle {
+            font-size: 1.125rem;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: calc(var(--grid) * 4);
+            align-items: start;
+        }
+        
+        .input-panel {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 4px;
+            padding: calc(var(--grid) * 4);
+            position: sticky;
+            top: calc(var(--grid) * 3);
+            max-height: calc(100vh - calc(var(--grid) * 6));
+            overflow-y: auto;
+        }
+        
+        .results-panel {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 4px;
+            padding: calc(var(--grid) * 4);
+            overflow-y: auto;
+        }
+        
+        .panel-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: calc(var(--grid) * 3);
+            padding-bottom: calc(var(--grid) * 2);
+            border-bottom: 2px solid var(--accent);
+        }
+        
+        .problem-type-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: calc(var(--grid) * 1);
+            margin-bottom: calc(var(--grid) * 4);
+        }
+        
+        .type-btn {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            padding: calc(var(--grid) * 1.5) calc(var(--grid) * 1);
+            border: 2px solid var(--border);
+            background: var(--surface);
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .type-btn:hover {
+            border-color: var(--primary-light);
+            background: var(--bg);
+        }
+        
+        .type-btn.active {
+            background: var(--primary);
+            color: #000000;
+            border-color: var(--primary);
+            font-weight: 700;
+        }
+        
+        .shape-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: calc(var(--grid) * 1);
+            margin-bottom: calc(var(--grid) * 4);
+        }
+        
+        .shape-btn {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            padding: calc(var(--grid) * 1.5) calc(var(--grid) * 0.5);
+            border: 2px solid var(--border);
+            background: var(--surface);
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .shape-btn:hover {
+            border-color: var(--accent);
+        }
+        
+        .shape-btn.active {
+            background: var(--accent);
+            color: #000000;
+            border-color: var(--accent);
+        }
+        
+        .form-group {
+            margin-bottom: calc(var(--grid) * 3);
+        }
+        
+        label {
+            display: block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: calc(var(--grid) * 1);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .label-description {
+            font-family: 'Spectral', serif;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            font-weight: 400;
+            text-transform: none;
+            letter-spacing: 0;
+            margin-top: 2px;
+        }
+        
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: calc(var(--grid) * 1.5);
+            border: 2px solid var(--border);
+            background: var(--bg);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            color: var(--text);
+            transition: all 0.2s;
+        }
+        
+        input[type="number"]:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        input[type="number"]:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            background: var(--surface);
+        }
+        
+        .calculate-btn {
+            width: 100%;
+            padding: calc(var(--grid) * 2);
+            background: var(--primary);
+            color: #000000;
+            border: none;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-top: calc(var(--grid) * 2);
+        }
+        
+        .calculate-btn:hover {
+            background: var(--primary-light);
+            transform: translateY(-1px);
+        }
+        
+        .calculate-btn:active {
+            transform: translateY(0);
+        }
+        
+        .results-empty {
+            text-align: center;
+            padding: calc(var(--grid) * 8);
+            color: var(--text-muted);
+        }
+        
+        .result-section {
+            margin-bottom: calc(var(--grid) * 4);
+            padding-bottom: calc(var(--grid) * 4);
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .result-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        .section-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: calc(var(--grid) * 2);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .key-results {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: calc(var(--grid) * 2);
+            margin-bottom: calc(var(--grid) * 3);
+        }
+        
+        .result-card {
+            background: var(--bg);
+            border-left: 4px solid var(--accent);
+            padding: calc(var(--grid) * 2);
+        }
+        
+        .result-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: calc(var(--grid) * 0.5);
+        }
+        
+        .result-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .commercial-pipe-section {
+            background: var(--bg);
+            border: 2px solid var(--accent);
+            padding: calc(var(--grid) * 3);
+            margin: calc(var(--grid) * 3) 0;
+        }
+        
+        .commercial-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: calc(var(--grid) * 2);
+            text-transform: uppercase;
+        }
+        
+        .commercial-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: calc(var(--grid) * 1);
+            margin-bottom: calc(var(--grid) * 2);
+        }
+        
+        .commercial-btn {
+            padding: calc(var(--grid) * 1.5);
+            background: var(--surface);
+            border: 2px solid var(--border);
+            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .commercial-btn:hover {
+            border-color: var(--accent);
+        }
+        
+        .commercial-btn.recommended {
+            background: var(--accent);
+            color: #000000;
+            border-color: var(--accent);
+            font-weight: 700;
+        }
+        
+        .commercial-btn.selected {
+            background: var(--primary);
+            color: #000000;
+            border-color: var(--primary);
+        }
+        
+        .recalc-note {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-style: italic;
+            margin-top: calc(var(--grid) * 1);
+        }
+        
+        .warning-box {
+            background: #422006;
+            border-left: 4px solid var(--accent);
+            padding: calc(var(--grid) * 2);
+            margin: calc(var(--grid) * 2) 0;
+            font-size: 0.9rem;
+            color: var(--text);
+        }
+        
+        .error-box {
+            background: #450a0a;
+            border-left: 4px solid var(--error);
+            padding: calc(var(--grid) * 2);
+            margin: calc(var(--grid) * 2) 0;
+            font-size: 0.9rem;
+            color: #fca5a5;
+        }
+        
+        .iteration-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: calc(var(--grid) * 2) 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+        }
+        
+        .iteration-table th {
+            background: var(--primary);
+            color: #000000;
+            padding: calc(var(--grid) * 1.5);
+            text-align: left;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .iteration-table td {
+            padding: calc(var(--grid) * 1.5);
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .iteration-table tr:last-child td {
+            border-bottom: 2px solid var(--primary);
+        }
+        
+        .equation-block {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: calc(var(--grid) * 2);
+            margin: calc(var(--grid) * 2) 0;
+            overflow-x: auto;
+        }
+        
+        .step-by-step {
+            margin-top: calc(var(--grid) * 2);
+        }
+        
+        .step {
+            margin-bottom: calc(var(--grid) * 3);
+            padding-left: calc(var(--grid) * 3);
+            border-left: 2px solid var(--accent);
+        }
+        
+        .step-number {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: calc(var(--grid) * 1);
+        }
+        
+        .step-content {
+            color: var(--text);
+            line-height: 1.8;
+        }
+        
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .input-panel {
+                position: relative;
+                top: 0;
+            }
+        }
+        
+        /* Custom Scrollbar Styling */
+        .input-panel::-webkit-scrollbar,
+        .results-panel::-webkit-scrollbar {
+            width: 12px;
+        }
+        
+        .input-panel::-webkit-scrollbar-track,
+        .results-panel::-webkit-scrollbar-track {
+            background: var(--bg);
+            border-left: 1px solid var(--border);
+        }
+        
+        .input-panel::-webkit-scrollbar-thumb,
+        .results-panel::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 6px;
+        }
+        
+        .input-panel::-webkit-scrollbar-thumb:hover,
+        .results-panel::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+        
+        /* Firefox */
+        .input-panel,
+        .results-panel {
+            scrollbar-width: thin;
+            scrollbar-color: var(--border) var(--bg);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        
+        // Material properties database
+        const materials = {
+            'custom': { name: 'Custom Value', epsilon: 0 },
+            'galvanized-iron': { name: 'Galvanized Iron', epsilon: 0.15 },
+            'cast-iron-new': { name: 'Cast Iron (New)', epsilon: 0.26 },
+            'steel-new': { name: 'Steel (New Unlined)', epsilon: 0.045 },
+            'concrete-steel': { name: 'Concrete (Steel Forms)', epsilon: 0.18 },
+            'plastic': { name: 'Plastic', epsilon: 0.0015 },
+            'copper': { name: 'Copper', epsilon: 0.0015 }
+        };
+        
+        // Standard commercial pipe sizes (mm converted to m)
+        const commercialSizes = [
+            25, 32, 40, 50, 63, 75, 90, 110, 125, 140, 160, 180, 200, 225, 250, 
+            280, 315, 355, 400, 450, 500, 560, 630, 710, 800, 900, 1000
+        ].map(d => d / 1000); // Convert to meters
+        
+        function HydroSolve() {
+            const [problemType, setProblemType] = useState('type1');
+            const [shape, setShape] = useState('circular');
+            const [inputs, setInputs] = useState({
+                Q: '',
+                V: '',
+                L: '',
+                D: '',
+                width: '',
+                height: '',
+                topWidth: '',
+                bottomWidth: '',
+                epsilon: '0.00015',
+                material: 'custom',
+                nu: '1.0e-6',
+                hf: ''
+            });
+            const [results, setResults] = useState(null);
+            const [error, setError] = useState(null);
+            const [selectedCommercialSize, setSelectedCommercialSize] = useState(null);
+            const [customDiameter, setCustomDiameter] = useState('');
+            
+            useEffect(() => {
+                if (results && window.MathJax) {
+                    window.MathJax.typesetPromise();
+                }
+            }, [results]);
+            
+            const calculateHydraulicDiameter = (shapeType, dims) => {
+                // Calculate Dh = 4 * (Area / Perimeter)
+                let A, P;
+                
+                switch(shapeType) {
+                    case 'circular':
+                        return { Dh: dims.D, A: Math.PI * Math.pow(dims.D, 2) / 4 };
+                    
+                    case 'rectangular':
+                        A = dims.width * dims.height;
+                        P = 2 * (dims.width + dims.height);
+                        return { Dh: 4 * A / P, A };
+                    
+                    case 'square':
+                        A = dims.width * dims.width;
+                        P = 4 * dims.width;
+                        return { Dh: dims.width, A }; // For square: Dh = side length
+                    
+                    case 'triangular':
+                        // Equilateral triangle with side = width
+                        A = (Math.sqrt(3) / 4) * Math.pow(dims.width, 2);
+                        P = 3 * dims.width;
+                        return { Dh: 4 * A / P, A };
+                    
+                    case 'trapezoidal':
+                        // Trapezoid: bottom width, top width, height
+                        A = ((dims.bottomWidth + dims.topWidth) / 2) * dims.height;
+                        const sideLength = Math.sqrt(
+                            Math.pow(dims.height, 2) + 
+                            Math.pow((dims.bottomWidth - dims.topWidth) / 2, 2)
+                        );
+                        P = dims.bottomWidth + dims.topWidth + 2 * sideLength;
+                        return { Dh: 4 * A / P, A };
+                    
+                    default:
+                        throw new Error('Unknown shape');
+                }
+            };
+            
+            const handleInputChange = (field, value) => {
+                setInputs(prev => ({ ...prev, [field]: value }));
+                if (field === 'material' && value !== 'custom') {
+                    setInputs(prev => ({ ...prev, epsilon: (materials[value].epsilon / 1000).toString() }));
+                }
+            };
+            
+            const handleProblemTypeChange = (newType) => {
+                setProblemType(newType);
+                setResults(null);
+                setError(null);
+                setSelectedCommercialSize(null);
+                setInputs({
+                    Q: '',
+                    V: '',
+                    L: '',
+                    D: '',
+                    width: '',
+                    height: '',
+                    topWidth: '',
+                    bottomWidth: '',
+                    epsilon: '0.00015',
+                    material: 'custom',
+                    nu: '1.0e-6',
+                    hf: ''
+                });
+            };
+            
+            const handleShapeChange = (newShape) => {
+                setShape(newShape);
+                setResults(null);
+                setSelectedCommercialSize(null);
+            };
+            
+            const loadExample = () => {
+                if (problemType === 'type1') {
+                    const exampleInputs = {
+                        Q: '0.003',
+                        V: '',
+                        L: '100',
+                        D: '0.05',
+                        width: '',
+                        height: '',
+                        topWidth: '',
+                        bottomWidth: '',
+                        epsilon: '0.000005',
+                        material: 'galvanized-iron',
+                        nu: '1.0e-6',
+                        hf: ''
+                    };
+                    setInputs(exampleInputs);
+                    setShape('circular');
+                    setTimeout(() => calculateWithInputs('type1', exampleInputs, 'circular'), 100);
+                } else if (problemType === 'type2') {
+                    const exampleInputs = {
+                        Q: '',
+                        V: '',
+                        hf: '10',
+                        L: '100',
+                        D: '0.05',
+                        width: '',
+                        height: '',
+                        topWidth: '',
+                        bottomWidth: '',
+                        epsilon: '0.000005',
+                        material: 'galvanized-iron',
+                        nu: '1.0e-6'
+                    };
+                    setInputs(exampleInputs);
+                    setShape('circular');
+                    setTimeout(() => calculateWithInputs('type2', exampleInputs, 'circular'), 100);
+                } else if (problemType === 'type3') {
+                    // Example 2.5: ε = 5×10⁻² mm = 5×10⁻⁵ m = 0.00005 m
+                    // This should converge to D ≈ 44 mm
+                    const exampleInputs = {
+                        Q: '0.003',
+                        V: '',
+                        hf: '10',
+                        L: '100',
+                        D: '',
+                        width: '',
+                        height: '',
+                        topWidth: '',
+                        bottomWidth: '',
+                        epsilon: '0.00005',
+                        material: 'custom',
+                        nu: '1.0e-6'
+                    };
+                    setInputs(exampleInputs);
+                    setShape('circular');
+                    setTimeout(() => calculateWithInputs('type3', exampleInputs, 'circular'), 100);
+                }
+            };
+            
+            const handleCommercialSizeSelect = (size) => {
+                setSelectedCommercialSize(size);
+                setCustomDiameter(''); // Clear custom input when selecting from buttons
+                
+                // Recalculate with new diameter
+                if (results && problemType === 'type3') {
+                    recalculateWithDiameter(size);
+                }
+            };
+            
+            const handleCustomDiameterApply = () => {
+                const customD = parseFloat(customDiameter) / 1000; // Convert mm to m
+                if (isNaN(customD) || customD <= 0) {
+                    alert('Please enter a valid diameter in mm');
+                    return;
+                }
+                setSelectedCommercialSize(customD);
+                recalculateWithDiameter(customD);
+            };
+            
+            const recalculateWithDiameter = (size) => {
+                const newInputs = {
+                    ...inputs,
+                    D: size.toString()
+                };
+                
+                // For Type III with commercial size, we need to recalculate V, Re, f, and verify hf
+                try {
+                    const Q = parseFloat(newInputs.Q);
+                    const L = parseFloat(newInputs.L);
+                    const epsilon = parseFloat(newInputs.epsilon);
+                    const nu = parseFloat(newInputs.nu);
+                    const hf_target = parseFloat(newInputs.hf);
+                    
+                    const hydraulic = calculateHydraulicDiameter('circular', { D: size });
+                    const Dh = hydraulic.Dh;
+                    const A = hydraulic.A;
+                    
+                    const V = Q / A;
+                    const Re = (V * Dh) / nu;
+                    const relativeRoughness = epsilon / Dh;
+                    
+                    let f;
+                    if (Re < 2000) {
+                        f = 64 / Re;
+                    } else {
+                        const term1 = epsilon / (3.7 * Dh);
+                        const term2 = 5.74 / Math.pow(Re, 0.9);
+                        f = 1.325 / Math.pow(Math.log(term1 + term2), 2);
+                    }
+                    
+                    const g = 9.81;
+                    const hf_actual = f * (L / Dh) * (Math.pow(V, 2) / (2 * g));
+                    
+                    // Update results with commercial size verification
+                    setResults(prev => ({
+                        ...prev,
+                        commercialVerification: {
+                            D_commercial: size,
+                            V_commercial: V,
+                            Re_commercial: Re,
+                            f_commercial: f,
+                            hf_target: hf_target,
+                            hf_actual: hf_actual,
+                            hf_difference: Math.abs(hf_actual - hf_target),
+                            hf_percent_diff: (Math.abs(hf_actual - hf_target) / hf_target * 100)
+                        }
+                    }));
+                    
+                } catch (e) {
+                    console.error('Error recalculating with commercial size:', e);
+                }
+            };
+            
+            const calculateWithInputs = (type, inputValues, shapeType) => {
+                try {
+                    setError(null);
+                    let result;
+                    
+                    if (type === 'type1') {
+                        result = calculateType1(inputValues, shapeType);
+                    } else if (type === 'type2') {
+                        result = calculateType2(inputValues, shapeType);
+                    } else if (type === 'type3') {
+                        result = calculateType3(inputValues, shapeType);
+                    }
+                    
+                    setResults(result);
+                } catch (e) {
+                    setError(e.message);
+                    setResults(null);
+                }
+            };
+            
+            const calculate = () => {
+                calculateWithInputs(problemType, inputs, shape);
+            };
+            
+            const calculateType1 = (inputValues, shapeType) => {
+                // Get hydraulic diameter and area
+                let hydraulic;
+                if (shapeType === 'circular') {
+                    const D = parseFloat(inputValues.D);
+                    if (!D) throw new Error('Please provide pipe diameter');
+                    hydraulic = calculateHydraulicDiameter(shapeType, { D });
+                } else if (shapeType === 'rectangular') {
+                    const width = parseFloat(inputValues.width);
+                    const height = parseFloat(inputValues.height);
+                    if (!width || !height) throw new Error('Please provide width and height');
+                    hydraulic = calculateHydraulicDiameter(shapeType, { width, height });
+                } else if (shapeType === 'square') {
+                    const width = parseFloat(inputValues.width);
+                    if (!width) throw new Error('Please provide side length');
+                    hydraulic = calculateHydraulicDiameter(shapeType, { width });
+                } else if (shapeType === 'triangular') {
+                    const width = parseFloat(inputValues.width);
+                    if (!width) throw new Error('Please provide side length');
+                    hydraulic = calculateHydraulicDiameter(shapeType, { width });
+                } else if (shapeType === 'trapezoidal') {
+                    const bottomWidth = parseFloat(inputValues.bottomWidth);
+                    const topWidth = parseFloat(inputValues.topWidth);
+                    const height = parseFloat(inputValues.height);
+                    if (!bottomWidth || !topWidth || !height) throw new Error('Please provide all trapezoid dimensions');
+                    hydraulic = calculateHydraulicDiameter(shapeType, { bottomWidth, topWidth, height });
+                }
+                
+                const Dh = hydraulic.Dh;
+                const A = hydraulic.A;
+                
+                const Q = inputValues.Q ? parseFloat(inputValues.Q) : (inputValues.V ? parseFloat(inputValues.V) * A : null);
+                const L = parseFloat(inputValues.L);
+                const epsilon = parseFloat(inputValues.epsilon);
+                const nu = parseFloat(inputValues.nu);
+                
+                if (!Q || !L || !epsilon || !nu) {
+                    throw new Error('Please fill in all required fields for Type I problem.');
+                }
+                
+                const V = Q / A;
+                const Re = (V * Dh) / nu;
+                const relativeRoughness = epsilon / Dh;
+                
+                if (Re >= 2000 && Re < 4000) {
+                    throw new Error('Flow is TRANSITIONAL (2000 < Re < 4000). Calculation halted. Flow regime is unstable and results would be unreliable. Please adjust parameters to achieve either laminar (Re < 2000) or turbulent (Re > 4000) flow.');
+                }
+                
+                let f, flowRegime;
+                if (Re < 2000) {
+                    f = 64 / Re;
+                    flowRegime = 'Laminar';
+                } else {
+                    flowRegime = 'Turbulent';
+                    const term1 = epsilon / (3.7 * Dh);
+                    const term2 = 5.74 / Math.pow(Re, 0.9);
+                    f = 1.325 / Math.pow(Math.log(term1 + term2), 2);
+                }
+                
+                const g = 9.81;
+                const hf = f * (L / Dh) * (Math.pow(V, 2) / (2 * g));
+                
+                return {
+                    type: 'Type I',
+                    flowRegime,
+                    shape: shapeType,
+                    inputs: { Q, V, L, Dh, epsilon, nu, A },
+                    results: { Re, f, hf, relativeRoughness },
+                    steps: generateType1Steps(Q, V, L, Dh, epsilon, nu, Re, f, hf, relativeRoughness, flowRegime, shapeType)
+                };
+            };
+            
+            const calculateType2 = (inputValues, shapeType) => {
+                // Get hydraulic diameter
+                let hydraulic;
+                if (shapeType === 'circular') {
+                    const D = parseFloat(inputValues.D);
+                    if (!D) throw new Error('Please provide pipe diameter');
+                    hydraulic = calculateHydraulicDiameter(shapeType, { D });
+                } else if (shapeType === 'rectangular') {
+                    const width = parseFloat(inputValues.width);
+                    const height = parseFloat(inputValues.height);
+                    if (!width || !height) throw new Error('Please provide width and height');
+                    hydraulic = calculateHydraulicDiameter(shapeType, { width, height });
+                } else if (shapeType === 'square') {
+                    const width = parseFloat(inputValues.width);
+                    if (!width) throw new Error('Please provide side length');
+                    hydraulic = calculateHydraulicDiameter(shapeType, { width });
+                } else if (shapeType === 'triangular') {
+                    const width = parseFloat(inputValues.width);
+                    if (!width) throw new Error('Please provide side length');
+                    hydraulic = calculateHydraulicDiameter(shapeType, { width });
+                } else if (shapeType === 'trapezoidal') {
+                    const bottomWidth = parseFloat(inputValues.bottomWidth);
+                    const topWidth = parseFloat(inputValues.topWidth);
+                    const height = parseFloat(inputValues.height);
+                    if (!bottomWidth || !topWidth || !height) throw new Error('Please provide all trapezoid dimensions');
+                    hydraulic = calculateHydraulicDiameter(shapeType, { bottomWidth, topWidth, height });
+                }
+                
+                const Dh = hydraulic.Dh;
+                const A = hydraulic.A;
+                
+                const hf = parseFloat(inputValues.hf);
+                const L = parseFloat(inputValues.L);
+                const epsilon = parseFloat(inputValues.epsilon);
+                const nu = parseFloat(inputValues.nu);
+                
+                if (!hf || !L || !epsilon || !nu) {
+                    throw new Error('Please fill in all required fields for Type II problem.');
+                }
+                
+                const g = 9.81;
+                const relativeRoughness = epsilon / Dh;
+                const iterations = [];
+                let f = 0.02;
+                let V, Re, fNew;
+                const tolerance = 0.00001;
+                const maxIter = 20;
+                
+                for (let i = 0; i < maxIter; i++) {
+                    V = Math.sqrt((2 * g * Dh * hf) / (f * L));
+                    Re = (V * Dh) / nu;
+                    
+                    if (Re >= 2000 && Re < 4000) {
+                        throw new Error('Flow is TRANSITIONAL (2000 < Re < 4000). Calculation halted at iteration ' + (i + 1) + '. Flow regime is unstable and results would be unreliable. Please adjust parameters.');
+                    }
+                    
+                    let flowRegime;
+                    if (Re < 2000) {
+                        fNew = 64 / Re;
+                        flowRegime = 'Laminar';
+                    } else {
+                        flowRegime = 'Turbulent';
+                        const term1 = epsilon / (3.7 * Dh);
+                        const term2 = 5.74 / Math.pow(Re, 0.9);
+                        fNew = 1.325 / Math.pow(Math.log(term1 + term2), 2);
+                    }
+                    
+                    iterations.push({
+                        iteration: i,
+                        f: f,
+                        V: V,
+                        Re: Re,
+                        fNew: fNew,
+                        flowRegime: flowRegime
+                    });
+                    
+                    if (Math.abs(fNew - f) < tolerance) {
+                        const Q = V * A;
+                        
+                        return {
+                            type: 'Type II',
+                            flowRegime,
+                            shape: shapeType,
+                            inputs: { hf, L, Dh, epsilon, nu, A },
+                            results: { Re, f: fNew, V, Q, relativeRoughness },
+                            iterations,
+                            steps: generateType2Steps(hf, L, Dh, epsilon, nu, Re, fNew, V, Q, relativeRoughness, flowRegime, iterations, shapeType)
+                        };
+                    }
+                    
+                    f = fNew;
+                }
+                
+                throw new Error('Solution did not converge after ' + maxIter + ' iterations.');
+            };
+            
+            const calculateType3 = (inputValues, shapeType) => {
+                if (shapeType !== 'circular') {
+                    throw new Error('Type III (find diameter) is only available for circular pipes. Please select circular shape.');
+                }
+                
+                const hf = parseFloat(inputValues.hf);
+                const L = parseFloat(inputValues.L);
+                const Q = parseFloat(inputValues.Q);
+                const epsilon = parseFloat(inputValues.epsilon);
+                const nu = parseFloat(inputValues.nu);
+                
+                if (!hf || !L || !Q || !epsilon || !nu) {
+                    throw new Error('Please fill in all required fields for Type III problem.');
+                }
+                
+                const g = 9.81;
+                const iterations = [];
+                let f = 0.02;
+                let D, V, Re, relativeRoughness, fNew;
+                const tolerance = 0.00001;
+                const maxIter = 20;
+                
+                for (let i = 0; i < maxIter; i++) {
+                    // CORRECT: D = [8fLQ²/(π²ghf)]^(1/5)
+                    D = Math.pow((8 * f * L * Math.pow(Q, 2)) / (Math.pow(Math.PI, 2) * g * hf), 0.2);
+                    const A = Math.PI * Math.pow(D, 2) / 4;
+                    V = Q / A;
+                    Re = (V * D) / nu;
+                    
+                    if (Re >= 2000 && Re < 4000) {
+                        throw new Error('Flow is TRANSITIONAL (2000 < Re < 4000). Calculation halted at iteration ' + (i + 1) + '. Flow regime is unstable and results would be unreliable. Please adjust parameters.');
+                    }
+                    
+                    relativeRoughness = epsilon / D;
+                    
+                    let flowRegime;
+                    if (Re < 2000) {
+                        fNew = 64 / Re;
+                        flowRegime = 'Laminar';
+                    } else {
+                        flowRegime = 'Turbulent';
+                        const term1 = epsilon / (3.7 * D);
+                        const term2 = 5.74 / Math.pow(Re, 0.9);
+                        fNew = 1.325 / Math.pow(Math.log(term1 + term2), 2);
+                    }
+                    
+                    iterations.push({
+                        iteration: i,
+                        f: f,
+                        D: D,
+                        V: V,
+                        Re: Re,
+                        relativeRoughness: relativeRoughness,
+                        fNew: fNew,
+                        flowRegime: flowRegime
+                    });
+                    
+                    if (Math.abs(fNew - f) < tolerance) {
+                        // Find recommended commercial size
+                        const D_mm = D * 1000;
+                        const recommendedSize = commercialSizes.find(size => size >= D);
+                        
+                        return {
+                            type: 'Type III',
+                            flowRegime,
+                            shape: shapeType,
+                            inputs: { hf, L, Q, epsilon, nu },
+                            results: { Re, f: fNew, V, D, relativeRoughness, D_mm, recommendedSize },
+                            iterations,
+                            steps: generateType3Steps(hf, L, Q, epsilon, nu, Re, fNew, V, D, relativeRoughness, flowRegime, iterations),
+                            commercialSizes: commercialSizes.filter(size => size >= D * 0.8) // Show sizes near calculated
+                        };
+                    }
+                    
+                    f = fNew;
+                }
+                
+                throw new Error('Solution did not converge after ' + maxIter + ' iterations.');
+            };
+            
+            const generateType1Steps = (Q, V, L, Dh, epsilon, nu, Re, f, hf, relRough, regime, shapeType) => {
+                const steps = [
+                    {
+                        title: 'Step 1: Calculate Hydraulic Diameter',
+                        description: shapeType === 'circular' ? 'For circular pipe: Dh = D' : `For ${shapeType} shape: Dh = 4A/P`,
+                        latex: `D_h = ${Dh.toFixed(4)} \\text{ m}`
+                    },
+                    {
+                        title: 'Step 2: Calculate Velocity',
+                        latex: `V = \\frac{Q}{A} = ${V.toFixed(4)} \\text{ m/s}`
+                    },
+                    {
+                        title: 'Step 3: Calculate Reynolds Number',
+                        latex: `Re = \\frac{VD_h}{\\nu} = \\frac{${V.toFixed(4)} \\times ${Dh.toFixed(4)}}{${nu}} = ${Re.toFixed(0)}`
+                    },
+                    {
+                        title: 'Step 4: Determine Friction Factor',
+                        description: `Flow regime: ${regime} (Re = ${Re.toFixed(0)})`,
+                        latex: regime === 'Laminar' 
+                            ? `f = \\frac{64}{Re} = \\frac{64}{${Re.toFixed(0)}} = ${f.toFixed(6)}`
+                            : `f = \\frac{1.325}{\\left[\\ln\\left(\\frac{\\varepsilon}{3.7D_h} + \\frac{5.74}{Re^{0.9}}\\right)\\right]^2} = ${f.toFixed(6)}`
+                    },
+                    {
+                        title: 'Step 5: Calculate Head Loss',
+                        latex: `h_f = f \\frac{L}{D_h} \\frac{V^2}{2g} = ${f.toFixed(6)} \\times \\frac{${L}}{${Dh.toFixed(4)}} \\times \\frac{${V.toFixed(4)}^2}{2 \\times 9.81} = ${hf.toFixed(4)} \\text{ m}`
+                    }
+                ];
+                return steps;
+            };
+            
+            const generateType2Steps = (hf, L, Dh, epsilon, nu, Re, f, V, Q, relRough, regime, iterations, shapeType) => {
+                return [
+                    {
+                        title: 'Hydraulic Diameter',
+                        description: shapeType === 'circular' ? 'For circular pipe: Dh = D' : `For ${shapeType} shape: Dh = 4A/P`,
+                        latex: `D_h = ${Dh.toFixed(4)} \\text{ m}`
+                    },
+                    {
+                        title: 'Iterative Solution',
+                        description: `Converged in ${iterations.length} iterations with tolerance 0.00001`
+                    },
+                    {
+                        title: 'Final Velocity',
+                        latex: `V = \\sqrt{\\frac{2gh_fD_h}{fL}} = ${V.toFixed(4)} \\text{ m/s}`
+                    },
+                    {
+                        title: 'Reynolds Number',
+                        latex: `Re = \\frac{VD_h}{\\nu} = ${Re.toFixed(0)} \\quad (${regime})`
+                    },
+                    {
+                        title: 'Discharge',
+                        latex: `Q = VA = ${Q.toExponential(4)} \\text{ m}^3\\text{/s} = ${(Q*1000).toFixed(2)} \\text{ L/s}`
+                    }
+                ];
+            };
+            
+            const generateType3Steps = (hf, L, Q, epsilon, nu, Re, f, V, D, relRough, regime, iterations) => {
+                return [
+                    {
+                        title: 'Iterative Solution',
+                        description: `Converged in ${iterations.length} iterations with tolerance 0.00001`
+                    },
+                    {
+                        title: 'Calculated Diameter',
+                        latex: `D = \\left(\\frac{8fLQ^2}{g^2 \\pi^2 h_f}\\right)^{1/5} = ${D.toFixed(4)} \\text{ m} = ${(D*1000).toFixed(1)} \\text{ mm}`
+                    },
+                    {
+                        title: 'Verification',
+                        latex: `Re = ${Re.toFixed(0)} \\quad (${regime}), \\quad V = ${V.toFixed(4)} \\text{ m/s}, \\quad f = ${f.toFixed(6)}`
+                    }
+                ];
+            };
+            
+            return (
+                <div className="app-container">
+                    <header>
+                        <h1>Darcy-Weisbach Calculator</h1>
+                        <div className="subtitle">
+                            Type I, II, III Problems • Circular & Non-Circular Conduits • METU CE 372
+                        </div>
+                    </header>
+                    
+                    <div className="main-grid">
+                        <div className="input-panel">
+                            <div className="panel-title">Input Parameters</div>
+                            
+                            <div className="problem-type-selector">
+                                <button 
+                                    className={`type-btn ${problemType === 'type1' ? 'active' : ''}`}
+                                    onClick={() => handleProblemTypeChange('type1')}
+                                >
+                                    Type I<br/>Find h<sub>f</sub>
+                                </button>
+                                <button 
+                                    className={`type-btn ${problemType === 'type2' ? 'active' : ''}`}
+                                    onClick={() => handleProblemTypeChange('type2')}
+                                >
+                                    Type II<br/>Find Q
+                                </button>
+                                <button 
+                                    className={`type-btn ${problemType === 'type3' ? 'active' : ''}`}
+                                    onClick={() => handleProblemTypeChange('type3')}
+                                >
+                                    Type III<br/>Find D
+                                </button>
+                            </div>
+                            
+                            {problemType !== 'type3' && (
+                                <>
+                                    <label style={{marginBottom: '8px'}}>Conduit Shape</label>
+                                    <div className="shape-selector">
+                                        <button 
+                                            className={`shape-btn ${shape === 'circular' ? 'active' : ''}`}
+                                            onClick={() => handleShapeChange('circular')}
+                                        >
+                                            Circular
+                                        </button>
+                                        <button 
+                                            className={`shape-btn ${shape === 'rectangular' ? 'active' : ''}`}
+                                            onClick={() => handleShapeChange('rectangular')}
+                                        >
+                                            Rectangle
+                                        </button>
+                                        <button 
+                                            className={`shape-btn ${shape === 'square' ? 'active' : ''}`}
+                                            onClick={() => handleShapeChange('square')}
+                                        >
+                                            Square
+                                        </button>
+                                        <button 
+                                            className={`shape-btn ${shape === 'triangular' ? 'active' : ''}`}
+                                            onClick={() => handleShapeChange('triangular')}
+                                        >
+                                            Triangle
+                                        </button>
+                                        <button 
+                                            className={`shape-btn ${shape === 'trapezoidal' ? 'active' : ''}`}
+                                            onClick={() => handleShapeChange('trapezoidal')}
+                                        >
+                                            Trapezoid
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                            
+                            {problemType === 'type1' && (
+                                <>
+                                    <div className="form-group">
+                                        <label>
+                                            Discharge Q (m³/s)
+                                            <div className="label-description">provide Q OR V, not both</div>
+                                        </label>
+                                        <input 
+                                            type="number" 
+                                            step="any"
+                                            value={inputs.Q}
+                                            onChange={(e) => handleInputChange('Q', e.target.value)}
+                                            placeholder="0.003"
+                                            disabled={!!inputs.V}
+                                        />
+                                    </div>
+                                    
+                                    <div className="form-group">
+                                        <label>
+                                            Velocity V (m/s)
+                                            <div className="label-description">provide Q OR V, not both</div>
+                                        </label>
+                                        <input 
+                                            type="number" 
+                                            step="any"
+                                            value={inputs.V}
+                                            onChange={(e) => handleInputChange('V', e.target.value)}
+                                            placeholder="1.5"
+                                            disabled={!!inputs.Q}
+                                        />
+                                    </div>
+                                </>
+                            )}
+                            
+                            {problemType === 'type2' && (
+                                <div className="form-group">
+                                    <label>Head Loss h<sub>f</sub> (m)</label>
+                                    <input 
+                                        type="number" 
+                                        step="any"
+                                        value={inputs.hf}
+                                        onChange={(e) => handleInputChange('hf', e.target.value)}
+                                        placeholder="10"
+                                    />
+                                </div>
+                            )}
+                            
+                            {problemType === 'type3' && (
+                                <>
+                                    <div className="form-group">
+                                        <label>Head Loss h<sub>f</sub> (m)</label>
+                                        <input 
+                                            type="number" 
+                                            step="any"
+                                            value={inputs.hf}
+                                            onChange={(e) => handleInputChange('hf', e.target.value)}
+                                            placeholder="10"
+                                        />
+                                    </div>
+                                    
+                                    <div className="form-group">
+                                        <label>Discharge Q (m³/s)</label>
+                                        <input 
+                                            type="number" 
+                                            step="any"
+                                            value={inputs.Q}
+                                            onChange={(e) => handleInputChange('Q', e.target.value)}
+                                            placeholder="0.003"
+                                        />
+                                    </div>
+                                </>
+                            )}
+                            
+                            <div className="form-group">
+                                <label>Pipe Length L (m)</label>
+                                <input 
+                                    type="number" 
+                                    step="any"
+                                    value={inputs.L}
+                                    onChange={(e) => handleInputChange('L', e.target.value)}
+                                    placeholder="100"
+                                />
+                            </div>
+                            
+                            {/* Dimension inputs based on shape */}
+                            {problemType !== 'type3' && shape === 'circular' && (
+                                <div className="form-group">
+                                    <label>Pipe Diameter D (m)</label>
+                                    <input 
+                                        type="number" 
+                                        step="any"
+                                        value={inputs.D}
+                                        onChange={(e) => handleInputChange('D', e.target.value)}
+                                        placeholder="0.05"
+                                    />
+                                </div>
+                            )}
+                            
+                            {problemType === 'type2' && shape === 'rectangular' && (
+                                <>
+                                    <div className="form-group">
+                                        <label>Width (m)</label>
+                                        <input 
+                                            type="number" 
+                                            step="any"
+                                            value={inputs.width}
+                                            onChange={(e) => handleInputChange('width', e.target.value)}
+                                            placeholder="0.10"
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Height (m)</label>
+                                        <input 
+                                            type="number" 
+                                            step="any"
+                                            value={inputs.height}
+                                            onChange={(e) => handleInputChange('height', e.target.value)}
+                                            placeholder="0.06"
+                                        />
+                                    </div>
+                                </>
+                            )}
+                            
+                            {problemType === 'type2' && shape === 'square' && (
+                                <div className="form-group">
+                                    <label>Side Length (m)</label>
+                                    <input 
+                                        type="number" 
+                                        step="any"
+                                        value={inputs.width}
+                                        onChange={(e) => handleInputChange('width', e.target.value)}
+                                        placeholder="0.10"
+                                    />
+                                </div>
+                            )}
+                            
+                            {problemType === 'type2' && shape === 'triangular' && (
+                                <div className="form-group">
+                                    <label>Side Length (m)</label>
+                                    <input 
+                                        type="number" 
+                                        step="any"
+                                        value={inputs.width}
+                                        onChange={(e) => handleInputChange('width', e.target.value)}
+                                        placeholder="0.10"
+                                    />
+                                </div>
+                            )}
+                            
+                            {problemType === 'type2' && shape === 'trapezoidal' && (
+                                <>
+                                    <div className="form-group">
+                                        <label>Bottom Width (m)</label>
+                                        <input 
+                                            type="number" 
+                                            step="any"
+                                            value={inputs.bottomWidth}
+                                            onChange={(e) => handleInputChange('bottomWidth', e.target.value)}
+                                            placeholder="0.15"
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Top Width (m)</label>
+                                        <input 
+                                            type="number" 
+                                            step="any"
+                                            value={inputs.topWidth}
+                                            onChange={(e) => handleInputChange('topWidth', e.target.value)}
+                                            placeholder="0.25"
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Height (m)</label>
+                                        <input 
+                                            type="number" 
+                                            step="any"
+                                            value={inputs.height}
+                                            onChange={(e) => handleInputChange('height', e.target.value)}
+                                            placeholder="0.10"
+                                        />
+                                    </div>
+                                </>
+                            )}
+                            
+                            {/* Similar for type1 shapes */}
+                            {problemType === 'type1' && shape === 'rectangular' && (
+                                <>
+                                    <div className="form-group">
+                                        <label>Width (m)</label>
+                                        <input 
+                                            type="number" 
+                                            step="any"
+                                            value={inputs.width}
+                                            onChange={(e) => handleInputChange('width', e.target.value)}
+                                            placeholder="0.10"
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Height (m)</label>
+                                        <input 
+                                            type="number" 
+                                            step="any"
+                                            value={inputs.height}
+                                            onChange={(e) => handleInputChange('height', e.target.value)}
+                                            placeholder="0.06"
+                                        />
+                                    </div>
+                                </>
+                            )}
+                            
+                            {problemType === 'type1' && shape === 'square' && (
+                                <div className="form-group">
+                                    <label>Side Length (m)</label>
+                                    <input 
+                                        type="number" 
+                                        step="any"
+                                        value={inputs.width}
+                                        onChange={(e) => handleInputChange('width', e.target.value)}
+                                        placeholder="0.10"
+                                    />
+                                </div>
+                            )}
+                            
+                            {problemType === 'type1' && shape === 'triangular' && (
+                                <div className="form-group">
+                                    <label>Side Length (m)</label>
+                                    <input 
+                                        type="number" 
+                                        step="any"
+                                        value={inputs.width}
+                                        onChange={(e) => handleInputChange('width', e.target.value)}
+                                        placeholder="0.10"
+                                    />
+                                </div>
+                            )}
+                            
+                            {problemType === 'type1' && shape === 'trapezoidal' && (
+                                <>
+                                    <div className="form-group">
+                                        <label>Bottom Width (m)</label>
+                                        <input 
+                                            type="number" 
+                                            step="any"
+                                            value={inputs.bottomWidth}
+                                            onChange={(e) => handleInputChange('bottomWidth', e.target.value)}
+                                            placeholder="0.15"
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Top Width (m)</label>
+                                        <input 
+                                            type="number" 
+                                            step="any"
+                                            value={inputs.topWidth}
+                                            onChange={(e) => handleInputChange('topWidth', e.target.value)}
+                                            placeholder="0.25"
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Height (m)</label>
+                                        <input 
+                                            type="number" 
+                                            step="any"
+                                            value={inputs.height}
+                                            onChange={(e) => handleInputChange('height', e.target.value)}
+                                            placeholder="0.10"
+                                        />
+                                    </div>
+                                </>
+                            )}
+                            
+                            <div className="form-group">
+                                <label>Pipe Material</label>
+                                <select 
+                                    value={inputs.material}
+                                    onChange={(e) => handleInputChange('material', e.target.value)}
+                                >
+                                    {Object.entries(materials).map(([key, mat]) => (
+                                        <option key={key} value={key}>{mat.name}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            
+                            <div className="form-group">
+                                <label>
+                                    Roughness Height ε (m)
+                                    <div className="label-description">set by material selection</div>
+                                </label>
+                                <input 
+                                    type="number" 
+                                    step="any"
+                                    value={inputs.epsilon}
+                                    onChange={(e) => handleInputChange('epsilon', e.target.value)}
+                                    placeholder="0.00015"
+                                    disabled={inputs.material !== 'custom'}
+                                />
+                            </div>
+                            
+                            <div className="form-group">
+                                <label>
+                                    Kinematic Viscosity ν (m²/s)
+                                    <div className="label-description">for water at 20°C: 1.0×10⁻⁶</div>
+                                </label>
+                                <input 
+                                    type="number" 
+                                    step="any"
+                                    value={inputs.nu}
+                                    onChange={(e) => handleInputChange('nu', e.target.value)}
+                                    placeholder="1.0e-6"
+                                />
+                            </div>
+                            
+                            <button className="calculate-btn" onClick={calculate}>
+                                Calculate Solution
+                            </button>
+                        </div>
+                        
+                        <div className="results-panel">
+                            {error && (
+                                <div className="error-box">
+                                    <strong>Error:</strong> {error}
+                                </div>
+                            )}
+                            
+                            {!results && !error && (
+                                <div className="results-empty">
+                                    <button 
+                                        className="calculate-btn" 
+                                        onClick={loadExample}
+                                        style={{ maxWidth: '300px', margin: '0 auto' }}
+                                    >
+                                        Load Example
+                                    </button>
+                                    <p style={{ marginTop: '16px', fontSize: '0.875rem' }}>
+                                        Loads sample problem from Examples 2.3, 2.4, or 2.5
+                                    </p>
+                                </div>
+                            )}
+                            
+                            {results && (
+                                <>
+                                    <div className="result-section">
+                                        <div className="section-title">Summary</div>
+                                        <div className="key-results">
+                                            {problemType === 'type1' && (
+                                                <>
+                                                    <div className="result-card">
+                                                        <div className="result-label">Head Loss</div>
+                                                        <div className="result-value">{results.results.hf.toFixed(4)} m</div>
+                                                    </div>
+                                                    <div className="result-card">
+                                                        <div className="result-label">Velocity</div>
+                                                        <div className="result-value">{results.inputs.V.toFixed(4)} m/s</div>
+                                                    </div>
+                                                    <div className="result-card">
+                                                        <div className="result-label">Discharge</div>
+                                                        <div className="result-value">{(results.inputs.Q * 1000).toFixed(2)} L/s</div>
+                                                    </div>
+                                                </>
+                                            )}
+                                            {problemType === 'type2' && (
+                                                <>
+                                                    <div className="result-card">
+                                                        <div className="result-label">Discharge</div>
+                                                        <div className="result-value">{(results.results.Q * 1000).toFixed(2)} L/s</div>
+                                                    </div>
+                                                    <div className="result-card">
+                                                        <div className="result-label">Velocity</div>
+                                                        <div className="result-value">{results.results.V.toFixed(4)} m/s</div>
+                                                    </div>
+                                                </>
+                                            )}
+                                            {problemType === 'type3' && (
+                                                <>
+                                                    <div className="result-card">
+                                                        <div className="result-label">Calculated Diameter</div>
+                                                        <div className="result-value">{(results.results.D * 1000).toFixed(1)} mm</div>
+                                                    </div>
+                                                    <div className="result-card">
+                                                        <div className="result-label">Velocity</div>
+                                                        <div className="result-value">{results.results.V.toFixed(4)} m/s</div>
+                                                    </div>
+                                                    <div className="result-card">
+                                                        <div className="result-label">Discharge</div>
+                                                        <div className="result-value">{(results.inputs.Q * 1000).toFixed(2)} L/s</div>
+                                                    </div>
+                                                </>
+                                            )}
+                                            <div className="result-card">
+                                                <div className="result-label">Reynolds Number</div>
+                                                <div className="result-value">{results.results.Re.toFixed(0)}</div>
+                                            </div>
+                                            <div className="result-card">
+                                                <div className="result-label">Friction Factor</div>
+                                                <div className="result-value">{results.results.f.toFixed(6)}</div>
+                                            </div>
+                                            <div className="result-card">
+                                                <div className="result-label">Flow Regime</div>
+                                                <div className="result-value">{results.flowRegime}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {results.iterations && results.iterations.length > 0 && (
+                                        <div className="result-section">
+                                            <div className="section-title">Iteration Table</div>
+                                            <table className="iteration-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Iter.</th>
+                                                        <th>f<sup>(i)</sup></th>
+                                                        {problemType === 'type3' && <th>D (m)</th>}
+                                                        <th>V (m/s)</th>
+                                                        <th>Re</th>
+                                                        {problemType === 'type3' && <th>ε/D</th>}
+                                                        <th>f<sup>(i+1)</sup></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {results.iterations.map((iter, idx) => (
+                                                        <tr key={idx}>
+                                                            <td>{iter.iteration + 1}</td>
+                                                            <td>{iter.f.toFixed(6)}</td>
+                                                            {problemType === 'type3' && <td>{iter.D.toFixed(4)}</td>}
+                                                            <td>{iter.V.toFixed(4)}</td>
+                                                            <td>{iter.Re.toFixed(0)}</td>
+                                                            {problemType === 'type3' && <td>{iter.relativeRoughness.toExponential(3)}</td>}
+                                                            <td>{iter.fNew.toFixed(6)}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    )}
+                                    
+                                    <div className="result-section">
+                                        <div className="section-title">Step-by-Step Solution</div>
+                                        <div className="step-by-step">
+                                            {results.steps.map((step, idx) => (
+                                                <div key={idx} className="step">
+                                                    <div className="step-number">{step.title}</div>
+                                                    {step.description && (
+                                                        <div className="step-content">{step.description}</div>
+                                                    )}
+                                                    {step.latex && (
+                                                        <div className="equation-block">
+                                                            <div className="step-content">
+                                                                {"\\[" + step.latex + "\\]"}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Commercial Pipe Selection for Type III - AT THE END */}
+                                    {problemType === 'type3' && results.commercialSizes && (
+                                        <div className="result-section">
+                                            <div className="commercial-pipe-section">
+                                                <div className="commercial-title">Commercial Pipe Sizing</div>
+                                                <p style={{fontSize: '0.9rem', marginBottom: '16px', color: 'var(--text-muted)'}}>
+                                                    Calculated: {(results.results.D * 1000).toFixed(1)} mm • 
+                                                    Recommended: {(results.results.recommendedSize * 1000).toFixed(0)} mm
+                                                </p>
+                                                
+                                                <div style={{marginBottom: '16px'}}>
+                                                    <label style={{fontSize: '0.9rem', marginBottom: '8px', display: 'block'}}>
+                                                        Standard Sizes:
+                                                    </label>
+                                                    <div className="commercial-options">
+                                                        {results.commercialSizes.slice(0, 12).map((size, idx) => (
+                                                            <button
+                                                                key={idx}
+                                                                className={`commercial-btn ${
+                                                                    size === results.results.recommendedSize ? 'recommended' : ''
+                                                                } ${selectedCommercialSize === size ? 'selected' : ''}`}
+                                                                onClick={() => handleCommercialSizeSelect(size)}
+                                                            >
+                                                                {(size * 1000).toFixed(0)} mm
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                                
+                                                <div style={{marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border)'}}>
+                                                    <label style={{fontSize: '0.9rem', marginBottom: '8px', display: 'block'}}>
+                                                        Or Enter Custom Diameter (mm):
+                                                    </label>
+                                                    <div style={{display: 'flex', gap: '8px'}}>
+                                                        <input 
+                                                            type="number"
+                                                            value={customDiameter}
+                                                            onChange={(e) => setCustomDiameter(e.target.value)}
+                                                            placeholder="e.g., 45"
+                                                            style={{flex: 1, padding: '8px'}}
+                                                        />
+                                                        <button
+                                                            onClick={handleCustomDiameterApply}
+                                                            style={{
+                                                                padding: '8px 16px',
+                                                                background: 'var(--primary)',
+                                                                color: '#000',
+                                                                border: 'none',
+                                                                cursor: 'pointer',
+                                                                fontFamily: 'JetBrains Mono, monospace',
+                                                                fontWeight: 700
+                                                            }}
+                                                        >
+                                                            Apply
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div className="recalc-note">
+                                                    Select a size or enter custom diameter to recalculate V, Re, f, and actual hf
+                                                </div>
+                                            </div>
+                                            
+                                            {/* Show recalculated results */}
+                                            {results.commercialVerification && (
+                                                <div style={{marginTop: '16px'}}>
+                                                    <div className="section-title">Verification with {(results.commercialVerification.D_commercial * 1000).toFixed(1)} mm Pipe</div>
+                                                    <div className="key-results">
+                                                        <div className="result-card">
+                                                            <div className="result-label">New Velocity</div>
+                                                            <div className="result-value">{results.commercialVerification.V_commercial.toFixed(4)} m/s</div>
+                                                        </div>
+                                                        <div className="result-card">
+                                                            <div className="result-label">New Re</div>
+                                                            <div className="result-value">{results.commercialVerification.Re_commercial.toFixed(0)}</div>
+                                                        </div>
+                                                        <div className="result-card">
+                                                            <div className="result-label">New f</div>
+                                                            <div className="result-value">{results.commercialVerification.f_commercial.toFixed(6)}</div>
+                                                        </div>
+                                                        <div className="result-card">
+                                                            <div className="result-label">Actual hf</div>
+                                                            <div className="result-value">{results.commercialVerification.hf_actual.toFixed(4)} m</div>
+                                                        </div>
+                                                        <div className="result-card">
+                                                            <div className="result-label">Target hf</div>
+                                                            <div className="result-value">{results.commercialVerification.hf_target.toFixed(4)} m</div>
+                                                        </div>
+                                                        <div className="result-card">
+                                                            <div className="result-label">Difference</div>
+                                                            <div className="result-value">{results.commercialVerification.hf_percent_diff.toFixed(2)}%</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+        
+        ReactDOM.render(<HydroSolve />, document.getElementById('root'));
+    </script>
+</body>
+</html>

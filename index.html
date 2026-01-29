@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WarsameSolve - Engineering Calculations Without the Ağrı</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Spectral:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4ade80;
+            --primary-light: #86efac;
+            --accent: #fbbf24;
+            --bg: #0a0a0a;
+            --surface: #171717;
+            --text: #e5e5e5;
+            --text-muted: #a3a3a3;
+            --border: #404040;
+            --grid: 8px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: 'Spectral', serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: calc(var(--grid) * 6);
+            position: relative;
+        }
+        
+        .hero h1 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 4rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: calc(var(--grid) * 3);
+            letter-spacing: -0.02em;
+        }
+        
+        .hero .tagline {
+            font-size: 1.5rem;
+            color: var(--text);
+            margin-bottom: calc(var(--grid) * 2);
+            max-width: 700px;
+        }
+        
+        .hero .subtitle {
+            font-size: 1.125rem;
+            color: var(--text-muted);
+            margin-bottom: calc(var(--grid) * 6);
+            max-width: 600px;
+        }
+        
+        .turkish {
+            color: var(--accent);
+        }
+        
+        .cta-button {
+            display: inline-block;
+            padding: calc(var(--grid) * 2) calc(var(--grid) * 6);
+            background: var(--primary);
+            color: #000000;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.125rem;
+            font-weight: 700;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .cta-button:hover {
+            background: var(--primary-light);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(74, 222, 128, 0.3);
+        }
+        
+        .scroll-hint {
+            position: absolute;
+            bottom: calc(var(--grid) * 4);
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        /* Section Container */
+        .section {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: calc(var(--grid) * 12) calc(var(--grid) * 6);
+        }
+        
+        .section-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-align: center;
+            margin-bottom: calc(var(--grid) * 8);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        /* Problem Cards */
+        .problem-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: calc(var(--grid) * 4);
+            margin-bottom: calc(var(--grid) * 12);
+        }
+        
+        .problem-card {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            padding: calc(var(--grid) * 4);
+            text-align: center;
+        }
+        
+        .problem-card h3 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.25rem;
+            color: var(--primary);
+            margin-bottom: calc(var(--grid) * 2);
+            text-transform: uppercase;
+        }
+        
+        .problem-card p {
+            color: var(--text);
+            margin-bottom: calc(var(--grid) * 1);
+        }
+        
+        .problem-card .turkish-note {
+            color: var(--accent);
+            font-size: 0.9rem;
+            font-style: italic;
+            margin-top: calc(var(--grid) * 2);
+        }
+        
+        /* Calculator Cards */
+        .calculator-grid {
+            display: grid;
+            gap: calc(var(--grid) * 4);
+        }
+        
+        .calc-card {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            padding: calc(var(--grid) * 6);
+            text-decoration: none;
+            color: var(--text);
+            display: block;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .calc-card.featured {
+            border-color: var(--primary);
+        }
+        
+        .calc-card.featured:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 60px rgba(74, 222, 128, 0.2);
+            border-color: var(--primary-light);
+        }
+        
+        .calc-card.coming-soon {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .calc-card h3 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2rem;
+            color: var(--primary);
+            margin-bottom: calc(var(--grid) * 2);
+            text-transform: uppercase;
+        }
+        
+        .calc-card .description {
+            font-size: 1.125rem;
+            color: var(--text-muted);
+            margin-bottom: calc(var(--grid) * 2);
+        }
+        
+        .calc-card .turkish-subtitle {
+            color: var(--accent);
+            font-style: italic;
+            margin-bottom: calc(var(--grid) * 3);
+        }
+        
+        .calc-card .button-text {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--primary);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+        
+        .coming-soon-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: calc(var(--grid) * 3);
+            margin-top: calc(var(--grid) * 4);
+        }
+        
+        .coming-soon-note {
+            text-align: center;
+            color: var(--accent);
+            font-style: italic;
+            margin-top: calc(var(--grid) * 4);
+            font-size: 1.125rem;
+        }
+        
+        .verified-badge {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: calc(var(--grid) * 4);
+            font-style: italic;
+        }
+        
+        /* About Section */
+        .about {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            padding: calc(var(--grid) * 8);
+            max-width: 900px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        
+        .about h2 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2rem;
+            color: var(--primary);
+            margin-bottom: calc(var(--grid) * 4);
+            text-transform: uppercase;
+        }
+        
+        .about p {
+            font-size: 1.125rem;
+            color: var(--text);
+            margin-bottom: calc(var(--grid) * 3);
+            line-height: 1.8;
+        }
+        
+        .about .divider {
+            color: var(--primary);
+            font-size: 2rem;
+            margin: calc(var(--grid) * 4) 0;
+        }
+        
+        .about .tech-stack {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            line-height: 2;
+        }
+        
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: calc(var(--grid) * 8) calc(var(--grid) * 6);
+            border-top: 2px solid var(--border);
+            margin-top: calc(var(--grid) * 12);
+        }
+        
+        footer .logo {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            color: var(--primary);
+            margin-bottom: calc(var(--grid) * 2);
+        }
+        
+        footer .location {
+            color: var(--text-muted);
+            margin-bottom: calc(var(--grid) * 3);
+        }
+        
+        footer .links {
+            display: flex;
+            gap: calc(var(--grid) * 4);
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        footer a {
+            color: var(--text);
+            text-decoration: none;
+            font-family: 'JetBrains Mono', monospace;
+            transition: color 0.2s;
+        }
+        
+        footer a:hover {
+            color: var(--primary);
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .hero .tagline {
+                font-size: 1.25rem;
+            }
+            
+            .section-title {
+                font-size: 2rem;
+            }
+            
+            .problem-grid,
+            .coming-soon-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <section class="hero">
+        <h1>WarsameSolve</h1>
+        <div class="tagline">
+            "If I have seen further, it is by standing on the shoulders of giants." — Isaac Newton
+        </div>
+        <a href="#calculators" class="cta-button">Hadi Başlayalım</a>
+        <div class="scroll-hint">scroll down - daha fazlası var</div>
+    </section>
+    
+    <!-- Problem Section -->
+    <section class="section">
+        <h2 class="section-title">The Problem With Engineering Calcs</h2>
+        <div class="problem-grid">
+            <div class="problem-card">
+                <h3>Time</h3>
+                <p>30 minutes per problem</p>
+                <p>Could be doing literally anything else</p>
+                <div class="turkish-note">Tamam da, gereksiz</div>
+            </div>
+            
+            <div class="problem-card">
+                <h3>Manual Labor</h3>
+                <p>Iteration tables that never end</p>
+                <p>5 pages of scratch paper minimum</p>
+                <div class="turkish-note">5 sayfa hesap kağıdı</div>
+            </div>
+            
+            <div class="problem-card">
+                <h3>Stress</h3>
+                <p>One wrong step = start over</p>
+                <p>Friday nights gone forever</p>
+                <div class="turkish-note">Sinir krizi garantili</div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Calculators Section -->
+    <section class="section" id="calculators">
+        <h2 class="section-title">Pick Your Calculator</h2>
+        <div class="verified-badge">Verified against textbook examples</div>
+        
+        <div class="calculator-grid">
+            <!-- HydroSolve - Featured -->
+            <a href="hydro/index.html" class="calc-card featured">
+                <h3>HydroSolve</h3>
+                <div class="description">
+                    Pipe flow • Pumps • Networks
+                </div>
+                <div class="turkish-subtitle">
+                    Darcy-Weisbach'tan bıktıysan burası
+                </div>
+                <div class="button-text">Hesapla →</div>
+            </a>
+            
+            <!-- Coming Soon Cards -->
+            <div class="coming-soon-grid">
+                <div class="calc-card coming-soon">
+                    <h3>NumericSolve</h3>
+                    <div class="description">
+                        Root finding • Integration • ODE solvers
+                    </div>
+                    <div class="button-text">Coming Soon</div>
+                </div>
+                
+                <div class="calc-card coming-soon">
+                    <h3>TransportSolve</h3>
+                    <div class="description">
+                        Traffic flow • LOS analysis • Capacity
+                    </div>
+                    <div class="button-text">Coming Soon</div>
+                </div>
+                
+                <div class="calc-card coming-soon">
+                    <h3>LabReportSolve</h3>
+                    <div class="description">
+                        Auto-format your lab reports
+                    </div>
+                    <div class="button-text">Coming Soon</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="coming-soon-note">Ve daha fazlası yolda...</div>
+    </section>
+    
+    <!-- Contribute Section -->
+    <section class="section">
+        <h2 class="section-title">Contribute</h2>
+        <div class="about">
+            <p>
+                Got a calculator idea? Share your code (Python, C++, MATLAB, JavaScript) or pseudocode in Turkish or English — farketmez.
+            </p>
+            
+            <p>
+                Your contribution will be live within hours, and you'll be credited on the site.
+            </p>
+            
+            <a href="contribution.html" class="cta-button" style="max-width: 400px; margin: calc(var(--grid) * 4) auto 0;">
+                Learn How to Contribute
+            </a>
+        </div>
+    </section>
+    
+    <!-- About Section -->
+    <section class="section">
+        <div class="about">
+            <h2>About This Project</h2>
+            
+            <p>
+                Started by Ali Warsame, 3rd year ODTÜ Civil Engineering student, inspired by KDY (that 50% English dude everyone knows).
+            </p>
+            
+            <p>
+                I'm just the starter. I may or may not add other courses beyond CE 372 — I expect you to do that.
+            </p>
+            
+            <p>
+                Coming soon doesn't mean nothing. If there's a topic you have in mind, feel free to share the code or pseudocode.
+            </p>
+            
+            <p>
+                <strong>Goal:</strong> Help CE students spend less time on tedious calculations and more time watching Trabzonspor trash all teams. Priorities, you know?
+            </p>
+            
+            <div class="divider">• • •</div>
+            
+            <div class="tech-stack">
+                Built with: React, tears, and too much kahve<br>
+                Tested against: Actual ODTÜ lecture notes<br>
+                Deployed from: Probably the library at 2am
+            </div>
+        </div>
+    </section>
+    
+    <!-- Footer -->
+    <footer>
+        <div class="logo">WarsameSolve</div>
+        <div class="location">Made in Ankara</div>
+        <div class="links">
+            <a href="https://github.com/cadimaalik/warsamesolve" target="_blank">GitHub</a>
+            <a href="contact.html">İletişim</a>
+        </div>
+    </footer>
+</body>
+</html>
