@@ -12,8 +12,7 @@ WarsameSolve automates tedious engineering calculations, saving students countle
 
 **Currently covers:**
 - **Hydromechanics** (CE 372): Darcy-Weisbach pipe flow calculator (Type I, II, III)
-- More coming soon in numeric methods, transportation, structures
-
+- More HydroMechanic Calculators.
 ---
 
 ## 🚀 Live Site
