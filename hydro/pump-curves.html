@@ -1,0 +1,2651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- 
+    Pump Curves Calculator - Final Version
+    Last Updated: 2026-02-06 19:09:59
+    Version: 2.0.0-final
+-->
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pump Curves Calculator - Series & Parallel</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Spectral:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4ade80;
+            --primary-light: #86efac;
+            --accent: #fbbf24;
+            --bg: #0a0a0a;
+            --surface: #171717;
+            --text: #e5e5e5;
+            --text-muted: #a3a3a3;
+            --border: #404040;
+            --error: #ef4444;
+            --success: #22c55e;
+            --grid: 8px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Spectral', serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        .app-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: calc(var(--grid) * 6);
+        }
+        
+        header {
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: calc(var(--grid) * 3);
+            margin-bottom: calc(var(--grid) * 6);
+        }
+        
+        .back-link {
+            display: inline-block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            margin-bottom: calc(var(--grid) * 2);
+            transition: color 0.2s;
+        }
+        
+        .back-link:hover {
+            color: var(--primary);
+        }
+        
+        h1 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: -0.02em;
+            margin-bottom: calc(var(--grid) * 1);
+        }
+        
+        .subtitle {
+            font-size: 1.125rem;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+        
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: calc(var(--grid) * 4);
+            align-items: start;
+        }
+        
+        .input-panel {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 4px;
+            padding: calc(var(--grid) * 4);
+            position: sticky;
+            top: calc(var(--grid) * 3);
+            max-height: calc(100vh - calc(var(--grid) * 6));
+            overflow-y: auto;
+        }
+        
+        .results-panel {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 4px;
+            padding: calc(var(--grid) * 4);
+        }
+        
+        .panel-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: calc(var(--grid) * 3);
+            padding-bottom: calc(var(--grid) * 2);
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .form-section {
+            margin-bottom: calc(var(--grid) * 4);
+        }
+        
+        .section-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: calc(var(--grid) * 2);
+        }
+        
+        .input-group {
+            margin-bottom: calc(var(--grid) * 2);
+        }
+        
+        label {
+            display: block;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-bottom: calc(var(--grid) * 1);
+        }
+        
+        input, select {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 2px;
+            padding: calc(var(--grid) * 1.5);
+            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            transition: border-color 0.2s;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        input::placeholder {
+            color: #505050;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: calc(var(--grid) * 1);
+            margin-bottom: calc(var(--grid) * 2);
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            accent-color: var(--primary);
+            cursor: pointer;
+        }
+        
+        .checkbox-group label {
+            margin: 0;
+            cursor: pointer;
+        }
+        
+        .calculate-button {
+            width: 100%;
+            background: var(--primary);
+            color: var(--bg);
+            border: none;
+            border-radius: 4px;
+            padding: calc(var(--grid) * 2);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: calc(var(--grid) * 3);
+        }
+        
+        .calculate-button:hover {
+            background: var(--primary-light);
+        }
+        
+        .calculate-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .results-empty {
+            text-align: center;
+            padding: calc(var(--grid) * 8);
+        }
+        
+        .calculate-btn {
+            background: var(--primary);
+            color: var(--bg);
+            border: none;
+            border-radius: 4px;
+            padding: calc(var(--grid) * 2) calc(var(--grid) * 4);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .calculate-btn:hover {
+            background: var(--primary-light);
+        }
+        
+        .result-card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: calc(var(--grid) * 3);
+            margin-bottom: calc(var(--grid) * 3);
+        }
+        
+        .result-card.success {
+            border-color: var(--success);
+        }
+        
+        .result-card.error {
+            border-color: var(--error);
+        }
+        
+        .config-section {
+            margin-bottom: calc(var(--grid) * 6);
+            padding-bottom: calc(var(--grid) * 4);
+            border-bottom: 2px solid var(--border);
+        }
+        
+        .config-section:last-of-type {
+            border-bottom: none;
+        }
+        
+        .config-header {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: calc(var(--grid) * 3);
+        }
+        
+        .result-header {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--success);
+            margin-bottom: calc(var(--grid) * 2);
+        }
+        
+        .result-header.error {
+            color: var(--error);
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 500px;
+            margin-bottom: calc(var(--grid) * 3);
+        }
+        
+        .result-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: calc(var(--grid) * 2);
+            margin-bottom: calc(var(--grid) * 3);
+        }
+        
+        .stat-item {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: calc(var(--grid) * 2);
+            border-radius: 2px;
+        }
+        
+        .stat-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: calc(var(--grid) * 1);
+        }
+        
+        .stat-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.125rem;
+            color: var(--primary);
+            font-weight: 600;
+        }
+        
+        .data-table {
+            width: 100%;
+            margin-top: calc(var(--grid) * 2);
+            border-collapse: collapse;
+        }
+        
+        .data-table input {
+            padding: calc(var(--grid) * 1);
+            font-size: 0.8125rem;
+        }
+        
+        .data-table th {
+            background: var(--bg);
+            padding: calc(var(--grid) * 1);
+            font-size: 0.75rem;
+            border: 1px solid var(--border);
+        }
+        
+        .data-table td {
+            padding: 0;
+            border: 1px solid var(--border);
+        }
+        
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: calc(var(--grid) * 2);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+        }
+        
+        .results-table th {
+            background: var(--bg);
+            color: var(--primary);
+            padding: calc(var(--grid) * 2);
+            text-align: left;
+            border: 1px solid var(--border);
+        }
+        
+        .results-table td {
+            padding: calc(var(--grid) * 2);
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+        
+        .combined-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: calc(var(--grid) * 2) 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8125rem;
+        }
+        
+        .combined-table th {
+            background: var(--bg);
+            color: var(--accent);
+            padding: calc(var(--grid) * 1.5);
+            text-align: left;
+            border: 1px solid var(--border);
+            font-size: 0.75rem;
+        }
+        
+        .combined-table td {
+            padding: calc(var(--grid) * 1.5);
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+        
+        .table-note {
+            font-size: 0.8125rem;
+            color: var(--accent);
+            margin-top: calc(var(--grid) * 1);
+            font-style: italic;
+        }
+        
+        .btn-small {
+            background: var(--border);
+            color: var(--text);
+            border: none;
+            padding: calc(var(--grid) * 1) calc(var(--grid) * 2);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            cursor: pointer;
+            border-radius: 2px;
+            margin-top: calc(var(--grid) * 1);
+            margin-right: calc(var(--grid) * 1);
+            transition: background 0.2s;
+        }
+        
+        .btn-small:hover {
+            background: var(--primary);
+            color: var(--bg);
+        }
+        
+        .warning-box {
+            background: rgba(251, 191, 36, 0.1);
+            border-left: 3px solid var(--accent);
+            padding: calc(var(--grid) * 2);
+            margin: calc(var(--grid) * 2) 0;
+            font-size: 0.875rem;
+            color: var(--accent);
+        }
+        
+        .info-box {
+            background: rgba(74, 222, 128, 0.1);
+            border-left: 3px solid var(--primary);
+            padding: calc(var(--grid) * 2);
+            margin: calc(var(--grid) * 1) 0;
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+        }
+        
+        .info-box a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        
+        .info-box a:hover {
+            text-decoration: underline;
+        }
+        
+        .math-display {
+            background: var(--bg);
+            border-left: 3px solid var(--primary);
+            padding: calc(var(--grid) * 2);
+            margin: calc(var(--grid) * 2) 0;
+            overflow-x: auto;
+        }
+        
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+        
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .input-panel {
+                position: static;
+                max-height: none;
+            }
+            
+            .result-stats {
+                grid-template-columns: 1fr;
+            }
+        }
+            
+        /* Disable scroll wheel changing number inputs */
+        input[type="number" onWheel={(e) => e.target.blur()}] {
+            -moz-appearance: textfield;
+        }
+        input[type="number" onWheel={(e) => e.target.blur()}]::-webkit-outer-spin-button,
+        input[type="number" onWheel={(e) => e.target.blur()}]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        
+        function PumpCurvesCalculator() {
+            const [numPumps, setNumPumps] = useState(2);
+            const [identicalPumps, setIdenticalPumps] = useState(true);
+            const [includeEfficiency, setIncludeEfficiency] = useState(true);
+            
+            const [pumpCurveMethod, setPumpCurveMethod] = useState('table');
+            const [pumpCurveDegree, setPumpCurveDegree] = useState(2);
+            const [pumpEquation, setPumpEquation] = useState({ a: '', b: '', c: '', d: '' });
+            
+            const [efficiencyMethod, setEfficiencyMethod] = useState('table');
+            const [efficiencyDegree, setEfficiencyDegree] = useState(2);
+            const [efficiencyEquation, setEfficiencyEquation] = useState({ a: '', b: '', c: '', d: '' });
+            
+            const [pumpData, setPumpData] = useState([
+                { Q: '', H: '', eta: '' },
+                { Q: '', H: '', eta: '' }
+            ]);
+            
+            const [multiplePumpData, setMultiplePumpData] = useState([]);
+            const [unifiedPumpData, setUnifiedPumpData] = useState([
+                { Q: '', H: ['', ''], eta: ['', ''] },
+                { Q: '', H: ['', ''], eta: ['', ''] }
+            ]);
+            const [multiplePumpEquations, setMultiplePumpEquations] = useState([]);
+            const [multipleEfficiencyEquations, setMultipleEfficiencyEquations] = useState([]);
+            const [unifiedQValues, setUnifiedQValues] = useState(true);
+            
+            
+            const [systemProps, setSystemProps] = useState({
+                Hs: '',
+                L: '',
+                D: '',
+                f: '0.02',
+                Km: '0',
+                nu: '1.02e-6'
+            });
+            
+            const [showFInfo, setShowFInfo] = useState(false);
+            const [results, setResults] = useState(null);
+            const [calculating, setCalculating] = useState(false);
+            const [triggerCalc, setTriggerCalc] = useState(false);
+            
+            const singleChartRef = useRef(null);
+            const seriesChartRef = useRef(null);
+            const parallelChartRef = useRef(null);
+            
+            const singleChartInstance = useRef(null);
+            const seriesChartInstance = useRef(null);
+            const parallelChartInstance = useRef(null);
+            
+            useEffect(() => {
+                if (!identicalPumps && numPumps > 0) {
+                    const newMultiplePumpData = [];
+                    const newMultiplePumpEquations = [];
+                    const newMultipleEfficiencyEquations = [];
+                    
+                    for (let i = 0; i < numPumps; i++) {
+                        newMultiplePumpData.push([
+                            { Q: '', H: '', eta: '' },
+                            { Q: '', H: '', eta: '' }
+                        ]);
+                        newMultiplePumpEquations.push({ a: '', b: '', c: '', d: '' });
+                        newMultipleEfficiencyEquations.push({ a: '', b: '', c: '', d: '' });
+                    }
+                    
+                    setMultiplePumpData(newMultiplePumpData);
+                    setMultiplePumpEquations(newMultiplePumpEquations);
+                    setMultipleEfficiencyEquations(newMultipleEfficiencyEquations);
+                    
+                    // Initialize unified data with correct number of pumps
+                    const newUnifiedData = [];
+                    for (let i = 0; i < 2; i++) {
+                        newUnifiedData.push({
+                            Q: '',
+                            H: Array(numPumps).fill(''),
+                            eta: Array(numPumps).fill('')
+                        });
+                    }
+                    setUnifiedPumpData(newUnifiedData);
+                }
+            }, [identicalPumps, numPumps]);
+            
+            // Sync data when toggling between unified and separate tables
+            useEffect(() => {
+                if (!identicalPumps && pumpCurveMethod === 'table') {
+                    if (unifiedQValues && multiplePumpData.length > 0) {
+                        // Convert from separate to unified
+                        const maxRows = Math.max(...multiplePumpData.map(arr => arr.length));
+                        const newUnified = [];
+                        for (let rowIdx = 0; rowIdx < maxRows; rowIdx++) {
+                            const row = {
+                                Q: multiplePumpData[0][rowIdx]?.Q || '',
+                                H: multiplePumpData.map(pumpArr => pumpArr[rowIdx]?.H || ''),
+                                eta: multiplePumpData.map(pumpArr => pumpArr[rowIdx]?.eta || '')
+                            };
+                            newUnified.push(row);
+                        }
+                        setUnifiedPumpData(newUnified);
+                    } else if (!unifiedQValues && unifiedPumpData.length > 0) {
+                        // Convert from unified to separate
+                        const newSeparate = [];
+                        for (let pumpIdx = 0; pumpIdx < numPumps; pumpIdx++) {
+                            const pumpArr = unifiedPumpData.map(row => ({
+                                Q: row.Q,
+                                H: row.H[pumpIdx] || '',
+                                eta: row.eta[pumpIdx] || ''
+                            }));
+                            newSeparate.push(pumpArr);
+                        }
+                        setMultiplePumpData(newSeparate);
+                    }
+                }
+            }, [unifiedQValues]);
+
+            
+            useEffect(() => {
+                if (triggerCalc) {
+                    const timer = setTimeout(() => {
+                        calculate();
+                        setTriggerCalc(false);
+                    }, 150);
+                    return () => clearTimeout(timer);
+                }
+            }, [triggerCalc]);
+            
+            useEffect(() => {
+                if (window.MathJax) {
+                    window.MathJax.typesetPromise();
+                }
+            }, [pumpCurveMethod, pumpCurveDegree, efficiencyMethod, efficiencyDegree]);
+            
+            useEffect(() => {
+                if (results && results.success && window.MathJax) {
+                    window.MathJax.typesetPromise();
+                }
+            }, [results]);
+            
+            const loadExample = () => {
+                setResults(null);
+                setNumPumps(2);
+                setIdenticalPumps(true);
+                setPumpCurveMethod('table');
+                setEfficiencyMethod('table');
+                setIncludeEfficiency(true);
+                
+                setPumpData([
+                    { Q: '0', H: '70', eta: '45' },
+                    { Q: '10', H: '67', eta: '63' },
+                    { Q: '20', H: '62.5', eta: '75' },
+                    { Q: '30', H: '57.5', eta: '82' },
+                    { Q: '40', H: '51', eta: '79' },
+                    { Q: '50', H: '43', eta: '71' },
+                    { Q: '60', H: '32', eta: '60' }
+                ]);
+                
+                setSystemProps({
+                    Hs: '40',
+                    L: '2000',
+                    D: '0.2',
+                    f: '0.02',
+                    Km: '0',
+                    nu: '1.02e-6'
+                });
+                
+                setTriggerCalc(true);
+            };
+            
+            const addDataRow = () => {
+                setPumpData([...pumpData, { Q: '', H: '', eta: '' }]);
+            };
+            
+            const addMultipleRows = (count) => {
+                const newRows = Array(count).fill(null).map(() => ({ Q: '', H: '', eta: '' }));
+                setPumpData([...pumpData, ...newRows]);
+            };
+            
+            const removeDataRow = (index) => {
+                if (pumpData.length > 2) {
+                    setPumpData(pumpData.filter((_, i) => i !== index));
+                }
+            };
+            
+            const updatePumpData = (index, field, value) => {
+                const newData = [...pumpData];
+                newData[index][field] = value;
+                setPumpData(newData);
+            };
+            
+            const addMultipleDataRow = (pumpIndex) => {
+                const newMultipleData = [...multiplePumpData];
+                newMultipleData[pumpIndex] = [...newMultipleData[pumpIndex], { Q: '', H: '', eta: '' }];
+                setMultiplePumpData(newMultipleData);
+            };
+            
+            const addMultipleDataRows = (pumpIndex, count) => {
+                const newMultipleData = [...multiplePumpData];
+                const newRows = Array(count).fill(null).map(() => ({ Q: '', H: '', eta: '' }));
+                newMultipleData[pumpIndex] = [...newMultipleData[pumpIndex], ...newRows];
+                setMultiplePumpData(newMultipleData);
+            };
+            
+            const removeMultipleDataRow = (pumpIndex, rowIndex) => {
+                const newMultipleData = [...multiplePumpData];
+                if (newMultipleData[pumpIndex].length > 2) {
+                    newMultipleData[pumpIndex] = newMultipleData[pumpIndex].filter((_, i) => i !== rowIndex);
+                    setMultiplePumpData(newMultipleData);
+                }
+            };
+            
+            const updateMultiplePumpData = (pumpIndex, rowIndex, field, value) => {
+                const newMultipleData = [...multiplePumpData];
+                newMultipleData[pumpIndex][rowIndex][field] = value;
+                setMultiplePumpData(newMultipleData);
+            };
+            
+            
+            // Unified table helpers (for non-identical with same Q)
+            const addUnifiedDataRow = () => {
+                const newRow = { Q: '', H: Array(numPumps).fill(''), eta: Array(numPumps).fill('') };
+                setUnifiedPumpData([...unifiedPumpData, newRow]);
+            };
+            
+            const addUnifiedDataRows = (count) => {
+                const newRows = [];
+                for (let i = 0; i < count; i++) {
+                    newRows.push({ Q: '', H: Array(numPumps).fill(''), eta: Array(numPumps).fill('') });
+                }
+                setUnifiedPumpData([...unifiedPumpData, ...newRows]);
+            };
+            
+            const removeUnifiedDataRow = (rowIndex) => {
+                if (unifiedPumpData.length > 2) {
+                    setUnifiedPumpData(unifiedPumpData.filter((_, i) => i !== rowIndex));
+                }
+            };
+            
+            const updateUnifiedPumpData = (rowIndex, field, pumpIndex, value) => {
+                const newData = [...unifiedPumpData];
+                if (field === 'Q') {
+                    newData[rowIndex].Q = value;
+                } else if (field === 'H') {
+                    newData[rowIndex].H[pumpIndex] = value;
+                } else if (field === 'eta') {
+                    newData[rowIndex].eta[pumpIndex] = value;
+                }
+                setUnifiedPumpData(newData);
+            };
+const updateMultiplePumpEquation = (pumpIndex, coeff, value) => {
+                const newEquations = [...multiplePumpEquations];
+                newEquations[pumpIndex][coeff] = value;
+                setMultiplePumpEquations(newEquations);
+            };
+            
+            const updateMultipleEfficiencyEquation = (pumpIndex, coeff, value) => {
+                const newEquations = [...multipleEfficiencyEquations];
+                newEquations[pumpIndex][coeff] = value;
+                setMultipleEfficiencyEquations(newEquations);
+            };
+            
+            const handleKeyDown = (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const table = e.target.closest('table');
+                    if (!table) return;
+                    
+                    const tbody = table.querySelector('tbody');
+                    if (!tbody) return;
+                    
+                    const allRows = Array.from(tbody.querySelectorAll('tr'));
+                    const currentRow = e.target.closest('tr');
+                    const currentRowIndex = allRows.indexOf(currentRow);
+                    
+                    // Get current column index
+                    const currentCell = e.target.closest('td');
+                    const allCells = Array.from(currentRow.querySelectorAll('td'));
+                    const currentColIndex = allCells.indexOf(currentCell);
+                    
+                    // Go to next row, same column
+                    if (currentRowIndex < allRows.length - 1) {
+                        const nextRow = allRows[currentRowIndex + 1];
+                        const nextRowCells = Array.from(nextRow.querySelectorAll('td'));
+                        const targetCell = nextRowCells[currentColIndex];
+                        if (targetCell) {
+                            const targetInput = targetCell.querySelector('input[type="number"]');
+                            if (targetInput) {
+                                targetInput.focus();
+                                targetInput.select();
+                            }
+                        }
+                    }
+                }
+            };
+            
+            const validateFrictionFactor = (value) => {
+                const num = parseFloat(value);
+                if (isNaN(num)) return value;
+                if (num < 0) return '0';
+                if (num > 1) return '1';
+                return value;
+            };
+            
+            const interpolate = (x, xVals, yVals) => {
+                if (x <= xVals[0]) return yVals[0];
+                if (x >= xVals[xVals.length - 1]) return yVals[xVals.length - 1];
+                
+                for (let i = 0; i < xVals.length - 1; i++) {
+                    if (x >= xVals[i] && x <= xVals[i + 1]) {
+                        const t = (x - xVals[i]) / (xVals[i + 1] - xVals[i]);
+                        return yVals[i] + t * (yVals[i + 1] - yVals[i]);
+                    }
+                }
+                return yVals[yVals.length - 1];
+            };
+            
+            const calculate = () => {
+                setCalculating(true);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                
+                try {
+                    const Hs = parseFloat(systemProps.Hs);
+                    const L = parseFloat(systemProps.L);
+                    const D = parseFloat(systemProps.D);
+                    const f = parseFloat(systemProps.f);
+                    const Km = parseFloat(systemProps.Km);
+                    const nu = parseFloat(systemProps.nu);
+                    
+                    if ([Hs, L, D, f, nu].some(v => isNaN(v))) {
+                        throw new Error('Please fill in all system properties with valid numbers');
+                    }
+                    
+                    let getPumpH, getPumpEta, maxQ;
+                    let pumpHFunctions = []; // For non-identical
+                    let pumpEtaFunctions = []; // For non-identical efficiency
+                    
+                    // IDENTICAL PUMPS
+                    if (identicalPumps) {
+                        if (pumpCurveMethod === 'table') {
+                            const validData = pumpData.filter(d => d.Q !== '' && d.H !== '');
+                            if (validData.length < 2) {
+                                throw new Error('Please enter at least 2 data points for pump curve');
+                            }
+                            
+                            const Qvals = validData.map(d => parseFloat(d.Q) / 1000);
+                            const Hvals = validData.map(d => parseFloat(d.H));
+                            maxQ = Math.max(...Qvals);
+                            
+                            getPumpH = (Q) => {
+                                if (Q > maxQ) return null;
+                                return interpolate(Q, Qvals, Hvals);
+                            };
+                        } else {
+                            const a = parseFloat(pumpEquation.a) || 0;
+                            const b = parseFloat(pumpEquation.b) || 0;
+                            const c = pumpCurveDegree >= 2 ? (parseFloat(pumpEquation.c) || 0) : 0;
+                            const d = pumpCurveDegree >= 3 ? (parseFloat(pumpEquation.d) || 0) : 0;
+                            
+                            maxQ = 0.1;
+                            
+                            getPumpH = (Q) => {
+                                const Qls = Q * 1000;
+                                if (pumpCurveDegree === 1) return a + b * Qls;
+                                if (pumpCurveDegree === 2) return a + b * Qls + c * Qls * Qls;
+                                return a + b * Qls + c * Qls * Qls + d * Qls * Qls * Qls;
+                            };
+                        }
+                    } 
+                    // NON-IDENTICAL PUMPS
+                    else {
+                        if (pumpCurveMethod === 'table') {
+                            if (unifiedQValues) {
+                                // UNIFIED TABLE: Same Q, different H values
+                                const validData = unifiedPumpData.filter(d => d.Q !== '');
+                                if (validData.length < 2) {
+                                    throw new Error('Please enter at least 2 data points with Q values');
+                                }
+                                
+                                const Qvals = validData.map(d => parseFloat(d.Q) / 1000);
+                                maxQ = Math.max(...Qvals);
+                                
+                                // Create function for each pump using shared Q values
+                                for (let pumpIdx = 0; pumpIdx < numPumps; pumpIdx++) {
+                                    const Hvals = validData.map(d => parseFloat(d.H[pumpIdx]) || 0);
+                                    const etaVals = includeEfficiency ? validData.map(d => parseFloat(d.eta[pumpIdx]) || 80) : null;
+                                    
+                                    pumpHFunctions.push((Q) => {
+                                        if (Q > maxQ) return null;
+                                        return interpolate(Q, Qvals, Hvals);
+                                    });
+                                    
+                                    if (includeEfficiency) {
+                                        pumpEtaFunctions.push((Q) => {
+                                            if (Q > maxQ) return null;
+                                            return interpolate(Q, Qvals, etaVals);
+                                        });
+                                    } else {
+                                        pumpEtaFunctions.push((Q) => 80);
+                                    }
+                                }
+                            } else {
+                                // SEPARATE TABLES: Different Q for each pump
+                                maxQ = 0;
+                                for (let i = 0; i < numPumps; i++) {
+                                    const validData = multiplePumpData[i].filter(d => d.Q !== '' && d.H !== '');
+                                    if (validData.length < 2) {
+                                        throw new Error(`Please enter at least 2 data points for Pump #${i + 1}`);
+                                    }
+                                    
+                                    const Qvals = validData.map(d => parseFloat(d.Q) / 1000);
+                                    const Hvals = validData.map(d => parseFloat(d.H));
+                                    const thisMaxQ = Math.max(...Qvals);
+                                    maxQ = Math.max(maxQ, thisMaxQ);
+                                    
+                                    pumpHFunctions.push((Q) => {
+                                        if (Q > thisMaxQ) return null;
+                                        return interpolate(Q, Qvals, Hvals);
+                                    });
+                                    
+                                    // Efficiency for this pump
+                                    if (includeEfficiency) {
+                                        const validEtaData = multiplePumpData[i].filter(d => d.Q !== '' && d.eta !== '');
+                                        if (validEtaData.length < 2) {
+                                            throw new Error(`Please enter at least 2 efficiency points for Pump #${i + 1}`);
+                                        }
+                                        
+                                        const QvalsEta = validEtaData.map(d => parseFloat(d.Q) / 1000);
+                                        const etaVals = validEtaData.map(d => parseFloat(d.eta));
+                                        
+                                        pumpEtaFunctions.push((Q) => {
+                                            if (Q > Math.max(...QvalsEta)) return null;
+                                            return interpolate(Q, QvalsEta, etaVals);
+                                        });
+                                    } else {
+                                        pumpEtaFunctions.push((Q) => 80);
+                                    }
+                                }
+                            }
+                        } else {
+                            maxQ = 0.1;
+                            for (let i = 0; i < numPumps; i++) {
+                                const eq = multiplePumpEquations[i];
+                                const a = parseFloat(eq.a) || 0;
+                                const b = parseFloat(eq.b) || 0;
+                                const c = pumpCurveDegree >= 2 ? (parseFloat(eq.c) || 0) : 0;
+                                const d = pumpCurveDegree >= 3 ? (parseFloat(eq.d) || 0) : 0;
+                                
+                                pumpHFunctions.push((Q) => {
+                                    const Qls = Q * 1000;
+                                    if (pumpCurveDegree === 1) return a + b * Qls;
+                                    if (pumpCurveDegree === 2) return a + b * Qls + c * Qls * Qls;
+                                    return a + b * Qls + c * Qls * Qls + d * Qls * Qls * Qls;
+                                });
+                            }
+                        }
+                        
+                        // For single pump display, use first pump
+                        getPumpH = pumpHFunctions[0];
+                    }
+                    
+                    // Efficiency
+                    if (includeEfficiency) {
+                        if (identicalPumps) {
+                            // For identical pumps, create single efficiency function
+                            if (efficiencyMethod === 'table') {
+                                const validData = pumpData.filter(d => d.Q !== '' && d.eta !== '');
+                                if (validData.length < 2) {
+                                    throw new Error('Please enter at least 2 data points for efficiency');
+                                }
+                                
+                                const Qvals = validData.map(d => parseFloat(d.Q) / 1000);
+                                const etaVals = validData.map(d => parseFloat(d.eta));
+                                
+                                getPumpEta = (Q) => {
+                                    if (Q > maxQ) return null;
+                                    return interpolate(Q, Qvals, etaVals);
+                                };
+                            } else {
+                                const a = parseFloat(efficiencyEquation.a) || 0;
+                                const b = parseFloat(efficiencyEquation.b) || 0;
+                                const c = efficiencyDegree >= 2 ? (parseFloat(efficiencyEquation.c) || 0) : 0;
+                                const d = efficiencyDegree >= 3 ? (parseFloat(efficiencyEquation.d) || 0) : 0;
+                                
+                                getPumpEta = (Q) => {
+                                    const Qls = Q * 1000;
+                                    if (efficiencyDegree === 1) return a + b * Qls;
+                                    if (efficiencyDegree === 2) return a + b * Qls + c * Qls * Qls;
+                                    return a + b * Qls + c * Qls * Qls + d * Qls * Qls * Qls;
+                                };
+                            }
+                        } else {
+                            // For non-identical, use first pump's efficiency function
+                            getPumpEta = pumpEtaFunctions[0] || ((Q) => 80);
+                        }
+                    } else {
+                        getPumpEta = (Q) => 100; // Default 100% if not tracking
+                    }
+                    
+                    const g = 9.81;
+                    const K = (8 * f * L) / (g * Math.PI * Math.PI * Math.pow(D, 5));
+                    const A = Math.PI * D * D / 4;
+                    
+                    const calcSystemH = (Q) => {
+                        if (Q === 0) return Hs;
+                        const hf = K * Q * Q;
+                        const hm = Km * (Q * Q) / (2 * g * A * A);
+                        return Hs + hf + hm;
+                    };
+                    
+                    const findOperatingPoint = (getH, maxQval) => {
+                        const Qrange = [];
+                        for (let i = 0; i <= 200; i++) {
+                            Qrange.push((i / 200) * maxQval);
+                        }
+                        
+                        let minDiff = Infinity;
+                        let opQ, opH, opEta;
+                        
+                        for (const Q of Qrange) {
+                            const Hp = getH(Q);
+                            if (Hp === null) continue;
+                            
+                            const Hsys = calcSystemH(Q);
+                            const diff = Math.abs(Hp - Hsys);
+                            
+                            if (diff < minDiff) {
+                                minDiff = diff;
+                                opQ = Q;
+                                opH = Hp;
+                                opEta = getPumpEta(Q);
+                            }
+                        }
+                        
+                        return { Q: opQ, H: opH, eta: opEta };
+                    };
+                    
+                    // Single pump
+                    const singlePump = findOperatingPoint(getPumpH, maxQ);
+                    
+                    // Series - ADD heads
+                    const getSeriesH = (Q) => {
+                        if (identicalPumps) {
+                            const h = getPumpH(Q);
+                            if (h === null) return null;
+                            return h * numPumps;
+                        } else {
+                            // NON-IDENTICAL: SUM individual heads
+                            let totalH = 0;
+                            for (let i = 0; i < numPumps; i++) {
+                                const h = pumpHFunctions[i](Q);
+                                if (h === null) return null;
+                                totalH += h;
+                            }
+                            return totalH;
+                        }
+                    };
+                    
+                    const pumpsSeries = findOperatingPoint(getSeriesH, maxQ);
+                    
+                    // Series combined H table - use EXACT input values (no interpolation)
+                    const seriesCombinedTable = [];
+                    
+                    if (identicalPumps) {
+                        // For identical, use input data directly
+                        const sourceData = pumpCurveMethod === 'table' 
+                            ? pumpData.filter(d => d.Q !== '' && d.H !== '')
+                            : null;
+                        
+                        if (sourceData && sourceData.length > 0) {
+                            // Use actual input values
+                            for (let i = 0; i < Math.min(6, sourceData.length); i++) {
+                                const Hsingle = parseFloat(sourceData[i].H);
+                                seriesCombinedTable.push({
+                                    Q: parseFloat(sourceData[i].Q),
+                                    Hsingle: Hsingle,
+                                    Hcombined: Hsingle * numPumps,
+                                    individualHeads: null
+                                });
+                            }
+                        } else {
+                            // Fallback to interpolation if using equations
+                            for (let i = 0; i <= 5; i++) {
+                                const Q = (i / 5) * pumpsSeries.Q;
+                                const Hsingle = getPumpH(Q);
+                                if (Hsingle !== null) {
+                                    seriesCombinedTable.push({
+                                        Q: Q * 1000,
+                                        Hsingle: Hsingle,
+                                        Hcombined: Hsingle * numPumps,
+                                        individualHeads: null
+                                    });
+                                }
+                            }
+                        }
+                    } else {
+                        // NON-IDENTICAL: Use exact input values
+                        if (unifiedQValues && pumpCurveMethod === 'table') {
+                            // Use unified table data directly
+                            const sourceData = unifiedPumpData.filter(d => d.Q !== '');
+                            for (let i = 0; i < Math.min(6, sourceData.length); i++) {
+                                const row = sourceData[i];
+                                const individualHeads = [];
+                                let Hcombined = 0;
+                                for (let j = 0; j < numPumps; j++) {
+                                    const h = parseFloat(row.H[j]);
+                                    if (!isNaN(h)) {
+                                        individualHeads.push(h);
+                                        Hcombined += h;
+                                    }
+                                }
+                                if (individualHeads.length === numPumps) {
+                                    seriesCombinedTable.push({
+                                        Q: parseFloat(row.Q),
+                                        Hsingle: null,
+                                        Hcombined: Hcombined,
+                                        individualHeads: individualHeads
+                                    });
+                                }
+                            }
+                        } else if (!unifiedQValues && pumpCurveMethod === 'table') {
+                            // Use separate tables - take Q from first pump
+                            const firstPumpData = multiplePumpData[0].filter(d => d.Q !== '' && d.H !== '');
+                            for (let i = 0; i < Math.min(6, firstPumpData.length); i++) {
+                                const Q = parseFloat(firstPumpData[i].Q) / 1000;
+                                const individualHeads = [];
+                                let Hcombined = 0;
+                                for (let j = 0; j < numPumps; j++) {
+                                    const h = pumpHFunctions[j](Q);
+                                    if (h !== null) {
+                                        individualHeads.push(h);
+                                        Hcombined += h;
+                                    }
+                                }
+                                if (individualHeads.length === numPumps) {
+                                    seriesCombinedTable.push({
+                                        Q: parseFloat(firstPumpData[i].Q),
+                                        Hsingle: null,
+                                        Hcombined: Hcombined,
+                                        individualHeads: individualHeads
+                                    });
+                                }
+                            }
+                        } else {
+                            // Fallback to interpolation for equations
+                            for (let i = 0; i <= 5; i++) {
+                                const Q = (i / 5) * pumpsSeries.Q;
+                                const individualHeads = [];
+                                let Hcombined = 0;
+                                for (let j = 0; j < numPumps; j++) {
+                                    const h = pumpHFunctions[j](Q);
+                                    if (h !== null) {
+                                        individualHeads.push(h);
+                                        Hcombined += h;
+                                    }
+                                }
+                                if (individualHeads.length === numPumps) {
+                                    seriesCombinedTable.push({
+                                        Q: Q * 1000,
+                                        Hsingle: null,
+                                        Hcombined: Hcombined,
+                                        individualHeads: individualHeads
+                                    });
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Parallel
+                    let pumpsParallel = null;
+                    let parallelCombinedTable = [];
+                    
+                    if (identicalPumps) {
+                        const getParallelH = (Q) => {
+                            const Qper = Q / numPumps;
+                            if (Qper > maxQ) return null;
+                            return getPumpH(Qper);
+                        };
+                        pumpsParallel = findOperatingPoint(getParallelH, maxQ * numPumps);
+                        
+                        // Use exact input values for parallel table
+                        const sourceData = pumpCurveMethod === 'table' 
+                            ? pumpData.filter(d => d.Q !== '' && d.H !== '')
+                            : null;
+                        
+                        if (sourceData && sourceData.length > 0) {
+                            // Use actual input values
+                            for (let i = 0; i < Math.min(6, sourceData.length); i++) {
+                                const Qsingle = parseFloat(sourceData[i].Q);
+                                const Qcombined = Qsingle * numPumps;
+                                const H = parseFloat(sourceData[i].H);
+                                parallelCombinedTable.push({
+                                    Qsingle: Qsingle,
+                                    Qcombined: Qcombined,
+                                    H: H
+                                });
+                            }
+                        } else {
+                            // Fallback to interpolation for equations
+                            for (let i = 0; i <= 5; i++) {
+                                const Qsingle = (i / 5) * (pumpsParallel.Q / numPumps);
+                                const Qcombined = Qsingle * numPumps;
+                                const H = getPumpH(Qsingle);
+                                if (H !== null) {
+                                    parallelCombinedTable.push({
+                                        Qsingle: Qsingle * 1000,
+                                        Qcombined: Qcombined * 1000,
+                                        H: H
+                                    });
+                                }
+                            }
+                        }
+                    }
+                    
+                    const gamma = 9810;
+                    const calcPower = (Q, H, eta) => {
+                        if (!includeEfficiency) return null;
+                        return (gamma * Q * H) / (eta / 100) / 1000;
+                    };
+                    
+                    const singlePower = calcPower(singlePump.Q, singlePump.H, singlePump.eta);
+                    const seriesPower = includeEfficiency ? calcPower(pumpsSeries.Q, pumpsSeries.H, pumpsSeries.eta) * numPumps : null;
+                    
+                    // Chart data
+                    const Qrange = [];
+                    for (let i = 0; i <= 200; i++) {
+                        Qrange.push((i / 200) * maxQ);
+                    }
+                    
+                    const Qrange_sys = [];
+                    for (let i = 0; i <= 200; i++) {
+                        Qrange_sys.push((i / 200) * maxQ * 1.5);
+                    }
+                    
+                    const singleData = {
+                        pumpCurve: Qrange.map(Q => {
+                            const h = getPumpH(Q);
+                            return h !== null ? { x: Q * 1000, y: h } : null;
+                        }).filter(d => d !== null),
+                        systemCurve: Qrange_sys.map(Q => ({ x: Q * 1000, y: calcSystemH(Q) })),
+                        efficiencyCurve: includeEfficiency ? Qrange.map(Q => {
+                            const eta = getPumpEta(Q);
+                            return eta !== null ? { x: Q * 1000, y: eta } : null;
+                        }).filter(d => d !== null) : [],
+                        operatingPoint: { x: singlePump.Q * 1000, y: singlePump.H }
+                    };
+                    
+                    const seriesData = {
+                        pumpCurve: Qrange.map(Q => {
+                            const h = getSeriesH(Q);
+                            return h !== null ? { x: Q * 1000, y: h } : null;
+                        }).filter(d => d !== null),
+                        systemCurve: Qrange_sys.map(Q => ({ x: Q * 1000, y: calcSystemH(Q) })),
+                        efficiencyCurve: includeEfficiency ? Qrange.map(Q => {
+                            const eta = getPumpEta(Q);
+                            return eta !== null ? { x: Q * 1000, y: eta } : null;
+                        }).filter(d => d !== null) : [],
+                        operatingPoint: { x: pumpsSeries.Q * 1000, y: pumpsSeries.H }
+                    };
+                    
+                    let parallelData = null;
+                    let parallelPower = null;
+                    
+                    if (identicalPumps) {
+                        const Qrange_parallel = [];
+                        for (let i = 0; i <= 200; i++) {
+                            Qrange_parallel.push((i / 200) * maxQ * numPumps);
+                        }
+                        
+                        parallelData = {
+                            pumpCurve: Qrange_parallel.map(Q => {
+                                const Qper = Q / numPumps;
+                                if (Qper > maxQ) return null;
+                                const h = getPumpH(Qper);
+                                return h !== null ? { x: Q * 1000, y: h } : null;
+                            }).filter(d => d !== null),
+                            systemCurve: Qrange_sys.map(Q => ({ x: Q * 1000, y: calcSystemH(Q) })),
+                            efficiencyCurve: includeEfficiency ? Qrange.map(Q => {
+                                const eta = getPumpEta(Q);
+                                return eta !== null ? { x: Q * 1000, y: eta } : null;
+                            }).filter(d => d !== null) : [],
+                            operatingPoint: { x: pumpsParallel.Q * 1000, y: pumpsParallel.H }
+                        };
+                        
+                        parallelPower = calcPower(pumpsParallel.Q, pumpsParallel.H, pumpsParallel.eta) * numPumps;
+                    }
+                    
+                    setResults({
+                        success: true,
+                        single: {
+                            Q: singlePump.Q,
+                            H: singlePump.H,
+                            eta: singlePump.eta,
+                            power: singlePower,
+                            chartData: singleData
+                        },
+                        series: {
+                            Q: pumpsSeries.Q,
+                            H: pumpsSeries.H,
+                            eta: pumpsSeries.eta,
+                            power: seriesPower,
+                            chartData: seriesData,
+                            combinedTable: seriesCombinedTable
+                        },
+                        parallel: pumpsParallel ? {
+                            Q: pumpsParallel.Q,
+                            H: pumpsParallel.H,
+                            eta: pumpsParallel.eta,
+                            power: parallelPower,
+                            chartData: parallelData,
+                            combinedTable: parallelCombinedTable
+                        } : null,
+                        systemEquation: {
+                            Hs: Hs,
+                            K: K,
+                            Km: Km,
+                            f: f,
+                            L: L,
+                            D: D,
+                            g: g
+                        },
+                        numPumps: numPumps,
+                        identicalPumps: identicalPumps,
+                        includeEfficiency: includeEfficiency
+                    });
+                    
+                } catch (error) {
+                    setResults({
+                        error: true,
+                        message: error.message
+                    });
+                } finally {
+                    setCalculating(false);
+                }
+            };
+            
+            const createChart = (canvasRef, chartInstanceRef, data, title, color) => {
+                if (chartInstanceRef.current) {
+                    chartInstanceRef.current.destroy();
+                }
+                
+                const ctx = canvasRef.current.getContext('2d');
+                
+                const datasets = [
+                    {
+                        label: title,
+                        data: data.pumpCurve,
+                        borderColor: color,
+                        backgroundColor: 'transparent',
+                        borderWidth: 3,
+                        pointRadius: 0,
+                        tension: 0.4,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'System Curve',
+                        data: data.systemCurve,
+                        borderColor: '#ef4444',
+                        backgroundColor: 'transparent',
+                        borderWidth: 3,
+                        borderDash: [5, 5],
+                        pointRadius: 0,
+                        yAxisID: 'y'
+                    }
+                ];
+                
+                if (includeEfficiency && data.efficiencyCurve.length > 0) {
+                    datasets.push({
+                        label: 'Efficiency',
+                        data: data.efficiencyCurve,
+                        borderColor: '#fbbf24',
+                        backgroundColor: 'transparent',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        yAxisID: 'y1'
+                    });
+                }
+                
+                datasets.push({
+                    label: 'Operating Point',
+                    data: [data.operatingPoint],
+                    borderColor: '#fff',
+                    backgroundColor: color,
+                    borderWidth: 3,
+                    pointRadius: 10,
+                    pointStyle: 'circle',
+                    yAxisID: 'y'
+                });
+                
+                const scales = {
+                    x: {
+                        type: 'linear',
+                        title: {
+                            display: true,
+                            text: 'Flow Rate Q (L/s)',
+                            color: '#e5e5e5',
+                            font: { family: 'JetBrains Mono', size: 12 }
+                        },
+                        ticks: {
+                            color: '#a3a3a3',
+                            font: { family: 'JetBrains Mono', size: 10 }
+                        },
+                        grid: { color: '#404040' }
+                    },
+                    y: {
+                        type: 'linear',
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Head H (m)',
+                            color: '#e5e5e5',
+                            font: { family: 'JetBrains Mono', size: 12 }
+                        },
+                        ticks: {
+                            color: '#a3a3a3',
+                            font: { family: 'JetBrains Mono', size: 10 }
+                        },
+                        grid: { color: '#404040' }
+                    }
+                };
+                
+                if (includeEfficiency) {
+                    scales.y1 = {
+                        type: 'linear',
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'η (%)',
+                            color: '#fbbf24',
+                            font: { family: 'JetBrains Mono', size: 12 }
+                        },
+                        ticks: {
+                            color: '#fbbf24',
+                            font: { family: 'JetBrains Mono', size: 10 }
+                        },
+                        grid: { display: false }
+                    };
+                }
+                
+                chartInstanceRef.current = new Chart(ctx, {
+                    type: 'line',
+                    data: { datasets: datasets },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
+                        },
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    color: '#e5e5e5',
+                                    font: { family: 'JetBrains Mono', size: 11 },
+                                    usePointStyle: true,
+                                    pointStyle: 'line'
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: '#171717',
+                                titleColor: '#4ade80',
+                                bodyColor: '#e5e5e5',
+                                borderColor: '#404040',
+                                borderWidth: 1,
+                                yAlign: 'bottom',
+                                xAlign: 'center',
+                                caretPadding: 10
+                            }
+                        },
+                        scales: scales
+                    }
+                });
+            };
+            
+            useEffect(() => {
+                if (results && results.success) {
+                    if (singleChartRef.current) {
+                        createChart(singleChartRef, singleChartInstance, results.single.chartData, 'Single Pump', '#4ade80');
+                    }
+                    if (seriesChartRef.current) {
+                        createChart(seriesChartRef, seriesChartInstance, results.series.chartData, `Pumps in Series (×${results.numPumps})`, '#a78bfa');
+                    }
+                    if (parallelChartRef.current && results.parallel) {
+                        createChart(parallelChartRef, parallelChartInstance, results.parallel.chartData, `Pumps in Parallel (×${results.numPumps})`, '#60a5fa');
+                    }
+                }
+            }, [results, includeEfficiency]);
+            
+            return (
+                <div className="app-container">
+                    <header>
+                        <a href="index.html?v=1770404999" className="back-link">← Back to HydroSolve Hub</a>
+                        <h1>Pump Curves</h1>
+                        <div className="subtitle">Pumps in Series & Parallel - System Matching</div>
+                    </header>
+                    
+                    <div className="main-grid">
+                        <div className="input-panel">
+                            <div className="panel-title">Input Parameters</div>
+                            
+                            <div className="form-section">
+                                <div className="section-label">Pump Configuration</div>
+                                
+                                <div className="input-group">
+                                    <label>Number of Pumps</label>
+                                    <input 
+                                        type="number" onWheel={(e) => e.target.blur()}
+                                        min="1"
+                                        value={numPumps}
+                                        onChange={(e) => setNumPumps(parseInt(e.target.value) || 1)}
+                                        placeholder="2"
+                                    />
+                                </div>
+                                
+                                {numPumps > 1 && (
+                                    <div className="checkbox-group">
+                                        <input 
+                                            type="checkbox"
+                                            checked={identicalPumps}
+                                            onChange={(e) => setIdenticalPumps(e.target.checked)}
+                                        />
+                                        <label>Pumps are identical</label>
+                                    </div>
+                                )}
+                                
+                                <div className="checkbox-group">
+                                    <input 
+                                        type="checkbox"
+                                        checked={includeEfficiency}
+                                        onChange={(e) => setIncludeEfficiency(e.target.checked)}
+                                    />
+                                    <label>Include efficiency data</label>
+                                </div>
+                                
+                                {!includeEfficiency && (
+                                    <div className="warning-box">
+                                        ⚠ Power calculations will not be available without efficiency data
+                                    </div>
+                                )}
+                                
+                                {!identicalPumps && numPumps > 1 && (
+                                    <div className="warning-box">
+                                        ⚠ Only series configuration will be calculated for non-identical pumps. Parallel requires identical pumps.
+                                    </div>
+                                )}
+                            </div>
+                            
+                            <div className="form-section">
+                                <div className="section-label">Pump Curve Data</div>
+                                
+                                {!identicalPumps && (
+                                    <div className="info-box" style={{marginBottom: 'calc(var(--grid) * 2)'}}>
+                                        💡 Enter separate data for each of the {numPumps} pumps below
+                                    </div>
+                                )}
+                                
+                                <div className="input-group">
+                                    <label>Pump Curve Input Method</label>
+                                    <div style={{display: 'flex', gap: 'calc(var(--grid) * 2)', marginBottom: 'calc(var(--grid) * 2)'}}>
+                                        <div style={{display: 'flex', alignItems: 'center', gap: 'calc(var(--grid) * 1)'}}>
+                                            <input 
+                                                type="radio" 
+                                                name="pumpMethod" 
+                                                value="table"
+                                                checked={pumpCurveMethod === 'table'}
+                                                onChange={(e) => setPumpCurveMethod(e.target.value)}
+                                                style={{width: 'auto', accentColor: 'var(--primary)'}}
+                                            />
+                                            <label style={{margin: 0, cursor: 'pointer'}}>Table Data</label>
+                                        </div>
+                                        <div style={{display: 'flex', alignItems: 'center', gap: 'calc(var(--grid) * 1)'}}>
+                                            <input 
+                                                type="radio" 
+                                                name="pumpMethod" 
+                                                value="equation"
+                                                checked={pumpCurveMethod === 'equation'}
+                                                onChange={(e) => setPumpCurveMethod(e.target.value)}
+                                                style={{width: 'auto', accentColor: 'var(--primary)'}}
+                                            />
+                                            <label style={{margin: 0, cursor: 'pointer'}}>Equation</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                {!identicalPumps && numPumps > 1 && pumpCurveMethod === 'table' && (
+                                    <div className="checkbox-group" style={{marginTop: 'calc(var(--grid) * 2)'}}>
+                                        <input 
+                                            type="checkbox"
+                                            checked={unifiedQValues}
+                                            onChange={(e) => setUnifiedQValues(e.target.checked)}
+                                        />
+                                        <label>Use same Q values for all pumps</label>
+                                    </div>
+                                )}
+                                
+                                {pumpCurveMethod === 'equation' && (
+                                    <>
+                                        {!identicalPumps ? (
+                                            multiplePumpEquations.map((equation, pumpIndex) => (
+                                                <div key={pumpIndex} style={{marginBottom: 'calc(var(--grid) * 3)', borderLeft: '3px solid var(--primary)', paddingLeft: 'calc(var(--grid) * 2)'}}>
+                                                    <div style={{fontFamily: 'JetBrains Mono', color: 'var(--primary)', fontSize: '0.875rem', fontWeight: 600, marginBottom: 'calc(var(--grid) * 2)'}}>
+                                                        Pump #{pumpIndex + 1} Curve Equation
+                                                    </div>
+                                                    
+                                                    <div className="input-group">
+                                                        <label>Polynomial Degree</label>
+                                                        <select 
+                                                            value={pumpCurveDegree}
+                                                            onChange={(e) => setPumpCurveDegree(parseInt(e.target.value))}
+                                                        >
+                                                            <option value="1">1st degree (linear)</option>
+                                                            <option value="2">2nd degree (quadratic)</option>
+                                                            <option value="3">3rd degree (cubic)</option>
+                                                        </select>
+                                                    </div>
+                                                    
+                                                    <div style={{margin: 'calc(var(--grid) * 2) 0', color: 'var(--primary)', fontWeight: 600}}>
+                                                        {pumpCurveDegree === 1 && <span>{"$$H_p = a + bQ$$"}</span>}
+                                                        {pumpCurveDegree === 2 && <span>{"$$H_p = a + bQ + cQ^2$$"}</span>}
+                                                        {pumpCurveDegree === 3 && <span>{"$$H_p = a + bQ + cQ^2 + dQ^3$$"}</span>}
+                                                    </div>
+                                                    
+                                                    <div className="input-group">
+                                                        <label>Coefficient a</label>
+                                                        <input 
+                                                            type="number" onWheel={(e) => e.target.blur()}
+                                                            step="any"
+                                                            value={equation.a}
+                                                            onChange={(e) => updateMultiplePumpEquation(pumpIndex, 'a', e.target.value)}
+                                                            placeholder="70"
+                                                        />
+                                                    </div>
+                                                    
+                                                    <div className="input-group">
+                                                        <label>Coefficient b</label>
+                                                        <input 
+                                                            type="number" onWheel={(e) => e.target.blur()}
+                                                            step="any"
+                                                            value={equation.b}
+                                                            onChange={(e) => updateMultiplePumpEquation(pumpIndex, 'b', e.target.value)}
+                                                            placeholder="-0.1"
+                                                        />
+                                                    </div>
+                                                    
+                                                    {pumpCurveDegree >= 2 && (
+                                                        <div className="input-group">
+                                                            <label>Coefficient c</label>
+                                                            <input 
+                                                                type="number" onWheel={(e) => e.target.blur()}
+                                                                step="any"
+                                                                value={equation.c}
+                                                                onChange={(e) => updateMultiplePumpEquation(pumpIndex, 'c', e.target.value)}
+                                                                placeholder="-0.001"
+                                                            />
+                                                        </div>
+                                                    )}
+                                                    
+                                                    {pumpCurveDegree >= 3 && (
+                                                        <div className="input-group">
+                                                            <label>Coefficient d</label>
+                                                            <input 
+                                                                type="number" onWheel={(e) => e.target.blur()}
+                                                                step="any"
+                                                                value={equation.d}
+                                                                onChange={(e) => updateMultiplePumpEquation(pumpIndex, 'd', e.target.value)}
+                                                                placeholder="0"
+                                                            />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <>
+                                                <div className="input-group">
+                                                    <label>Polynomial Degree</label>
+                                                    <select 
+                                                        value={pumpCurveDegree}
+                                                        onChange={(e) => setPumpCurveDegree(parseInt(e.target.value))}
+                                                    >
+                                                        <option value="1">1st degree (linear)</option>
+                                                        <option value="2">2nd degree (quadratic)</option>
+                                                        <option value="3">3rd degree (cubic)</option>
+                                                    </select>
+                                                </div>
+                                                
+                                                <div style={{margin: 'calc(var(--grid) * 2) 0', color: 'var(--primary)', fontWeight: 600}}>
+                                                    {pumpCurveDegree === 1 && <span>{"$$H_p = a + bQ$$"}</span>}
+                                                    {pumpCurveDegree === 2 && <span>{"$$H_p = a + bQ + cQ^2$$"}</span>}
+                                                    {pumpCurveDegree === 3 && <span>{"$$H_p = a + bQ + cQ^2 + dQ^3$$"}</span>}
+                                                </div>
+                                                
+                                                <div className="input-group">
+                                                    <label>Coefficient a</label>
+                                                    <input 
+                                                        type="number" onWheel={(e) => e.target.blur()}
+                                                        step="any"
+                                                        value={pumpEquation.a}
+                                                        onChange={(e) => setPumpEquation({...pumpEquation, a: e.target.value})}
+                                                        placeholder="70"
+                                                    />
+                                                </div>
+                                                
+                                                <div className="input-group">
+                                                    <label>Coefficient b</label>
+                                                    <input 
+                                                        type="number" onWheel={(e) => e.target.blur()}
+                                                        step="any"
+                                                        value={pumpEquation.b}
+                                                        onChange={(e) => setPumpEquation({...pumpEquation, b: e.target.value})}
+                                                        placeholder="-0.1"
+                                                    />
+                                                </div>
+                                                
+                                                {pumpCurveDegree >= 2 && (
+                                                    <div className="input-group">
+                                                        <label>Coefficient c</label>
+                                                        <input 
+                                                            type="number" onWheel={(e) => e.target.blur()}
+                                                            step="any"
+                                                            value={pumpEquation.c}
+                                                            onChange={(e) => setPumpEquation({...pumpEquation, c: e.target.value})}
+                                                            placeholder="-0.001"
+                                                        />
+                                                    </div>
+                                                )}
+                                                
+                                                {pumpCurveDegree >= 3 && (
+                                                    <div className="input-group">
+                                                        <label>Coefficient d</label>
+                                                        <input 
+                                                            type="number" onWheel={(e) => e.target.blur()}
+                                                            step="any"
+                                                            value={pumpEquation.d}
+                                                            onChange={(e) => setPumpEquation({...pumpEquation, d: e.target.value})}
+                                                            placeholder="0"
+                                                        />
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
+                                    </>
+                                )}
+                                
+                                {pumpCurveMethod === 'table' && (
+                                    <>
+                                        {!identicalPumps ? (
+                                            unifiedQValues ? (
+                                                <div className="pump-section-divider">
+                                                    <div className="pump-section-title">
+                                                        All Pumps (Same Q Values)
+                                                    </div>
+                                                    <table className="data-table">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Q (L/s)</th>
+                                                                {Array.from({length: numPumps}, (_, i) => {
+                                                                    const subscript = i === 0 ? '₁' : i === 1 ? '₂' : i === 2 ? '₃' : `₁${i+1}`;
+                                                                    return <th key={`h${i}`}>H{subscript} (m)</th>;
+                                                                })}
+                                                                {includeEfficiency && Array.from({length: numPumps}, (_, i) => {
+                                                                    const subscript = i === 0 ? '₁' : i === 1 ? '₂' : i === 2 ? '₃' : `₁${i+1}`;
+                                                                    return <th key={`eta${i}`}>η{subscript} (%)</th>;
+                                                                })}
+                                                                <th></th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {unifiedPumpData.map((row, rowIndex) => (
+                                                                <tr key={rowIndex}>
+                                                                    <td>
+                                                                        <input 
+                                                                            type="number" onWheel={(e) => e.target.blur()}
+                                                                            step="any"
+                                                                            value={row.Q}
+                                                                            onChange={(e) => updateUnifiedPumpData(rowIndex, 'Q', 0, e.target.value)}
+                                                                            onKeyDown={handleKeyDown}
+                                                                            placeholder="0"
+                                                                        />
+                                                                    </td>
+                                                                    {Array.from({length: numPumps}, (_, pumpIdx) => (
+                                                                        <td key={`h${pumpIdx}`}>
+                                                                            <input 
+                                                                                type="number" onWheel={(e) => e.target.blur()}
+                                                                                step="any"
+                                                                                value={row.H[pumpIdx] || ''}
+                                                                                onChange={(e) => updateUnifiedPumpData(rowIndex, 'H', pumpIdx, e.target.value)}
+                                                                                onKeyDown={handleKeyDown}
+                                                                                placeholder="70"
+                                                                            />
+                                                                        </td>
+                                                                    ))}
+                                                                    {includeEfficiency && Array.from({length: numPumps}, (_, pumpIdx) => (
+                                                                        <td key={`eta${pumpIdx}`}>
+                                                                            <input 
+                                                                                type="number" onWheel={(e) => e.target.blur()}
+                                                                                step="any"
+                                                                                value={row.eta[pumpIdx] || ''}
+                                                                                onChange={(e) => updateUnifiedPumpData(rowIndex, 'eta', pumpIdx, e.target.value)}
+                                                                                onKeyDown={handleKeyDown}
+                                                                                placeholder="80"
+                                                                            />
+                                                                        </td>
+                                                                    ))}
+                                                                    <td>
+                                                                        {unifiedPumpData.length > 2 && (
+                                                                            <button 
+                                                                                className="btn-small"
+                                                                                onClick={() => removeUnifiedDataRow(rowIndex)}
+                                                                                style={{fontSize: '0.7rem', padding: '4px 8px', margin: 0}}
+                                                                            >
+                                                                                ✕
+                                                                            </button>
+                                                                        )}
+                                                                    </td>
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
+                                                    <button className="btn-small" onClick={addUnifiedDataRow}>+ Add Row</button>
+                                                    <button className="btn-small" onClick={() => addUnifiedDataRows(5)}>+ Add 5 Rows</button>
+                                                    <button className="btn-small" onClick={() => addUnifiedDataRows(10)}>+ Add 10 Rows</button>
+                                                </div>
+                                            ) : (
+                                                multiplePumpData.map((pumpDataArray, pumpIndex) => (
+                                                    <div key={pumpIndex} style={{marginBottom: 'calc(var(--grid) * 3)', borderLeft: '3px solid var(--primary)', paddingLeft: 'calc(var(--grid) * 2)'}}>
+                                                        <div style={{fontFamily: 'JetBrains Mono', color: 'var(--primary)', fontSize: '0.875rem', fontWeight: 600, marginBottom: 'calc(var(--grid) * 2)'}}>
+                                                            Pump #{pumpIndex + 1}
+                                                        </div>
+                                                        <table className="data-table">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th>Q (L/s)</th>
+                                                                    <th>H (m)</th>
+                                                                    {includeEfficiency && <th>η (%)</th>}
+                                                                    <th></th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {pumpDataArray.map((row, rowIndex) => (
+                                                                    <tr key={rowIndex}>
+                                                                        <td>
+                                                                            <input 
+                                                                                type="number" onWheel={(e) => e.target.blur()}
+                                                                                step="any"
+                                                                                value={row.Q}
+                                                                                onChange={(e) => updateMultiplePumpData(pumpIndex, rowIndex, 'Q', e.target.value)}
+                                                                                onKeyDown={handleKeyDown}
+                                                                                placeholder="0"
+                                                                            />
+                                                                        </td>
+                                                                        <td>
+                                                                            <input 
+                                                                                type="number" onWheel={(e) => e.target.blur()}
+                                                                                step="any"
+                                                                                value={row.H}
+                                                                                onChange={(e) => updateMultiplePumpData(pumpIndex, rowIndex, 'H', e.target.value)}
+                                                                                onKeyDown={handleKeyDown}
+                                                                                placeholder="70"
+                                                                            />
+                                                                        </td>
+                                                                        {includeEfficiency && (
+                                                                            <td>
+                                                                                <input 
+                                                                                    type="number" onWheel={(e) => e.target.blur()}
+                                                                                    step="any"
+                                                                                    value={row.eta}
+                                                                                    onChange={(e) => updateMultiplePumpData(pumpIndex, rowIndex, 'eta', e.target.value)}
+                                                                                    onKeyDown={handleKeyDown}
+                                                                                    placeholder="80"
+                                                                                />
+                                                                            </td>
+                                                                        )}
+                                                                        <td>
+                                                                            {pumpDataArray.length > 2 && (
+                                                                                <button 
+                                                                                    className="btn-small"
+                                                                                    onClick={() => removeMultipleDataRow(pumpIndex, rowIndex)}
+                                                                                    style={{fontSize: '0.7rem', padding: '4px 8px', margin: 0}}
+                                                                                >
+                                                                                    ✕
+                                                                                </button>
+                                                                            )}
+                                                                        </td>
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
+                                                        <button className="btn-small" onClick={() => addMultipleDataRow(pumpIndex)}>+ Add Row</button>
+                                                        <button className="btn-small" onClick={() => addMultipleDataRows(pumpIndex, 5)}>+ Add 5 Rows</button>
+                                                        <button className="btn-small" onClick={() => addMultipleDataRows(pumpIndex, 10)}>+ Add 10 Rows</button>
+                                                    </div>
+                                                ))
+                                            )
+                                        ) : (
+                                            <>
+                                                <table className="data-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Q (L/s)</th>
+                                                            <th>H (m)</th>
+                                                            {includeEfficiency && <th>η (%)</th>}
+                                                            <th></th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {pumpData.map((row, i) => (
+                                                            <tr key={i}>
+                                                                <td>
+                                                                    <input 
+                                                                        type="number" onWheel={(e) => e.target.blur()}
+                                                                        step="any"
+                                                                        value={row.Q}
+                                                                        onChange={(e) => updatePumpData(i, 'Q', e.target.value)}
+                                                                        onKeyDown={handleKeyDown}
+                                                                        placeholder="0"
+                                                                    />
+                                                                </td>
+                                                                <td>
+                                                                    <input 
+                                                                        type="number" onWheel={(e) => e.target.blur()}
+                                                                        step="any"
+                                                                        value={row.H}
+                                                                        onChange={(e) => updatePumpData(i, 'H', e.target.value)}
+                                                                        onKeyDown={handleKeyDown}
+                                                                        placeholder="70"
+                                                                    />
+                                                                </td>
+                                                                {includeEfficiency && (
+                                                                    <td>
+                                                                        <input 
+                                                                            type="number" onWheel={(e) => e.target.blur()}
+                                                                            step="any"
+                                                                            value={row.eta}
+                                                                            onChange={(e) => updatePumpData(i, 'eta', e.target.value)}
+                                                                            onKeyDown={handleKeyDown}
+                                                                            placeholder="80"
+                                                                        />
+                                                                    </td>
+                                                                )}
+                                                                <td>
+                                                                    {pumpData.length > 2 && (
+                                                                        <button 
+                                                                            className="btn-small"
+                                                                            onClick={() => removeDataRow(i)}
+                                                                            style={{fontSize: '0.7rem', padding: '4px 8px', margin: 0}}
+                                                                        >
+                                                                            ✕
+                                                                        </button>
+                                                                    )}
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                                <button className="btn-small" onClick={addDataRow}>+ Add Row</button>
+                                                <button className="btn-small" onClick={() => addMultipleRows(5)}>+ Add 5 Rows</button>
+                                                <button className="btn-small" onClick={() => addMultipleRows(10)}>+ Add 10 Rows</button>
+                                            </>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                            
+                            
+                            {/* EFFICIENCY INPUT SECTION - Only shows when pump curve method is equation */}
+                            {pumpCurveMethod === 'equation' && includeEfficiency && (
+                                <div className="form-section">
+                                    <div className="section-label">Efficiency Data</div>
+                                    
+                                    <div className="input-group">
+                                        <label>Efficiency Input Method</label>
+                                        <div style={{display: 'flex', gap: 'calc(var(--grid) * 2)', marginBottom: 'calc(var(--grid) * 2)'}}>
+                                            <div style={{display: 'flex', alignItems: 'center', gap: 'calc(var(--grid) * 1)'}}>
+                                                <input 
+                                                    type="radio" 
+                                                    name="efficiencyMethod" 
+                                                    value="table"
+                                                    checked={efficiencyMethod === 'table'}
+                                                    onChange={(e) => setEfficiencyMethod(e.target.value)}
+                                                    style={{width: 'auto', accentColor: 'var(--primary)'}}
+                                                />
+                                                <label style={{margin: 0, cursor: 'pointer'}}>Table Data</label>
+                                            </div>
+                                            <div style={{display: 'flex', alignItems: 'center', gap: 'calc(var(--grid) * 1)'}}>
+                                                <input 
+                                                    type="radio" 
+                                                    name="efficiencyMethod" 
+                                                    value="equation"
+                                                    checked={efficiencyMethod === 'equation'}
+                                                    onChange={(e) => setEfficiencyMethod(e.target.value)}
+                                                    style={{width: 'auto', accentColor: 'var(--primary)'}}
+                                                />
+                                                <label style={{margin: 0, cursor: 'pointer'}}>Equation</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {efficiencyMethod === 'equation' && (
+                                        <>
+                                            {!identicalPumps ? (
+                                                multipleEfficiencyEquations.map((equation, pumpIndex) => (
+                                                    <div key={pumpIndex} className="pump-section-divider">
+                                                        <div className="pump-section-title">
+                                                            Pump #{pumpIndex + 1} Efficiency Equation
+                                                        </div>
+                                                        
+                                                        <div className="input-group">
+                                                            <label>Polynomial Degree</label>
+                                                            <select 
+                                                                value={efficiencyDegree}
+                                                                onChange={(e) => setEfficiencyDegree(parseInt(e.target.value))}
+                                                            >
+                                                                <option value="1">1st degree (linear)</option>
+                                                                <option value="2">2nd degree (quadratic)</option>
+                                                                <option value="3">3rd degree (cubic)</option>
+                                                            </select>
+                                                        </div>
+                                                        
+                                                        <div style={{margin: 'calc(var(--grid) * 2) 0', color: 'var(--primary)', fontWeight: 600}}>
+                                                            {efficiencyDegree === 1 && <span>{"$$\\eta = a + bQ$$"}</span>}
+                                                            {efficiencyDegree === 2 && <span>{"$$\\eta = a + bQ + cQ^2$$"}</span>}
+                                                            {efficiencyDegree === 3 && <span>{"$$\\eta = a + bQ + cQ^2 + dQ^3$$"}</span>}
+                                                        </div>
+                                                        
+                                                        <div className="input-group">
+                                                            <label>Coefficient a</label>
+                                                            <input 
+                                                                type="number" onWheel={(e) => e.target.blur()}
+                                                                step="any"
+                                                                value={equation.a}
+                                                                onChange={(e) => updateMultipleEfficiencyEquation(pumpIndex, 'a', e.target.value)}
+                                                                placeholder="80"
+                                                            />
+                                                        </div>
+                                                        
+                                                        <div className="input-group">
+                                                            <label>Coefficient b</label>
+                                                            <input 
+                                                                type="number" onWheel={(e) => e.target.blur()}
+                                                                step="any"
+                                                                value={equation.b}
+                                                                onChange={(e) => updateMultipleEfficiencyEquation(pumpIndex, 'b', e.target.value)}
+                                                                placeholder="0"
+                                                            />
+                                                        </div>
+                                                        
+                                                        {efficiencyDegree >= 2 && (
+                                                            <div className="input-group">
+                                                                <label>Coefficient c</label>
+                                                                <input 
+                                                                    type="number" onWheel={(e) => e.target.blur()}
+                                                                    step="any"
+                                                                    value={equation.c}
+                                                                    onChange={(e) => updateMultipleEfficiencyEquation(pumpIndex, 'c', e.target.value)}
+                                                                    placeholder="0"
+                                                                />
+                                                            </div>
+                                                        )}
+                                                        
+                                                        {efficiencyDegree >= 3 && (
+                                                            <div className="input-group">
+                                                                <label>Coefficient d</label>
+                                                                <input 
+                                                                    type="number" onWheel={(e) => e.target.blur()}
+                                                                    step="any"
+                                                                    value={equation.d}
+                                                                    onChange={(e) => updateMultipleEfficiencyEquation(pumpIndex, 'd', e.target.value)}
+                                                                    placeholder="0"
+                                                                />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <>
+                                                    <div className="input-group">
+                                                        <label>Polynomial Degree</label>
+                                                        <select 
+                                                            value={efficiencyDegree}
+                                                            onChange={(e) => setEfficiencyDegree(parseInt(e.target.value))}
+                                                        >
+                                                            <option value="1">1st degree (linear)</option>
+                                                            <option value="2">2nd degree (quadratic)</option>
+                                                            <option value="3">3rd degree (cubic)</option>
+                                                        </select>
+                                                    </div>
+                                                    
+                                                    <div style={{margin: 'calc(var(--grid) * 2) 0', color: 'var(--primary)', fontWeight: 600}}>
+                                                        {efficiencyDegree === 1 && <span>{"$$\\eta = a + bQ$$"}</span>}
+                                                        {efficiencyDegree === 2 && <span>{"$$\\eta = a + bQ + cQ^2$$"}</span>}
+                                                        {efficiencyDegree === 3 && <span>{"$$\\eta = a + bQ + cQ^2 + dQ^3$$"}</span>}
+                                                    </div>
+                                                    
+                                                    <div className="input-group">
+                                                        <label>Coefficient a</label>
+                                                        <input 
+                                                            type="number" onWheel={(e) => e.target.blur()}
+                                                            step="any"
+                                                            value={efficiencyEquation.a}
+                                                            onChange={(e) => setEfficiencyEquation({...efficiencyEquation, a: e.target.value})}
+                                                            placeholder="80"
+                                                        />
+                                                    </div>
+                                                    
+                                                    <div className="input-group">
+                                                        <label>Coefficient b</label>
+                                                        <input 
+                                                            type="number" onWheel={(e) => e.target.blur()}
+                                                            step="any"
+                                                            value={efficiencyEquation.b}
+                                                            onChange={(e) => setEfficiencyEquation({...efficiencyEquation, b: e.target.value})}
+                                                            placeholder="0"
+                                                        />
+                                                    </div>
+                                                    
+                                                    {efficiencyDegree >= 2 && (
+                                                        <div className="input-group">
+                                                            <label>Coefficient c</label>
+                                                            <input 
+                                                                type="number" onWheel={(e) => e.target.blur()}
+                                                                step="any"
+                                                                value={efficiencyEquation.c}
+                                                                onChange={(e) => setEfficiencyEquation({...efficiencyEquation, c: e.target.value})}
+                                                                placeholder="0"
+                                                            />
+                                                        </div>
+                                                    )}
+                                                    
+                                                    {efficiencyDegree >= 3 && (
+                                                        <div className="input-group">
+                                                            <label>Coefficient d</label>
+                                                            <input 
+                                                                type="number" onWheel={(e) => e.target.blur()}
+                                                                step="any"
+                                                                value={efficiencyEquation.d}
+                                                                onChange={(e) => setEfficiencyEquation({...efficiencyEquation, d: e.target.value})}
+                                                                placeholder="0"
+                                                            />
+                                                        </div>
+                                                    )}
+                                                </>
+                                            )}
+                                        </>
+                                    )}
+                                    
+                                    {efficiencyMethod === 'table' && (
+                                        <>
+                                            <div className="info-box">
+                                                💡 Enter Q (flow rate) and η (efficiency) values. Since you're using equations for pump curves, efficiency data is separate.
+                                            </div>
+                                            
+                                            {!identicalPumps ? (
+                                                multiplePumpData.map((pumpDataArray, pumpIndex) => (
+                                                    <div key={pumpIndex} className="pump-section-divider">
+                                                        <div className="pump-section-title">
+                                                            Pump #{pumpIndex + 1} Efficiency
+                                                        </div>
+                                                        <table className="data-table">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th>Q (L/s)</th>
+                                                                    <th>η (%)</th>
+                                                                    <th></th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {pumpDataArray.map((row, rowIndex) => (
+                                                                    <tr key={rowIndex}>
+                                                                        <td>
+                                                                            <input 
+                                                                                type="number" onWheel={(e) => e.target.blur()}
+                                                                                step="any"
+                                                                                value={row.Q}
+                                                                                onChange={(e) => updateMultiplePumpData(pumpIndex, rowIndex, 'Q', e.target.value)}
+                                                                                onKeyDown={handleKeyDown}
+                                                                                placeholder="0"
+                                                                            />
+                                                                        </td>
+                                                                        <td>
+                                                                            <input 
+                                                                                type="number" onWheel={(e) => e.target.blur()}
+                                                                                step="any"
+                                                                                value={row.eta}
+                                                                                onChange={(e) => updateMultiplePumpData(pumpIndex, rowIndex, 'eta', e.target.value)}
+                                                                                onKeyDown={handleKeyDown}
+                                                                                placeholder="80"
+                                                                            />
+                                                                        </td>
+                                                                        <td>
+                                                                            {pumpDataArray.length > 2 && (
+                                                                                <button 
+                                                                                    className="btn-small"
+                                                                                    onClick={() => removeMultipleDataRow(pumpIndex, rowIndex)}
+                                                                                    style={{fontSize: '0.7rem', padding: '4px 8px', margin: 0}}
+                                                                                >
+                                                                                    ✕
+                                                                                </button>
+                                                                            )}
+                                                                        </td>
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
+                                                        <button className="btn-small" onClick={() => addMultipleDataRow(pumpIndex)}>+ Add Row</button>
+                                                        <button className="btn-small" onClick={() => addMultipleDataRows(pumpIndex, 5)}>+ Add 5 Rows</button>
+                                                        <button className="btn-small" onClick={() => addMultipleDataRows(pumpIndex, 10)}>+ Add 10 Rows</button>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <>
+                                                    <table className="data-table">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Q (L/s)</th>
+                                                                <th>η (%)</th>
+                                                                <th></th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {pumpData.map((row, i) => (
+                                                                <tr key={i}>
+                                                                    <td>
+                                                                        <input 
+                                                                            type="number" onWheel={(e) => e.target.blur()}
+                                                                            step="any"
+                                                                            value={row.Q}
+                                                                            onChange={(e) => updatePumpData(i, 'Q', e.target.value)}
+                                                                            onKeyDown={handleKeyDown}
+                                                                            placeholder="0"
+                                                                        />
+                                                                    </td>
+                                                                    <td>
+                                                                        <input 
+                                                                            type="number" onWheel={(e) => e.target.blur()}
+                                                                            step="any"
+                                                                            value={row.eta}
+                                                                            onChange={(e) => updatePumpData(i, 'eta', e.target.value)}
+                                                                            onKeyDown={handleKeyDown}
+                                                                            placeholder="80"
+                                                                        />
+                                                                    </td>
+                                                                    <td>
+                                                                        {pumpData.length > 2 && (
+                                                                            <button 
+                                                                                className="btn-small"
+                                                                                onClick={() => removeDataRow(i)}
+                                                                                style={{fontSize: '0.7rem', padding: '4px 8px', margin: 0}}
+                                                                            >
+                                                                                ✕
+                                                                            </button>
+                                                                        )}
+                                                                    </td>
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
+                                                    <button className="btn-small" onClick={addDataRow}>+ Add Row</button>
+                                                    <button className="btn-small" onClick={() => addDataRows(5)}>+ Add 5 Rows</button>
+                                                    <button className="btn-small" onClick={() => addDataRows(10)}>+ Add 10 Rows</button>
+                                                </>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
+                            )}
+                            
+                            <div className="form-section">
+                                <div className="section-label">System Properties</div>
+                                
+                                <div className="input-group">
+                                    <label>Static Head Hs (m)</label>
+                                    <input 
+                                        type="number" onWheel={(e) => e.target.blur()}
+                                        step="any"
+                                        value={systemProps.Hs}
+                                        onChange={(e) => setSystemProps({...systemProps, Hs: e.target.value})}
+                                        placeholder="40"
+                                    />
+                                </div>
+                                
+                                <div className="input-group">
+                                    <label>Pipe Length L (m)</label>
+                                    <input 
+                                        type="number" onWheel={(e) => e.target.blur()}
+                                        step="any"
+                                        value={systemProps.L}
+                                        onChange={(e) => setSystemProps({...systemProps, L: e.target.value})}
+                                        placeholder="2000"
+                                    />
+                                </div>
+                                
+                                <div className="input-group">
+                                    <label>Pipe Diameter D (m)</label>
+                                    <input 
+                                        type="number" onWheel={(e) => e.target.blur()}
+                                        step="any"
+                                        value={systemProps.D}
+                                        onChange={(e) => setSystemProps({...systemProps, D: e.target.value})}
+                                        placeholder="0.2"
+                                    />
+                                </div>
+                                
+                                <div className="input-group">
+                                    <label>Friction Factor f</label>
+                                    <input 
+                                        type="number" onWheel={(e) => e.target.blur()}
+                                        step="0.0001"
+                                        min="0"
+                                        max="1"
+                                        value={systemProps.f}
+                                        onChange={(e) => {
+                                            const validated = validateFrictionFactor(e.target.value);
+                                            setSystemProps({...systemProps, f: validated});
+                                            setShowFInfo(true);
+                                        }}
+                                        
+                                        placeholder="0.02"
+                                    />
+                                    {showFInfo && (
+                                        <div className="info-box">
+                                            💡 If friction factor is unknown, use our <a href="darcy-weisbach.html?v=1770404999" target="_blank">Darcy-Weisbach Calculator</a> to compute it.
+                                        </div>
+                                    )}
+                                </div>
+                                
+                                <div className="input-group">
+                                    <label>Minor Loss Coefficient Km</label>
+                                    <input 
+                                        type="number" onWheel={(e) => e.target.blur()}
+                                        step="any"
+                                        value={systemProps.Km}
+                                        onChange={(e) => setSystemProps({...systemProps, Km: e.target.value})}
+                                        placeholder="0"
+                                    />
+                                </div>
+                                
+                                <div className="input-group">
+                                    <label>Kinematic Viscosity ν (m²/s)</label>
+                                    <input 
+                                        type="number" onWheel={(e) => e.target.blur()}
+                                        step="any"
+                                        value={systemProps.nu}
+                                        onChange={(e) => setSystemProps({...systemProps, nu: e.target.value})}
+                                        placeholder="1.02e-6"
+                                    />
+                                </div>
+                            </div>
+                            
+                            <button className="calculate-button" onClick={calculate} disabled={calculating}>
+                                {calculating ? 'Calculating...' : 'Calculate All Configurations'}
+                            </button>
+                        </div>
+                        
+                        <div className="results-panel">
+                            <div className="panel-title">Results</div>
+                            
+                            {!results && !calculating && (
+                                <div className="results-empty">
+                                    <button 
+                                        className="calculate-btn" 
+                                        onClick={loadExample}
+                                        style={{ maxWidth: '300px', margin: '0 auto' }}
+                                    >
+                                        Load Example 2.12
+                                    </button>
+                                    <p style={{ marginTop: '16px', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+                                        Loads sample problem from Example 2.12
+                                    </p>
+                                </div>
+                            )}
+                            
+                            {results && results.error && (
+                                <div className="result-card error">
+                                    <div className="result-header error">⚠ Error</div>
+                                    <p>{results.message}</p>
+                                </div>
+                            )}
+                            
+                            {results && results.success && (
+                                <>
+                                    <div className="result-card success">
+                                        <div className="result-header">✓ Operating Points Found</div>
+                                        <table className="results-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Configuration</th>
+                                                    <th>Q (L/s)</th>
+                                                    <th>H (m)</th>
+                                                    {results.includeEfficiency && <th>η (%)</th>}
+                                                    {results.includeEfficiency && <th>P (kW)</th>}
+                                                    {results.includeEfficiency && <th>P/Q (kW·s/L)</th>}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {(results.identicalPumps || results.numPumps === 1) && (
+                                                    <tr>
+                                                        <td>Single Pump</td>
+                                                        <td>{(results.single.Q * 1000).toFixed(1)}</td>
+                                                        <td>{results.single.H.toFixed(1)}</td>
+                                                        {results.includeEfficiency && <td>{results.single.eta.toFixed(0)}</td>}
+                                                        {results.includeEfficiency && <td>{results.single.power.toFixed(1)}</td>}
+                                                        {results.includeEfficiency && <td>{(results.single.power / (results.single.Q * 1000)).toFixed(2)}</td>}
+                                                    </tr>
+                                                )}
+                                                {results.numPumps > 1 && (
+                                                    <tr>
+                                                        <td>Pumps in Series (×{results.numPumps})</td>
+                                                        <td>{(results.series.Q * 1000).toFixed(1)}</td>
+                                                        <td>{results.series.H.toFixed(1)}</td>
+                                                        {results.includeEfficiency && <td>{results.series.eta.toFixed(0)}</td>}
+                                                        {results.includeEfficiency && <td>{results.series.power ? results.series.power.toFixed(1) : 'N/A'}</td>}
+                                                        {results.includeEfficiency && <td>{results.series.power ? (results.series.power / (results.series.Q * 1000)).toFixed(2) : 'N/A'}</td>}
+                                                    </tr>
+                                                )}
+                                                {results.parallel && results.numPumps > 1 && (
+                                                    <tr>
+                                                        <td>Pumps in Parallel (×{results.numPumps})</td>
+                                                        <td>{(results.parallel.Q * 1000).toFixed(1)}</td>
+                                                        <td>{results.parallel.H.toFixed(1)}</td>
+                                                        {results.includeEfficiency && <td>{results.parallel.eta.toFixed(0)}</td>}
+                                                        {results.includeEfficiency && <td>{results.parallel.power ? results.parallel.power.toFixed(1) : 'N/A'}</td>}
+                                                        {results.includeEfficiency && <td>{results.parallel.power ? (results.parallel.power / (results.parallel.Q * 1000)).toFixed(2) : 'N/A'}</td>}
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    
+                                    <div className="result-card">
+                                        <div className="result-header">System Curve Equation</div>
+                                        <div className="math-display">
+                                            <p><strong>Energy Equation (Bernoulli):</strong></p>
+                                            <p>{"$$\\frac{p_1}{\\gamma} + \\frac{V_1^2}{2g} + z_1 = \\frac{p_2}{\\gamma} + \\frac{V_2^2}{2g} + z_2 + h_f + h_m - H_p$$"}</p>
+                                            <p>For reservoirs (p₁/γ = p₂/γ = 0, V₁ = V₂ = 0):</p>
+                                            <p>{"$$z_1 = z_2 + h_f + h_m - H_p$$"}</p>
+                                            <p>Rearranging:</p>
+                                            <p>{"$$H_p = (z_2 - z_1) + h_f + h_m = \\Delta z + h_f + h_m$$"}</p>
+                                            <p><strong>Head Losses:</strong></p>
+                                            <p>{"$$h_f = f \\frac{L}{D} \\frac{V^2}{2g} = f \\frac{L}{D} \\frac{1}{2g} \\left(\\frac{Q}{A}\\right)^2 = KQ^2$$"}</p>
+                                            <p>{"$$h_m = K_m \\frac{V^2}{2g} = K_m \\frac{Q^2}{2gA^2}$$"}</p>
+                                            <p><strong>Friction Coefficient K:</strong></p>
+                                            <p>{"$$K = \\frac{8fL}{g\\pi^2D^5}$$"}</p>
+                                            <p>{"$$K = \\frac{8 \\times " + results.systemEquation.f.toFixed(3) + " \\times " + results.systemEquation.L.toFixed(0) + "}{" + results.systemEquation.g.toFixed(2) + " \\times \\pi^2 \\times " + results.systemEquation.D.toFixed(2) + "^5} = " + results.systemEquation.K.toFixed(2) + "$$"}</p>
+                                            <p><strong>System Curve:</strong></p>
+                                            <p>{"$$H_p = H_s + KQ^2 + K_mQ^2$$"}</p>
+                                            <p>{"$$H_p = " + results.systemEquation.Hs.toFixed(1) + " + " + results.systemEquation.K.toFixed(2) + "Q^2 + " + results.systemEquation.Km.toFixed(2) + "Q^2$$"}</p>
+                                        </div>
+                                    </div>
+                                    
+                                    
+                                    {numPumps === 1 && (
+                                        <div className="info-box" style={{marginBottom: 'calc(var(--grid) * 4)'}}>
+                                            💡 With 1 pump selected, only Single Pump configuration is calculated. Add 2+ pumps to see Series and Parallel configurations.
+                                        </div>
+                                    )}
+                                    
+                                    {!identicalPumps && numPumps > 1 && (
+                                        <div className="info-box" style={{marginBottom: 'calc(var(--grid) * 4)'}}>
+                                            💡 For non-identical pumps, Single Pump configuration is skipped (no way to determine which pump to use). Only Series configuration is calculated.
+                                        </div>
+                                    )}
+                                    
+                                    {(identicalPumps || numPumps === 1) && results.single && (
+                                        <div className="config-section">
+                                            <div className="config-header">Single Pump</div>
+                                        <div className="chart-container">
+                                            <canvas ref={singleChartRef}></canvas>
+                                        </div>
+                                        <div className="result-stats">
+                                            <div className="stat-item">
+                                                <div className="stat-label">Flow Rate (Q)</div>
+                                                <div className="stat-value">{(results.single.Q * 1000).toFixed(2)} L/s</div>
+                                            </div>
+                                            <div className="stat-item">
+                                                <div className="stat-label">Head (Hp)</div>
+                                                <div className="stat-value">{results.single.H.toFixed(2)} m</div>
+                                            </div>
+                                            {results.includeEfficiency && (
+                                                <>
+                                                    <div className="stat-item">
+                                                        <div className="stat-label">Efficiency (η)</div>
+                                                        <div className="stat-value">{results.single.eta.toFixed(1)}%</div>
+                                                    </div>
+                                                    <div className="stat-item">
+                                                        <div className="stat-label">Power (P)</div>
+                                                        <div className="stat-value">{results.single.power ? results.single.power.toFixed(2) + ' kW' : 'N/A'}</div>
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                    )}
+                                    
+                                    {numPumps > 1 && (
+                                    <div className="config-section">
+                                        <div className="config-header">Pumps in Series (×{results.numPumps})</div>
+                                        <div className="chart-container">
+                                            <canvas ref={seriesChartRef}></canvas>
+                                        </div>
+                                        <div className="result-stats">
+                                            <div className="stat-item">
+                                                <div className="stat-label">Flow Rate (Q)</div>
+                                                <div className="stat-value">{(results.series.Q * 1000).toFixed(2)} L/s</div>
+                                            </div>
+                                            <div className="stat-item">
+                                                <div className="stat-label">Total Head (ΣHp)</div>
+                                                <div className="stat-value">{results.series.H.toFixed(2)} m</div>
+                                            </div>
+                                            {results.includeEfficiency && (
+                                                <>
+                                                    <div className="stat-item">
+                                                        <div className="stat-label">Efficiency (η)</div>
+                                                        <div className="stat-value">{results.series.eta.toFixed(1)}%</div>
+                                                    </div>
+                                                    <div className="stat-item">
+                                                        <div className="stat-label">Total Power (ΣP)</div>
+                                                        <div className="stat-value">{results.series.power ? results.series.power.toFixed(2) + ' kW' : 'N/A'}</div>
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
+                                        
+                                        <div style={{marginTop: 'calc(var(--grid) * 2)'}}>
+                                            <strong style={{fontFamily: 'JetBrains Mono', color: 'var(--accent)', fontSize: '0.875rem'}}>
+                                                How Heads Combine in Series:
+                                            </strong>
+                                            <table className="combined-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Q (L/s)</th>
+                                                        {results.identicalPumps ? (
+                                                            <>
+                                                                <th>H_single (m)</th>
+                                                                <th>H_combined (m)</th>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                {results.series.combinedTable[0]?.individualHeads?.map((_, i) => {
+                                                                    const subscript = i === 0 ? '₁' : i === 1 ? '₂' : i === 2 ? '₃' : i === 3 ? '₄' : i === 4 ? '₅' : `₁${i+1}`;
+                                                                    return <th key={i}>H{subscript} (m)</th>;
+                                                                })}
+                                                                <th>H_total (m)</th>
+                                                            </>
+                                                        )}
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {results.series.combinedTable.map((row, i) => (
+                                                        <tr key={i}>
+                                                            <td>{row.Q}</td>
+                                                            {results.identicalPumps ? (
+                                                                <>
+                                                                    <td>{row.Hsingle}</td>
+                                                                    <td>{row.Hcombined}</td>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    {row.individualHeads.map((h, j) => (
+                                                                        <td key={j}>{h}</td>
+                                                                    ))}
+                                                                    <td>{row.Hcombined}</td>
+                                                                </>
+                                                            )}
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                            <div className="table-note">
+                                                {results.identicalPumps 
+                                                    ? `Note: In series, heads add while flow remains constant (H_combined = ${results.numPumps} × H_single)`
+                                                    : `Note: In series, heads ADD for each pump at the same flow rate (H_total = H₁ + H₂ + ... + H${results.numPumps})`
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                    )}
+                                    
+                                    {results.parallel && numPumps > 1 ? (
+                                        <div className="config-section">
+                                            <div className="config-header">Pumps in Parallel (×{results.numPumps})</div>
+                                            <div className="chart-container">
+                                                <canvas ref={parallelChartRef}></canvas>
+                                            </div>
+                                            <div className="result-stats">
+                                                <div className="stat-item">
+                                                    <div className="stat-label">Total Flow Rate (ΣQ)</div>
+                                                    <div className="stat-value">{(results.parallel.Q * 1000).toFixed(2)} L/s</div>
+                                                </div>
+                                                <div className="stat-item">
+                                                    <div className="stat-label">Head (Hp)</div>
+                                                    <div className="stat-value">{results.parallel.H.toFixed(2)} m</div>
+                                                </div>
+                                                {results.includeEfficiency && (
+                                                    <>
+                                                        <div className="stat-item">
+                                                            <div className="stat-label">Efficiency (η)</div>
+                                                            <div className="stat-value">{results.parallel.eta.toFixed(1)}%</div>
+                                                        </div>
+                                                        <div className="stat-item">
+                                                            <div className="stat-label">Total Power (ΣP)</div>
+                                                            <div className="stat-value">{results.parallel.power ? results.parallel.power.toFixed(2) + ' kW' : 'N/A'}</div>
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </div>
+                                            
+                                            <div style={{marginTop: 'calc(var(--grid) * 2)'}}>
+                                                <strong style={{fontFamily: 'JetBrains Mono', color: 'var(--accent)', fontSize: '0.875rem'}}>
+                                                    How Flows Combine in Parallel:
+                                                </strong>
+                                                <table className="combined-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Q₁ (L/s)</th>
+                                                            <th>Q_total (L/s)</th>
+                                                            <th>H (m)</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {results.parallel.combinedTable.map((row, i) => (
+                                                            <tr key={i}>
+                                                                <td>{row.Qsingle}</td>
+                                                                <td>{row.Qcombined}</td>
+                                                                <td>{row.H}</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                                <div className="table-note">
+                                                    Note: In parallel, flows add while head remains constant (Q_total = {results.numPumps} × Q₁)
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="config-section">
+                                            <div className="config-header">Pumps in Parallel</div>
+                                            <div className="warning-box">
+                                                ⚠ Parallel configuration cannot be calculated for non-identical pumps. Only identical pumps can operate in parallel.
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+        
+        ReactDOM.render(<PumpCurvesCalculator />, document.getElementById('root'));
+    </script>
+</body>
+</html>
