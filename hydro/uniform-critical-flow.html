@@ -1,0 +1,1519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uniform & Critical Flow Calculator - Manning's Equation</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Spectral:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4ade80;
+            --primary-light: #86efac;
+            --accent: #fbbf24;
+            --bg: #0a0a0a;
+            --surface: #171717;
+            --text: #e5e5e5;
+            --text-muted: #a3a3a3;
+            --border: #404040;
+            --error: #ef4444;
+            --success: #22c55e;
+            --grid: 8px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Spectral', serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .app-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: calc(var(--grid) * 6);
+        }
+
+        header {
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: calc(var(--grid) * 3);
+            margin-bottom: calc(var(--grid) * 6);
+        }
+
+        .back-link {
+            display: inline-block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            margin-bottom: calc(var(--grid) * 2);
+            transition: color 0.2s;
+        }
+
+        .back-link:hover { color: var(--primary); }
+
+        h1 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: -0.02em;
+            margin-bottom: calc(var(--grid) * 1);
+        }
+
+        .subtitle {
+            font-size: 1.125rem;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: calc(var(--grid) * 4);
+            align-items: start;
+        }
+
+        .input-panel {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 4px;
+            padding: calc(var(--grid) * 4);
+            position: sticky;
+            top: calc(var(--grid) * 3);
+            max-height: calc(100vh - calc(var(--grid) * 6));
+            overflow-y: auto;
+        }
+
+        .results-panel {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 4px;
+            padding: calc(var(--grid) * 4);
+        }
+
+        .panel-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: calc(var(--grid) * 3);
+            padding-bottom: calc(var(--grid) * 2);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .form-section {
+            margin-bottom: calc(var(--grid) * 4);
+        }
+
+        .section-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: calc(var(--grid) * 2);
+        }
+
+        .input-group {
+            margin-bottom: calc(var(--grid) * 2);
+        }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-bottom: calc(var(--grid) * 1);
+        }
+
+        input, select {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 2px;
+            padding: calc(var(--grid) * 1.5);
+            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        input::placeholder { color: #505050; }
+
+        input:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            background: var(--surface);
+        }
+
+        /* Shape & Mode selector buttons */
+        .selector-group {
+            display: flex;
+            gap: calc(var(--grid) * 1);
+            flex-wrap: wrap;
+            margin-bottom: calc(var(--grid) * 3);
+        }
+
+        .selector-btn {
+            padding: calc(var(--grid) * 1) calc(var(--grid) * 2);
+            background: var(--bg);
+            border: 2px solid var(--border);
+            border-radius: 2px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .selector-btn:hover { border-color: var(--primary); }
+
+        .selector-btn.active {
+            background: var(--primary);
+            color: #000000;
+            border-color: var(--primary);
+        }
+
+        .selector-btn.mode-active {
+            background: var(--accent);
+            color: #000000;
+            border-color: var(--accent);
+        }
+
+        .calculate-button {
+            width: 100%;
+            background: var(--primary);
+            color: var(--bg);
+            border: none;
+            border-radius: 4px;
+            padding: calc(var(--grid) * 2);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: calc(var(--grid) * 3);
+        }
+
+        .calculate-button:hover { background: var(--primary-light); }
+        .calculate-button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .results-empty {
+            text-align: center;
+            padding: calc(var(--grid) * 8);
+        }
+
+        .calculate-btn {
+            background: var(--primary);
+            color: var(--bg);
+            border: none;
+            border-radius: 4px;
+            padding: calc(var(--grid) * 2) calc(var(--grid) * 4);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .calculate-btn:hover { background: var(--primary-light); }
+
+        .result-card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: calc(var(--grid) * 3);
+            margin-bottom: calc(var(--grid) * 3);
+        }
+
+        .result-card.success { border-color: var(--success); }
+        .result-card.error { border-color: var(--error); }
+
+        .result-header {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--success);
+            margin-bottom: calc(var(--grid) * 2);
+        }
+
+        .result-header.error { color: var(--error); }
+
+        .result-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: calc(var(--grid) * 1);
+        }
+
+        .result-label {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: calc(var(--grid) * 2);
+        }
+
+        .result-item { display: flex; flex-direction: column; }
+
+        .result-item-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: calc(var(--grid) * 0.5);
+        }
+
+        .result-item-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            color: var(--text);
+        }
+
+        /* Step-by-step solution styles */
+        .step-section {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: calc(var(--grid) * 3);
+            margin-bottom: calc(var(--grid) * 3);
+        }
+
+        .step-header {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: calc(var(--grid) * 2);
+            padding-bottom: calc(var(--grid) * 2);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .reasoning-box {
+            background: rgba(251, 191, 36, 0.1);
+            border-left: 3px solid var(--accent);
+            padding: calc(var(--grid) * 2);
+            margin: calc(var(--grid) * 2) 0;
+            font-style: italic;
+            color: var(--text);
+        }
+
+        .math-display {
+            background: var(--bg);
+            border-left: 3px solid var(--primary);
+            padding: calc(var(--grid) * 2);
+            margin: calc(var(--grid) * 1) 0;
+            overflow-x: auto;
+        }
+
+        .f-iteration-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: calc(var(--grid) * 2) 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+        }
+
+        .f-iteration-table th {
+            background: var(--primary);
+            color: #000000;
+            padding: calc(var(--grid) * 1.5);
+            text-align: left;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .f-iteration-table td {
+            padding: calc(var(--grid) * 1.5);
+            border-bottom: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        .f-iteration-table tr:last-child td {
+            border-bottom: 2px solid var(--primary);
+        }
+
+        .f-iteration-table tr:last-child {
+            background: rgba(74, 222, 128, 0.05);
+        }
+
+        /* Flow regime badges */
+        .regime-badge {
+            display: inline-block;
+            padding: calc(var(--grid) * 1) calc(var(--grid) * 2);
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            font-weight: 700;
+        }
+
+        .regime-badge.subcritical {
+            background: rgba(74, 222, 128, 0.15);
+            color: var(--primary);
+        }
+
+        .regime-badge.supercritical {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--error);
+        }
+
+        .regime-badge.critical {
+            background: rgba(251, 191, 36, 0.15);
+            color: var(--accent);
+        }
+
+        .slope-badge {
+            display: inline-block;
+            padding: calc(var(--grid) * 1) calc(var(--grid) * 2);
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            font-weight: 700;
+            margin-left: calc(var(--grid) * 1);
+        }
+
+        .slope-badge.mild {
+            background: rgba(74, 222, 128, 0.15);
+            color: var(--primary);
+        }
+
+        .slope-badge.steep {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--error);
+        }
+
+        .slope-badge.critical-slope {
+            background: rgba(251, 191, 36, 0.15);
+            color: var(--accent);
+        }
+
+        /* Summary table */
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: calc(var(--grid) * 2) 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+        }
+
+        .summary-table th {
+            background: var(--primary);
+            color: #000000;
+            padding: calc(var(--grid) * 1.5);
+            text-align: left;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .summary-table td {
+            padding: calc(var(--grid) * 1.5);
+            border-bottom: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        .summary-table tr:nth-child(even) {
+            background: rgba(255,255,255,0.02);
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+        @media (max-width: 1024px) {
+            .main-grid { grid-template-columns: 1fr; }
+            .input-panel { position: static; max-height: none; }
+            h1 { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"><p style="color:#e5e5e5;font-family:monospace;padding:48px;text-align:center;">Loading calculator...</p></div>
+    <script>
+        window.onerror = function(msg, url, line, col, error) {
+            document.getElementById('root').innerHTML = '<pre style="color:#ef4444;font-family:monospace;padding:48px;">' +
+                'Error: ' + msg + '\nLine: ' + line + '\nCol: ' + col + '</pre>';
+        };
+    </script>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        const g = 9.81;
+        const nu_water = 1.0e-6; // kinematic viscosity of water at ~20C
+
+        // ===================== GEOMETRY HELPERS =====================
+
+        function getGeometry(shape, y, params) {
+            let A, P, T;
+            if (shape === 'rectangular') {
+                const b = params.b;
+                A = b * y;
+                P = b + 2 * y;
+                T = b;
+            } else if (shape === 'trapezoidal') {
+                const b = params.b;
+                const z = params.z;
+                A = (b + z * y) * y;
+                P = b + 2 * y * Math.sqrt(1 + z * z);
+                T = b + 2 * z * y;
+            } else if (shape === 'triangular') {
+                const z = params.z;
+                A = z * y * y;
+                P = 2 * y * Math.sqrt(1 + z * z);
+                T = 2 * z * y;
+            } else if (shape === 'circular') {
+                const D0 = params.D0;
+                if (y <= 0 || y >= D0) return null;
+                const theta = 2 * Math.acos(1 - 2 * y / D0);
+                A = (D0 * D0 / 8) * (theta - Math.sin(theta));
+                P = (D0 * theta) / 2;
+                T = D0 * Math.sin(theta / 2);
+            }
+            if (A <= 0 || P <= 0 || T <= 0) return null;
+            const R = A / P;
+            const D = A / T;
+            return { A, P, R, T, D };
+        }
+
+        // Compute Q from Manning for given y
+        function manningQ(n, S0, shape, y, params) {
+            const geo = getGeometry(shape, y, params);
+            if (!geo) return null;
+            const Q = (geo.A / n) * Math.pow(geo.R, 2/3) * Math.sqrt(S0);
+            return { Q, ...geo };
+        }
+
+        // ===================== SOLVERS =====================
+
+        // Mode A: find yn given Q, S0, n (Newton-Raphson)
+        function solveNormalDepth(Q, n, S0, shape, params) {
+            const iterations = [];
+            let y = 1.0; // initial guess
+
+            // Better initial guess for rectangular
+            if (shape === 'rectangular') {
+                y = Math.pow(Q * n / (params.b * Math.sqrt(S0)), 3/5);
+                if (y < 0.01) y = 0.5;
+            } else if (shape === 'triangular') {
+                y = Math.pow(Q * n / (params.z * Math.sqrt(S0)), 3/8) * 1.5;
+                if (y < 0.01) y = 0.5;
+            } else if (shape === 'circular') {
+                y = params.D0 * 0.5;
+            }
+
+            for (let i = 0; i < 50; i++) {
+                const res = manningQ(n, S0, shape, y, params);
+                if (!res) { y = y * 0.8; continue; }
+                const Qcalc = res.Q;
+                const error = Qcalc - Q;
+
+                iterations.push({
+                    iteration: i + 1,
+                    y: y,
+                    A: res.A,
+                    P: res.P,
+                    R: res.R,
+                    Qcalc: Qcalc,
+                    error: error
+                });
+
+                if (Math.abs(error / Q) < 1e-6) break;
+
+                // Numerical derivative
+                const dy = y * 0.001;
+                const res2 = manningQ(n, S0, shape, y + dy, params);
+                if (!res2) { y = y * 0.9; continue; }
+                const dQdy = (res2.Q - Qcalc) / dy;
+                if (Math.abs(dQdy) < 1e-12) break;
+
+                let yNew = y - error / dQdy;
+                // Keep y positive and within bounds
+                if (shape === 'circular') {
+                    yNew = Math.max(0.001 * params.D0, Math.min(0.999 * params.D0, yNew));
+                } else {
+                    yNew = Math.max(0.001, yNew);
+                }
+                y = yNew;
+            }
+            return { y, iterations };
+        }
+
+        // Mode E: find yc given Q (Newton-Raphson on Q^2*T/(g*A^3) = 1)
+        function solveCriticalDepth(Q, shape, params) {
+            const iterations = [];
+
+            // Direct formulas for simple shapes
+            if (shape === 'rectangular') {
+                const yc = Math.pow(Q * Q / (g * params.b * params.b), 1/3);
+                const geo = getGeometry(shape, yc, params);
+                iterations.push({
+                    iteration: 1,
+                    y: yc,
+                    A: geo.A,
+                    T: geo.T,
+                    criterion: (Q * Q * geo.T) / (g * Math.pow(geo.A, 3)),
+                    error: 0
+                });
+                return { y: yc, iterations, direct: true };
+            }
+
+            if (shape === 'triangular') {
+                const z = params.z;
+                const yc = Math.pow(2 * Q * Q / (g * z * z), 1/5);
+                const geo = getGeometry(shape, yc, params);
+                iterations.push({
+                    iteration: 1,
+                    y: yc,
+                    A: geo.A,
+                    T: geo.T,
+                    criterion: (Q * Q * geo.T) / (g * Math.pow(geo.A, 3)),
+                    error: 0
+                });
+                return { y: yc, iterations, direct: true };
+            }
+
+            // Iterative for trapezoidal and circular
+            let y = 0.5;
+            if (shape === 'circular') y = params.D0 * 0.3;
+
+            for (let i = 0; i < 50; i++) {
+                const geo = getGeometry(shape, y, params);
+                if (!geo) { y = y * 0.8; continue; }
+                const criterion = (Q * Q * geo.T) / (g * Math.pow(geo.A, 3));
+                const error = criterion - 1;
+
+                iterations.push({
+                    iteration: i + 1,
+                    y: y,
+                    A: geo.A,
+                    T: geo.T,
+                    criterion: criterion,
+                    error: error
+                });
+
+                if (Math.abs(error) < 1e-6) break;
+
+                const dy = y * 0.001;
+                const geo2 = getGeometry(shape, y + dy, params);
+                if (!geo2) { y = y * 0.9; continue; }
+                const criterion2 = (Q * Q * geo2.T) / (g * Math.pow(geo2.A, 3));
+                const dFdy = (criterion2 - criterion) / dy;
+                if (Math.abs(dFdy) < 1e-12) break;
+
+                let yNew = y - error / dFdy;
+                if (shape === 'circular') {
+                    yNew = Math.max(0.001 * params.D0, Math.min(0.999 * params.D0, yNew));
+                } else {
+                    yNew = Math.max(0.001, yNew);
+                }
+                y = yNew;
+            }
+            return { y, iterations, direct: false };
+        }
+
+        // ===================== MAIN COMPONENT =====================
+
+        function UniformCriticalFlow() {
+            const [shape, setShape] = useState('trapezoidal');
+            const [mode, setMode] = useState('A');
+            const [inputs, setInputs] = useState({
+                b: '', z: '', D0: '',
+                Q: '', y: '', S0: '', n: ''
+            });
+            const [results, setResults] = useState(null);
+            const inputRefs = useRef({});
+
+            useEffect(() => {
+                if (results && window.MathJax) {
+                    setTimeout(() => window.MathJax.typesetPromise(), 100);
+                }
+            }, [results]);
+
+            const handleInputChange = (field, value) => {
+                setInputs(prev => ({ ...prev, [field]: value }));
+            };
+
+            const clearResults = () => {
+                setResults(null);
+            };
+
+            const changeShape = (s) => {
+                setShape(s);
+                clearResults();
+            };
+
+            const changeMode = (m) => {
+                setMode(m);
+                clearResults();
+            };
+
+            const loadExample = () => {
+                setShape('trapezoidal');
+                setMode('A');
+                const ex = { b: '6', z: '1', D0: '', Q: '12.1', y: '', S0: '0.0002', n: '0.014' };
+                setInputs(ex);
+                setTimeout(() => {
+                    calculateWithValues('trapezoidal', 'A', {
+                        b: 6, z: 1, D0: 0, Q: 12.1, y: 0, S0: 0.0002, n: 0.014
+                    });
+                }, 100);
+            };
+
+            const getShapeParams = (vals) => {
+                if (shape === 'rectangular') return { b: vals.b };
+                if (shape === 'trapezoidal') return { b: vals.b, z: vals.z };
+                if (shape === 'triangular') return { z: vals.z };
+                if (shape === 'circular') return { D0: vals.D0 };
+            };
+
+            const validate = (vals, sh, md) => {
+                const errors = [];
+                // Shape params
+                if ((sh === 'rectangular' || sh === 'trapezoidal') && (isNaN(vals.b) || vals.b <= 0))
+                    errors.push('Bottom width b must be > 0');
+                if ((sh === 'trapezoidal' || sh === 'triangular') && (isNaN(vals.z) || vals.z <= 0))
+                    errors.push('Side slope z must be > 0');
+                if (sh === 'circular' && (isNaN(vals.D0) || vals.D0 <= 0))
+                    errors.push('Diameter D₀ must be > 0');
+                // Mode params
+                if (md === 'A') {
+                    if (isNaN(vals.Q) || vals.Q <= 0) errors.push('Discharge Q must be > 0');
+                    if (isNaN(vals.S0) || vals.S0 <= 0) errors.push('Bed slope S₀ must be > 0');
+                    if (isNaN(vals.n) || vals.n < 0.008 || vals.n > 0.15) errors.push('Manning n must be between 0.008 and 0.15');
+                } else if (md === 'B') {
+                    if (isNaN(vals.y) || vals.y <= 0) errors.push('Depth y must be > 0');
+                    if (isNaN(vals.S0) || vals.S0 <= 0) errors.push('Bed slope S₀ must be > 0');
+                    if (isNaN(vals.n) || vals.n < 0.008 || vals.n > 0.15) errors.push('Manning n must be between 0.008 and 0.15');
+                    if (sh === 'circular' && vals.y >= vals.D0) errors.push('Depth y must be < D₀ for circular');
+                } else if (md === 'C') {
+                    if (isNaN(vals.y) || vals.y <= 0) errors.push('Depth y must be > 0');
+                    if (isNaN(vals.Q) || vals.Q <= 0) errors.push('Discharge Q must be > 0');
+                    if (isNaN(vals.n) || vals.n < 0.008 || vals.n > 0.15) errors.push('Manning n must be between 0.008 and 0.15');
+                    if (sh === 'circular' && vals.y >= vals.D0) errors.push('Depth y must be < D₀ for circular');
+                } else if (md === 'D') {
+                    if (isNaN(vals.y) || vals.y <= 0) errors.push('Depth y must be > 0');
+                    if (isNaN(vals.Q) || vals.Q <= 0) errors.push('Discharge Q must be > 0');
+                    if (isNaN(vals.S0) || vals.S0 <= 0) errors.push('Bed slope S₀ must be > 0');
+                    if (sh === 'circular' && vals.y >= vals.D0) errors.push('Depth y must be < D₀ for circular');
+                } else if (md === 'E') {
+                    if (isNaN(vals.Q) || vals.Q <= 0) errors.push('Discharge Q must be > 0');
+                }
+                return errors;
+            };
+
+            const calculateWithValues = (sh, md, vals) => {
+                const errors = validate(vals, sh, md);
+                if (errors.length > 0) {
+                    setResults({ error: true, message: errors.join('. ') });
+                    return;
+                }
+
+                const params = (() => {
+                    if (sh === 'rectangular') return { b: vals.b };
+                    if (sh === 'trapezoidal') return { b: vals.b, z: vals.z };
+                    if (sh === 'triangular') return { z: vals.z };
+                    if (sh === 'circular') return { D0: vals.D0 };
+                })();
+
+                try {
+                    let yn, yc, Q_val, S0_val, n_val, y_val, geo;
+                    let ynIterations = [], ycIterations = [];
+                    let ycDirect = false;
+
+                    if (md === 'A') {
+                        // Find normal depth yn
+                        Q_val = vals.Q; S0_val = vals.S0; n_val = vals.n;
+                        const ynResult = solveNormalDepth(Q_val, n_val, S0_val, sh, params);
+                        yn = ynResult.y;
+                        ynIterations = ynResult.iterations;
+                        geo = getGeometry(sh, yn, params);
+
+                        // Also find critical depth
+                        const ycResult = solveCriticalDepth(Q_val, sh, params);
+                        yc = ycResult.y;
+                        ycIterations = ycResult.iterations;
+                        ycDirect = ycResult.direct;
+                        y_val = yn;
+
+                    } else if (md === 'B') {
+                        // Direct: find Q
+                        y_val = vals.y; S0_val = vals.S0; n_val = vals.n;
+                        geo = getGeometry(sh, y_val, params);
+                        if (!geo) { setResults({ error: true, message: 'Invalid depth for this geometry.' }); return; }
+                        Q_val = (geo.A / n_val) * Math.pow(geo.R, 2/3) * Math.sqrt(S0_val);
+                        yn = y_val;
+
+                        const ycResult = solveCriticalDepth(Q_val, sh, params);
+                        yc = ycResult.y;
+                        ycIterations = ycResult.iterations;
+                        ycDirect = ycResult.direct;
+
+                    } else if (md === 'C') {
+                        // Direct: find S0
+                        y_val = vals.y; Q_val = vals.Q; n_val = vals.n;
+                        geo = getGeometry(sh, y_val, params);
+                        if (!geo) { setResults({ error: true, message: 'Invalid depth for this geometry.' }); return; }
+                        const V = Q_val / geo.A;
+                        S0_val = Math.pow(V * n_val / Math.pow(geo.R, 2/3), 2);
+                        yn = y_val;
+
+                        const ycResult = solveCriticalDepth(Q_val, sh, params);
+                        yc = ycResult.y;
+                        ycIterations = ycResult.iterations;
+                        ycDirect = ycResult.direct;
+
+                    } else if (md === 'D') {
+                        // Direct: find n
+                        y_val = vals.y; Q_val = vals.Q; S0_val = vals.S0;
+                        geo = getGeometry(sh, y_val, params);
+                        if (!geo) { setResults({ error: true, message: 'Invalid depth for this geometry.' }); return; }
+                        n_val = (geo.A * Math.pow(geo.R, 2/3) * Math.sqrt(S0_val)) / Q_val;
+                        yn = y_val;
+
+                        const ycResult = solveCriticalDepth(Q_val, sh, params);
+                        yc = ycResult.y;
+                        ycIterations = ycResult.iterations;
+                        ycDirect = ycResult.direct;
+
+                    } else if (md === 'E') {
+                        // Find critical depth only
+                        Q_val = vals.Q;
+                        const ycResult = solveCriticalDepth(Q_val, sh, params);
+                        yc = ycResult.y;
+                        ycIterations = ycResult.iterations;
+                        ycDirect = ycResult.direct;
+                        y_val = yc;
+                        geo = getGeometry(sh, yc, params);
+                        yn = null;
+                        S0_val = null;
+                        n_val = null;
+                    }
+
+                    // Compute final properties at the solved depth
+                    const finalGeo = getGeometry(sh, y_val, params);
+                    const V = Q_val / finalGeo.A;
+                    const Fr = V / Math.sqrt(g * finalGeo.D);
+                    const E = y_val + (V * V) / (2 * g);
+                    const Re = V * finalGeo.R / nu_water;
+
+                    let tau_w = null;
+                    if (S0_val && S0_val > 0) {
+                        tau_w = 9810 * finalGeo.R * S0_val;
+                    }
+
+                    // Slope type
+                    let slopeType = null;
+                    if (yn !== null && yc !== undefined && yc > 0) {
+                        if (Math.abs(yn - yc) / yc < 0.01) slopeType = 'Critical (C)';
+                        else if (yn > yc) slopeType = 'Mild (M)';
+                        else slopeType = 'Steep (S)';
+                    }
+
+                    let flowRegime;
+                    if (Math.abs(Fr - 1) < 0.02) flowRegime = 'Critical';
+                    else if (Fr < 1) flowRegime = 'Subcritical';
+                    else flowRegime = 'Supercritical';
+
+                    setResults({
+                        success: true,
+                        mode: md,
+                        shape: sh,
+                        params: params,
+                        yn: yn,
+                        yc: yc,
+                        Q: Q_val,
+                        S0: S0_val,
+                        n: n_val,
+                        y: y_val,
+                        geo: finalGeo,
+                        V: V,
+                        Fr: Fr,
+                        E: E,
+                        Re: Re,
+                        tau_w: tau_w,
+                        slopeType: slopeType,
+                        flowRegime: flowRegime,
+                        ynIterations: ynIterations,
+                        ycIterations: ycIterations,
+                        ycDirect: ycDirect,
+                        inputVals: vals
+                    });
+
+                } catch (err) {
+                    setResults({ error: true, message: 'Calculation error: ' + err.message });
+                }
+            };
+
+            const calculate = () => {
+                const vals = {
+                    b: parseFloat(inputs.b),
+                    z: parseFloat(inputs.z),
+                    D0: parseFloat(inputs.D0),
+                    Q: parseFloat(inputs.Q),
+                    y: parseFloat(inputs.y),
+                    S0: parseFloat(inputs.S0),
+                    n: parseFloat(inputs.n)
+                };
+                calculateWithValues(shape, mode, vals);
+            };
+
+            // Determine which inputs to show
+            const needsB = shape === 'rectangular' || shape === 'trapezoidal';
+            const needsZ = shape === 'trapezoidal' || shape === 'triangular';
+            const needsD0 = shape === 'circular';
+            const needsQ = mode === 'A' || mode === 'C' || mode === 'D' || mode === 'E';
+            const needsY = mode === 'B' || mode === 'C' || mode === 'D';
+            const needsS0 = mode === 'A' || mode === 'B' || mode === 'D';
+            const needsN = mode === 'A' || mode === 'B' || mode === 'C';
+
+            const modeLabels = {
+                'A': 'Find yₙ',
+                'B': 'Find Q',
+                'C': 'Find S₀',
+                'D': 'Find n',
+                'E': 'Find yc'
+            };
+
+            // Helper to get LaTeX geometry formulas for step 1
+            const getGeomFormulasLatex = (r, params) => {
+                if (r.shape === 'rectangular') {
+                    const b = params.b;
+                    return {
+                        A: `A = by = ${b} \\times y`,
+                        P: `P = b + 2y = ${b} + 2y`,
+                        R: `R = \\frac{A}{P}`,
+                        T: `T = b = ${b}`
+                    };
+                } else if (r.shape === 'trapezoidal') {
+                    const b = params.b, z = params.z;
+                    const sq = Math.sqrt(1 + z * z);
+                    return {
+                        A: `A = (b + zy)y = (${b} + ${z}y)y`,
+                        P: `P = b + 2y\\sqrt{1+z^2} = ${b} + ${(2*sq).toFixed(3)}y`,
+                        R: `R = \\frac{A}{P}`,
+                        T: `T = b + 2zy = ${b} + ${2*z}y`
+                    };
+                } else if (r.shape === 'triangular') {
+                    const z = params.z;
+                    const sq = Math.sqrt(1 + z * z);
+                    return {
+                        A: `A = zy^2 = ${z}y^2`,
+                        P: `P = 2y\\sqrt{1+z^2} = ${(2*sq).toFixed(3)}y`,
+                        R: `R = \\frac{A}{P}`,
+                        T: `T = 2zy = ${2*z}y`
+                    };
+                } else {
+                    const D0 = params.D0;
+                    return {
+                        A: `A = \\frac{D_0^2}{8}(\\theta - \\sin\\theta)`,
+                        P: `P = \\frac{D_0 \\theta}{2}`,
+                        R: `R = \\frac{A}{P}`,
+                        T: `T = D_0 \\sin(\\theta/2)`,
+                        theta: `\\theta = 2\\cos^{-1}\\left(1 - \\frac{2y}{D_0}\\right) = 2\\cos^{-1}\\left(1 - \\frac{2y}{${D0}}\\right)`
+                    };
+                }
+            };
+
+            const shapeLabel = (s) => {
+                return { rectangular: 'Rectangular', trapezoidal: 'Trapezoidal', triangular: 'Triangular', circular: 'Circular' }[s];
+            };
+
+            // ===================== RENDER =====================
+            return (
+                <div className="app-container">
+                    <header>
+                        <a href="index.html" className="back-link">← Back to HydroSolve Hub</a>
+                        <h1>Uniform & Critical Flow</h1>
+                        <div className="subtitle">Manning's Equation for Open Channels</div>
+                    </header>
+
+                    <div className="main-grid">
+                        {/* INPUT PANEL */}
+                        <div className="input-panel">
+                            <div className="panel-title">Input Parameters</div>
+
+                            <div className="form-section">
+                                <div className="section-label">Channel Shape</div>
+                                <div className="selector-group">
+                                    {['rectangular', 'trapezoidal', 'triangular', 'circular'].map(s => (
+                                        <button key={s} className={`selector-btn ${shape === s ? 'active' : ''}`}
+                                            onClick={() => changeShape(s)}>
+                                            {s.charAt(0).toUpperCase() + s.slice(1)}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="form-section">
+                                <div className="section-label">Solve Mode</div>
+                                <div className="selector-group">
+                                    {['A', 'B', 'C', 'D', 'E'].map(m => (
+                                        <button key={m} className={`selector-btn ${mode === m ? 'mode-active' : ''}`}
+                                            onClick={() => changeMode(m)}>
+                                            {modeLabels[m]}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="form-section">
+                                <div className="section-label">Channel Geometry</div>
+                                {needsB && (
+                                    <div className="input-group">
+                                        <label>Bottom Width (b) [m]</label>
+                                        <input type="number" step="any" value={inputs.b}
+                                            onChange={e => handleInputChange('b', e.target.value)}
+                                            placeholder="6" />
+                                    </div>
+                                )}
+                                {needsZ && (
+                                    <div className="input-group">
+                                        <label>Side Slope (z) [H:V = z:1]</label>
+                                        <input type="number" step="any" value={inputs.z}
+                                            onChange={e => handleInputChange('z', e.target.value)}
+                                            placeholder="1" />
+                                    </div>
+                                )}
+                                {needsD0 && (
+                                    <div className="input-group">
+                                        <label>Pipe Diameter (D₀) [m]</label>
+                                        <input type="number" step="any" value={inputs.D0}
+                                            onChange={e => handleInputChange('D0', e.target.value)}
+                                            placeholder="1.5" />
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="form-section">
+                                <div className="section-label">Flow Parameters</div>
+                                {needsQ && (
+                                    <div className="input-group">
+                                        <label>Discharge (Q) [m³/s]</label>
+                                        <input type="number" step="any" value={inputs.Q}
+                                            onChange={e => handleInputChange('Q', e.target.value)}
+                                            placeholder="12.1" />
+                                    </div>
+                                )}
+                                {needsY && (
+                                    <div className="input-group">
+                                        <label>Flow Depth (y) [m]</label>
+                                        <input type="number" step="any" value={inputs.y}
+                                            onChange={e => handleInputChange('y', e.target.value)}
+                                            placeholder="1.5" />
+                                    </div>
+                                )}
+                                {needsS0 && (
+                                    <div className="input-group">
+                                        <label>Bed Slope (S₀)</label>
+                                        <input type="number" step="any" value={inputs.S0}
+                                            onChange={e => handleInputChange('S0', e.target.value)}
+                                            placeholder="0.0002" />
+                                    </div>
+                                )}
+                                {needsN && (
+                                    <div className="input-group">
+                                        <label>Manning's n</label>
+                                        <input type="number" step="any" value={inputs.n}
+                                            onChange={e => handleInputChange('n', e.target.value)}
+                                            placeholder="0.014" />
+                                    </div>
+                                )}
+                            </div>
+
+                            <button className="calculate-button" onClick={calculate}>
+                                Calculate
+                            </button>
+                        </div>
+
+                        {/* RESULTS PANEL */}
+                        <div className="results-panel">
+                            <div className="panel-title">Results</div>
+
+                            {!results && (
+                                <div className="results-empty">
+                                    <button className="calculate-btn" onClick={loadExample}>
+                                        Load Example
+                                    </button>
+                                    <p style={{ marginTop: '16px', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+                                        Trapezoidal channel: Q=12.1 m³/s, b=6m, z=1, S₀=0.0002, n=0.014
+                                    </p>
+                                </div>
+                            )}
+
+                            {results && results.error && (
+                                <div className="result-card error">
+                                    <div className="result-header error">Error</div>
+                                    <p>{results.message}</p>
+                                </div>
+                            )}
+
+                            {results && results.success && (
+                                <>
+                                    {/* Primary Result Card */}
+                                    <div className="result-card success">
+                                        <div className="result-header">Solution Found</div>
+                                        {results.mode === 'A' && (
+                                            <>
+                                                <div className="result-value">{results.yn.toFixed(4)} m</div>
+                                                <div className="result-label">Normal Depth (yₙ)</div>
+                                            </>
+                                        )}
+                                        {results.mode === 'B' && (
+                                            <>
+                                                <div className="result-value">{results.Q.toFixed(4)} m³/s</div>
+                                                <div className="result-label">Discharge (Q)</div>
+                                            </>
+                                        )}
+                                        {results.mode === 'C' && (
+                                            <>
+                                                <div className="result-value">{results.S0.toFixed(6)}</div>
+                                                <div className="result-label">Bed Slope (S₀)</div>
+                                            </>
+                                        )}
+                                        {results.mode === 'D' && (
+                                            <>
+                                                <div className="result-value">{results.n.toFixed(4)}</div>
+                                                <div className="result-label">Manning's n</div>
+                                            </>
+                                        )}
+                                        {results.mode === 'E' && (
+                                            <>
+                                                <div className="result-value">{results.yc.toFixed(4)} m</div>
+                                                <div className="result-label">Critical Depth (yc)</div>
+                                            </>
+                                        )}
+                                    </div>
+
+                                    {/* Summary Result Grid */}
+                                    <div className="result-card">
+                                        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: '1rem', fontWeight: 700, color: 'var(--primary)', marginBottom: 'calc(var(--grid) * 2)' }}>
+                                            Quick Summary
+                                        </div>
+                                        <div className="result-grid">
+                                            {results.yn !== null && (
+                                                <div className="result-item">
+                                                    <div className="result-item-label">Normal Depth yₙ</div>
+                                                    <div className="result-item-value">{results.yn.toFixed(4)} m</div>
+                                                </div>
+                                            )}
+                                            {results.yc !== undefined && results.yc !== null && (
+                                                <div className="result-item">
+                                                    <div className="result-item-label">Critical Depth yc</div>
+                                                    <div className="result-item-value">{results.yc.toFixed(4)} m</div>
+                                                </div>
+                                            )}
+                                            <div className="result-item">
+                                                <div className="result-item-label">Flow Area A</div>
+                                                <div className="result-item-value">{results.geo.A.toFixed(4)} m²</div>
+                                            </div>
+                                            <div className="result-item">
+                                                <div className="result-item-label">Wetted Perimeter P</div>
+                                                <div className="result-item-value">{results.geo.P.toFixed(4)} m</div>
+                                            </div>
+                                            <div className="result-item">
+                                                <div className="result-item-label">Hydraulic Radius R</div>
+                                                <div className="result-item-value">{results.geo.R.toFixed(4)} m</div>
+                                            </div>
+                                            <div className="result-item">
+                                                <div className="result-item-label">Top Width T</div>
+                                                <div className="result-item-value">{results.geo.T.toFixed(4)} m</div>
+                                            </div>
+                                            <div className="result-item">
+                                                <div className="result-item-label">Velocity V</div>
+                                                <div className="result-item-value">{results.V.toFixed(4)} m/s</div>
+                                            </div>
+                                            <div className="result-item">
+                                                <div className="result-item-label">Froude Number Fr</div>
+                                                <div className="result-item-value">
+                                                    {results.Fr.toFixed(4)}
+                                                    <span className={`regime-badge ${results.flowRegime.toLowerCase()}`} style={{marginLeft: '8px'}}>
+                                                        {results.flowRegime}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div className="result-item">
+                                                <div className="result-item-label">Specific Energy E</div>
+                                                <div className="result-item-value">{results.E.toFixed(4)} m</div>
+                                            </div>
+                                            <div className="result-item">
+                                                <div className="result-item-label">Hydraulic Depth D</div>
+                                                <div className="result-item-value">{results.geo.D.toFixed(4)} m</div>
+                                            </div>
+                                            {results.tau_w !== null && (
+                                                <div className="result-item">
+                                                    <div className="result-item-label">Wall Shear Stress</div>
+                                                    <div className="result-item-value">{results.tau_w.toFixed(4)} N/m²</div>
+                                                </div>
+                                            )}
+                                            {results.slopeType && (
+                                                <div className="result-item">
+                                                    <div className="result-item-label">Slope Type</div>
+                                                    <div className="result-item-value">
+                                                        <span className={`slope-badge ${results.slopeType.includes('Mild') ? 'mild' : results.slopeType.includes('Steep') ? 'steep' : 'critical-slope'}`} style={{marginLeft: 0}}>
+                                                            {results.slopeType}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* ========== STEP-BY-STEP SOLUTION ========== */}
+                                    <div className="panel-title" style={{ marginTop: 'calc(var(--grid) * 4)' }}>
+                                        Step-by-Step Solution
+                                    </div>
+
+                                    {/* STEP 1: Identify Channel & Geometry */}
+                                    {(() => {
+                                        const gf = getGeomFormulasLatex(results, results.params);
+                                        return (
+                                            <div className="step-section">
+                                                <div className="step-header">Step 1: Identify Channel Type and Write Geometry Formulas</div>
+                                                <div className="reasoning-box">
+                                                    For a <strong>{shapeLabel(results.shape)}</strong> channel, the geometric properties are:
+                                                </div>
+                                                <div className="math-display">
+                                                    <p>{"$$" + gf.A + "$$"}</p>
+                                                    <p>{"$$" + gf.P + "$$"}</p>
+                                                    <p>{"$$" + gf.R + "$$"}</p>
+                                                    <p>{"$$" + gf.T + "$$"}</p>
+                                                    {gf.theta && <p>{"$$" + gf.theta + "$$"}</p>}
+                                                </div>
+                                            </div>
+                                        );
+                                    })()}
+
+                                    {/* STEP 2: Manning Equation */}
+                                    {results.mode !== 'E' && (
+                                        <div className="step-section">
+                                            <div className="step-header">Step 2: Write Manning's Equation</div>
+                                            <div className="reasoning-box">
+                                                Manning's equation relates discharge to channel geometry and slope:
+                                            </div>
+                                            <div className="math-display">
+                                                <p>{"$$Q = \\frac{A}{n} R^{2/3} S_0^{1/2}$$"}</p>
+                                                {results.mode === 'A' && (
+                                                    <>
+                                                        <p>{"$$" + results.Q.toFixed(4) + " = \\frac{A}{" + results.n.toFixed(4) + "} R^{2/3} (" + results.S0 + ")^{1/2}$$"}</p>
+                                                        <p style={{marginTop: '12px', fontStyle: 'italic', color: 'var(--text-muted)'}}>
+                                                            This equation is implicit in y and requires iteration.
+                                                        </p>
+                                                    </>
+                                                )}
+                                                {results.mode === 'B' && (
+                                                    <>
+                                                        <p>{"$$Q = \\frac{" + results.geo.A.toFixed(4) + "}{" + results.n.toFixed(4) + "} \\times " + results.geo.R.toFixed(4) + "^{2/3} \\times " + results.S0 + "^{1/2}$$"}</p>
+                                                        <p>{"$$\\boxed{Q = " + results.Q.toFixed(4) + " \\text{ m}^3/\\text{s}}$$"}</p>
+                                                    </>
+                                                )}
+                                                {results.mode === 'C' && (
+                                                    <>
+                                                        <p>{"$$V = \\frac{Q}{A} = \\frac{" + results.Q.toFixed(4) + "}{" + results.geo.A.toFixed(4) + "} = " + results.V.toFixed(4) + " \\text{ m/s}$$"}</p>
+                                                        <p>{"$$S_0 = \\left(\\frac{Vn}{R^{2/3}}\\right)^2 = \\left(\\frac{" + results.V.toFixed(4) + " \\times " + results.n.toFixed(4) + "}{" + results.geo.R.toFixed(4) + "^{2/3}}\\right)^2$$"}</p>
+                                                        <p>{"$$\\boxed{S_0 = " + results.S0.toFixed(6) + "}$$"}</p>
+                                                    </>
+                                                )}
+                                                {results.mode === 'D' && (
+                                                    <>
+                                                        <p>{"$$n = \\frac{A R^{2/3} S_0^{1/2}}{Q} = \\frac{" + results.geo.A.toFixed(4) + " \\times " + results.geo.R.toFixed(4) + "^{2/3} \\times " + results.S0 + "^{1/2}}{" + results.Q.toFixed(4) + "}$$"}</p>
+                                                        <p>{"$$\\boxed{n = " + results.n.toFixed(4) + "}$$"}</p>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* STEP 3: Iteration Table (Mode A - find yn) */}
+                                    {results.mode === 'A' && results.ynIterations.length > 0 && (
+                                        <div className="step-section">
+                                            <div className="step-header">Step 3: Iteration for Normal Depth</div>
+                                            <div className="reasoning-box">
+                                                Using Newton-Raphson method with initial guess y₀ = {results.ynIterations[0].y.toFixed(3)} m:
+                                            </div>
+                                            <table className="f-iteration-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Iter</th>
+                                                        <th>y (m)</th>
+                                                        <th>A (m²)</th>
+                                                        <th>P (m)</th>
+                                                        <th>R (m)</th>
+                                                        <th>Q_calc (m³/s)</th>
+                                                        <th>Error</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {results.ynIterations.map((it, idx) => (
+                                                        <tr key={idx}>
+                                                            <td>{it.iteration}</td>
+                                                            <td>{it.y.toFixed(4)}</td>
+                                                            <td>{it.A.toFixed(4)}</td>
+                                                            <td>{it.P.toFixed(4)}</td>
+                                                            <td>{it.R.toFixed(4)}</td>
+                                                            <td>{it.Qcalc.toFixed(4)}</td>
+                                                            <td>{it.error >= 0 ? '+' : ''}{it.error.toFixed(4)}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                            <div className="math-display">
+                                                <p>{"$$\\boxed{y_n = " + results.yn.toFixed(4) + " \\text{ m}}$$"}</p>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* STEP: Geometric Properties at solution depth */}
+                                    {(() => {
+                                        const stepNum = results.mode === 'A' ? 4 : (results.mode === 'E' ? 2 : 3);
+                                        return (
+                                            <div className="step-section">
+                                                <div className="step-header">Step {stepNum}: Calculate Geometric Properties at y = {results.y.toFixed(4)} m</div>
+                                                <div className="math-display">
+                                                    <p>{"$$A = " + results.geo.A.toFixed(4) + " \\text{ m}^2$$"}</p>
+                                                    <p>{"$$P = " + results.geo.P.toFixed(4) + " \\text{ m}$$"}</p>
+                                                    <p>{"$$R = \\frac{A}{P} = \\frac{" + results.geo.A.toFixed(4) + "}{" + results.geo.P.toFixed(4) + "} = " + results.geo.R.toFixed(4) + " \\text{ m}$$"}</p>
+                                                    <p>{"$$T = " + results.geo.T.toFixed(4) + " \\text{ m}$$"}</p>
+                                                    <p>{"$$D = \\frac{A}{T} = \\frac{" + results.geo.A.toFixed(4) + "}{" + results.geo.T.toFixed(4) + "} = " + results.geo.D.toFixed(4) + " \\text{ m}$$"}</p>
+                                                </div>
+                                            </div>
+                                        );
+                                    })()}
+
+                                    {/* STEP: Velocity and Froude Number */}
+                                    {(() => {
+                                        const stepNum = results.mode === 'A' ? 5 : (results.mode === 'E' ? 3 : 4);
+                                        return (
+                                            <div className="step-section">
+                                                <div className="step-header">Step {stepNum}: Calculate Velocity and Froude Number</div>
+                                                <div className="math-display">
+                                                    <p>{"$$V = \\frac{Q}{A} = \\frac{" + results.Q.toFixed(4) + "}{" + results.geo.A.toFixed(4) + "} = " + results.V.toFixed(4) + " \\text{ m/s}$$"}</p>
+                                                    <p>{"$$F_r = \\frac{V}{\\sqrt{gD}} = \\frac{" + results.V.toFixed(4) + "}{\\sqrt{" + g + " \\times " + results.geo.D.toFixed(4) + "}} = \\frac{" + results.V.toFixed(4) + "}{" + Math.sqrt(g * results.geo.D).toFixed(4) + "} = " + results.Fr.toFixed(4) + "$$"}</p>
+                                                </div>
+                                                <div className="reasoning-box" style={{
+                                                    borderColor: results.flowRegime === 'Subcritical' ? 'var(--primary)' : results.flowRegime === 'Supercritical' ? 'var(--error)' : 'var(--accent)',
+                                                    background: results.flowRegime === 'Subcritical' ? 'rgba(74,222,128,0.1)' : results.flowRegime === 'Supercritical' ? 'rgba(239,68,68,0.1)' : 'rgba(251,191,36,0.1)'
+                                                }}>
+                                                    Since F<sub>r</sub> = {results.Fr.toFixed(4)} {results.Fr < 1 ? '< 1' : results.Fr > 1 ? '> 1' : '= 1'}, the flow is <strong>{results.flowRegime.toUpperCase()}</strong>.
+                                                </div>
+                                            </div>
+                                        );
+                                    })()}
+
+                                    {/* STEP: Critical Depth */}
+                                    {results.yc !== null && results.yc !== undefined && (
+                                        (() => {
+                                            const stepNum = results.mode === 'A' ? 6 : (results.mode === 'E' ? 4 : 5);
+                                            return (
+                                                <div className="step-section">
+                                                    <div className="step-header">Step {stepNum}: Calculate Critical Depth</div>
+                                                    <div className="reasoning-box">
+                                                        At critical flow, the Froude number equals 1:
+                                                    </div>
+                                                    <div className="math-display">
+                                                        <p>{"$$\\frac{Q^2 T}{g A^3} = 1$$"}</p>
+                                                        {results.ycDirect && results.shape === 'rectangular' && (
+                                                            <>
+                                                                <p style={{marginTop: '8px'}}>For a rectangular channel, the critical depth has a direct solution:</p>
+                                                                <p>{"$$y_c = \\sqrt[3]{\\frac{Q^2}{gb^2}} = \\sqrt[3]{\\frac{" + results.Q.toFixed(4) + "^2}{" + g + " \\times " + results.params.b + "^2}}$$"}</p>
+                                                                <p>{"$$\\boxed{y_c = " + results.yc.toFixed(4) + " \\text{ m}}$$"}</p>
+                                                            </>
+                                                        )}
+                                                        {results.ycDirect && results.shape === 'triangular' && (
+                                                            <>
+                                                                <p style={{marginTop: '8px'}}>For a triangular channel, the critical depth has a direct solution:</p>
+                                                                <p>{"$$y_c = \\sqrt[5]{\\frac{2Q^2}{gz^2}} = \\sqrt[5]{\\frac{2 \\times " + results.Q.toFixed(4) + "^2}{" + g + " \\times " + results.params.z + "^2}}$$"}</p>
+                                                                <p>{"$$\\boxed{y_c = " + results.yc.toFixed(4) + " \\text{ m}}$$"}</p>
+                                                            </>
+                                                        )}
+                                                        {!results.ycDirect && (
+                                                            <>
+                                                                <p style={{marginTop: '8px', fontStyle: 'italic', color: 'var(--text-muted)'}}>
+                                                                    For {shapeLabel(results.shape).toLowerCase()} channels, this requires iteration:
+                                                                </p>
+                                                            </>
+                                                        )}
+                                                    </div>
+
+                                                    {/* yc iteration table */}
+                                                    {!results.ycDirect && results.ycIterations.length > 0 && (
+                                                        <>
+                                                            <table className="f-iteration-table">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>Iter</th>
+                                                                        <th>y (m)</th>
+                                                                        <th>A (m²)</th>
+                                                                        <th>T (m)</th>
+                                                                        <th>Q²T/gA³</th>
+                                                                        <th>Error</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    {results.ycIterations.map((it, idx) => (
+                                                                        <tr key={idx}>
+                                                                            <td>{it.iteration}</td>
+                                                                            <td>{it.y.toFixed(4)}</td>
+                                                                            <td>{it.A.toFixed(4)}</td>
+                                                                            <td>{it.T.toFixed(4)}</td>
+                                                                            <td>{it.criterion.toFixed(6)}</td>
+                                                                            <td>{it.error >= 0 ? '+' : ''}{it.error.toFixed(6)}</td>
+                                                                        </tr>
+                                                                    ))}
+                                                                </tbody>
+                                                            </table>
+                                                            <div className="math-display">
+                                                                <p>{"$$\\boxed{y_c = " + results.yc.toFixed(4) + " \\text{ m}}$$"}</p>
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            );
+                                        })()
+                                    )}
+
+                                    {/* STEP: Classify Slope Type */}
+                                    {results.slopeType && results.yn !== null && (
+                                        (() => {
+                                            const stepNum = results.mode === 'A' ? 7 : 6;
+                                            return (
+                                                <div className="step-section">
+                                                    <div className="step-header">Step {stepNum}: Classify Slope Type</div>
+                                                    <div className="reasoning-box">
+                                                        Compare normal depth to critical depth:
+                                                    </div>
+                                                    <div className="math-display">
+                                                        <p>{"$$y_n = " + results.yn.toFixed(4) + " \\text{ m}" + (results.yn > results.yc ? " > " : results.yn < results.yc ? " < " : " = ") + "y_c = " + results.yc.toFixed(4) + " \\text{ m}$$"}</p>
+                                                    </div>
+                                                    <div className="reasoning-box" style={{
+                                                        borderColor: results.slopeType.includes('Mild') ? 'var(--primary)' : results.slopeType.includes('Steep') ? 'var(--error)' : 'var(--accent)',
+                                                        background: results.slopeType.includes('Mild') ? 'rgba(74,222,128,0.1)' : results.slopeType.includes('Steep') ? 'rgba(239,68,68,0.1)' : 'rgba(251,191,36,0.1)'
+                                                    }}>
+                                                        Therefore, the slope is <strong>{results.slopeType.toUpperCase()}</strong>.
+                                                    </div>
+                                                </div>
+                                            );
+                                        })()
+                                    )}
+
+                                    {/* STEP: Additional Parameters */}
+                                    {(() => {
+                                        const stepNum = results.mode === 'A' ? 8 : (results.mode === 'E' ? 5 : 7);
+                                        return (
+                                            <div className="step-section">
+                                                <div className="step-header">Step {stepNum}: Additional Parameters</div>
+                                                <div className="math-display">
+                                                    <p><strong>Specific Energy:</strong></p>
+                                                    <p>{"$$E = y + \\frac{V^2}{2g} = " + results.y.toFixed(4) + " + \\frac{" + results.V.toFixed(4) + "^2}{2 \\times " + g + "} = " + results.y.toFixed(4) + " + " + (results.V * results.V / (2 * g)).toFixed(4) + " = " + results.E.toFixed(4) + " \\text{ m}$$"}</p>
+                                                </div>
+                                                {results.tau_w !== null && (
+                                                    <div className="math-display">
+                                                        <p><strong>Wall Shear Stress:</strong></p>
+                                                        <p>{"$$\\tau_w = \\gamma R S_0 = 9810 \\times " + results.geo.R.toFixed(4) + " \\times " + results.S0 + " = " + results.tau_w.toFixed(4) + " \\text{ N/m}^2$$"}</p>
+                                                    </div>
+                                                )}
+                                                <div className="math-display">
+                                                    <p><strong>Reynolds Number:</strong></p>
+                                                    <p>{"$$Re = \\frac{VR}{\\nu} = \\frac{" + results.V.toFixed(4) + " \\times " + results.geo.R.toFixed(4) + "}{1.0 \\times 10^{-6}} = " + results.Re.toExponential(2) + "$$"}</p>
+                                                    <p style={{marginTop: '8px'}}>
+                                                        {results.Re > 1000
+                                                            ? <span>Since Re &gt; 1000, flow is <strong>turbulent</strong> (Manning equation valid).</span>
+                                                            : <span style={{color: 'var(--error)'}}>Re &lt; 1000, flow may be <strong>laminar</strong> — Manning equation may not be appropriate.</span>
+                                                        }
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        );
+                                    })()}
+
+                                    {/* FINAL SUMMARY TABLE */}
+                                    <div className="step-section">
+                                        <div className="step-header">Final Results Summary</div>
+                                        <table className="summary-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Parameter</th>
+                                                    <th>Symbol</th>
+                                                    <th>Value</th>
+                                                    <th>Unit</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {results.yn !== null && (
+                                                    <tr>
+                                                        <td>Normal Depth</td>
+                                                        <td>yₙ</td>
+                                                        <td>{results.yn.toFixed(4)}</td>
+                                                        <td>m</td>
+                                                    </tr>
+                                                )}
+                                                {results.yc !== null && results.yc !== undefined && (
+                                                    <tr>
+                                                        <td>Critical Depth</td>
+                                                        <td>yc</td>
+                                                        <td>{results.yc.toFixed(4)}</td>
+                                                        <td>m</td>
+                                                    </tr>
+                                                )}
+                                                <tr><td>Flow Area</td><td>A</td><td>{results.geo.A.toFixed(4)}</td><td>m²</td></tr>
+                                                <tr><td>Wetted Perimeter</td><td>P</td><td>{results.geo.P.toFixed(4)}</td><td>m</td></tr>
+                                                <tr><td>Hydraulic Radius</td><td>R</td><td>{results.geo.R.toFixed(4)}</td><td>m</td></tr>
+                                                <tr><td>Top Width</td><td>T</td><td>{results.geo.T.toFixed(4)}</td><td>m</td></tr>
+                                                <tr><td>Hydraulic Depth</td><td>D</td><td>{results.geo.D.toFixed(4)}</td><td>m</td></tr>
+                                                <tr><td>Velocity</td><td>V</td><td>{results.V.toFixed(4)}</td><td>m/s</td></tr>
+                                                <tr><td>Froude Number</td><td>Fr</td><td>{results.Fr.toFixed(4)}</td><td>-</td></tr>
+                                                <tr><td>Specific Energy</td><td>E</td><td>{results.E.toFixed(4)}</td><td>m</td></tr>
+                                                {results.tau_w !== null && (
+                                                    <tr><td>Wall Shear Stress</td><td>τw</td><td>{results.tau_w.toFixed(4)}</td><td>N/m²</td></tr>
+                                                )}
+                                                {results.slopeType && (
+                                                    <tr><td>Slope Type</td><td>-</td><td>{results.slopeType}</td><td>-</td></tr>
+                                                )}
+                                                <tr><td>Flow Regime</td><td>-</td><td>{results.flowRegime}</td><td>-</td></tr>
+                                                {results.Q && (
+                                                    <tr><td>Discharge</td><td>Q</td><td>{results.Q.toFixed(4)}</td><td>m³/s</td></tr>
+                                                )}
+                                                {results.S0 !== null && results.S0 !== undefined && (
+                                                    <tr><td>Bed Slope</td><td>S₀</td><td>{results.S0.toFixed(6)}</td><td>-</td></tr>
+                                                )}
+                                                {results.n !== null && results.n !== undefined && (
+                                                    <tr><td>Manning's n</td><td>n</td><td>{results.n.toFixed(4)}</td><td>-</td></tr>
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<UniformCriticalFlow />, document.getElementById('root'));
+    </script>
+</body>
+</html>
