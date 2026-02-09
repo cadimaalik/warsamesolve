@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Specific Energy & Channel Transitions - HydroSolve</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Spectral:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4ade80;
+            --primary-light: #86efac;
+            --accent: #fbbf24;
+            --bg: #0a0a0a;
+            --surface: #171717;
+            --text: #e5e5e5;
+            --text-muted: #a3a3a3;
+            --border: #404040;
+            --error: #ef4444;
+            --success: #22c55e;
+            --grid: 8px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Spectral', serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .app-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: calc(var(--grid) * 6);
+        }
+
+        header {
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: calc(var(--grid) * 3);
+            margin-bottom: calc(var(--grid) * 6);
+        }
+
+        .back-link {
+            display: inline-block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            margin-bottom: calc(var(--grid) * 2);
+            transition: color 0.2s;
+        }
+        .back-link:hover { color: var(--primary); }
+
+        h1 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: -0.02em;
+            margin-bottom: calc(var(--grid) * 1);
+        }
+
+        .subtitle {
+            font-size: 1.125rem;
+            color: var(--text-muted);
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: calc(var(--grid) * 4);
+            align-items: start;
+        }
+
+        .input-panel {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 4px;
+            padding: calc(var(--grid) * 4);
+            position: sticky;
+            top: calc(var(--grid) * 3);
+            max-height: calc(100vh - calc(var(--grid) * 6));
+            overflow-y: auto;
+        }
+
+        .results-panel {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 4px;
+            padding: calc(var(--grid) * 4);
+        }
+
+        .panel-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: calc(var(--grid) * 3);
+            padding-bottom: calc(var(--grid) * 2);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .form-section { margin-bottom: calc(var(--grid) * 4); }
+
+        .section-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: calc(var(--grid) * 2);
+        }
+
+        .input-group { margin-bottom: calc(var(--grid) * 2); }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-bottom: calc(var(--grid) * 1);
+        }
+
+        input, select {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 2px;
+            padding: calc(var(--grid) * 1.5);
+            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            transition: border-color 0.2s;
+        }
+        input:focus, select:focus { outline: none; border-color: var(--primary); }
+        input::placeholder { color: #505050; }
+        input:disabled { opacity: 0.4; cursor: not-allowed; background: var(--surface); }
+
+        .selector-group {
+            display: flex;
+            gap: calc(var(--grid) * 1);
+            flex-wrap: wrap;
+            margin-bottom: calc(var(--grid) * 3);
+        }
+
+        .selector-btn {
+            padding: calc(var(--grid) * 1) calc(var(--grid) * 2);
+            background: var(--bg);
+            border: 2px solid var(--border);
+            border-radius: 2px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .selector-btn:hover { border-color: var(--primary); }
+        .selector-btn.active {
+            background: var(--accent);
+            color: #000;
+            border-color: var(--accent);
+        }
+
+        .calculate-button {
+            width: 100%;
+            background: var(--primary);
+            color: var(--bg);
+            border: none;
+            border-radius: 4px;
+            padding: calc(var(--grid) * 2);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: calc(var(--grid) * 2);
+        }
+        .calculate-button:hover { background: var(--primary-light); }
+
+        .example-btn {
+            width: 100%;
+            background: var(--surface);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: calc(var(--grid) * 1.5);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: calc(var(--grid) * 1);
+            text-align: left;
+        }
+        .example-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+        .results-empty {
+            text-align: center;
+            padding: calc(var(--grid) * 8);
+        }
+
+        .calculate-btn {
+            background: var(--primary);
+            color: var(--bg);
+            border: none;
+            border-radius: 4px;
+            padding: calc(var(--grid) * 2) calc(var(--grid) * 4);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .calculate-btn:hover { background: var(--primary-light); }
+
+        .result-card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: calc(var(--grid) * 3);
+            margin-bottom: calc(var(--grid) * 3);
+        }
+        .result-card.success { border-color: var(--success); }
+        .result-card.error { border-color: var(--error); }
+
+        .result-header {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--success);
+            margin-bottom: calc(var(--grid) * 2);
+        }
+        .result-header.error { color: var(--error); }
+        .result-header.warning { color: var(--accent); }
+
+        .result-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: calc(var(--grid) * 1);
+        }
+
+        .result-label { font-size: 0.875rem; color: var(--text-muted); }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: calc(var(--grid) * 2);
+        }
+
+        .result-item { display: flex; flex-direction: column; }
+
+        .result-item-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: calc(var(--grid) * 0.5);
+        }
+
+        .result-item-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            color: var(--text);
+        }
+
+        .step-section {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: calc(var(--grid) * 3);
+            margin-bottom: calc(var(--grid) * 3);
+        }
+
+        .step-header {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: calc(var(--grid) * 2);
+            padding-bottom: calc(var(--grid) * 2);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .reasoning-box {
+            background: rgba(251, 191, 36, 0.1);
+            border-left: 3px solid var(--accent);
+            padding: calc(var(--grid) * 2);
+            margin: calc(var(--grid) * 2) 0;
+            font-style: italic;
+            color: var(--text);
+        }
+
+        .warning-box {
+            background: rgba(239, 68, 68, 0.1);
+            border-left: 3px solid var(--error);
+            padding: calc(var(--grid) * 2);
+            margin: calc(var(--grid) * 2) 0;
+            color: var(--text);
+        }
+
+        .success-box {
+            background: rgba(74, 222, 128, 0.1);
+            border-left: 3px solid var(--success);
+            padding: calc(var(--grid) * 2);
+            margin: calc(var(--grid) * 2) 0;
+            color: var(--text);
+        }
+
+        .math-display {
+            background: var(--bg);
+            border-left: 3px solid var(--primary);
+            padding: calc(var(--grid) * 2);
+            margin: calc(var(--grid) * 1) 0;
+            overflow-x: auto;
+        }
+
+        .f-iteration-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: calc(var(--grid) * 2) 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+        }
+        .f-iteration-table th {
+            background: var(--primary);
+            color: #000;
+            padding: calc(var(--grid) * 1.5);
+            text-align: left;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .f-iteration-table td {
+            padding: calc(var(--grid) * 1.5);
+            border-bottom: 1px solid var(--border);
+            color: var(--text);
+        }
+        .f-iteration-table tr:last-child td { border-bottom: 2px solid var(--primary); }
+        .f-iteration-table tr:last-child { background: rgba(74, 222, 128, 0.05); }
+
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: calc(var(--grid) * 2) 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+        }
+        .summary-table th {
+            background: var(--primary);
+            color: #000;
+            padding: calc(var(--grid) * 1.5);
+            text-align: left;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .summary-table td {
+            padding: calc(var(--grid) * 1.5);
+            border-bottom: 1px solid var(--border);
+            color: var(--text);
+        }
+        .summary-table tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+
+        .regime-badge {
+            display: inline-block;
+            padding: calc(var(--grid) * 0.5) calc(var(--grid) * 1.5);
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+        .regime-badge.subcritical { background: rgba(74, 222, 128, 0.15); color: var(--primary); }
+        .regime-badge.supercritical { background: rgba(239, 68, 68, 0.15); color: var(--error); }
+        .regime-badge.critical { background: rgba(251, 191, 36, 0.15); color: var(--accent); }
+
+        .chart-container {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: calc(var(--grid) * 3);
+            margin-bottom: calc(var(--grid) * 3);
+        }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+        @media (max-width: 1024px) {
+            .main-grid { grid-template-columns: 1fr; }
+            .input-panel { position: static; max-height: none; }
+            h1 { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"><p style="color:#e5e5e5;font-family:monospace;padding:48px;text-align:center;">Loading calculator...</p></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        const g = 9.81;
+
+        // ===================== HELPERS =====================
+
+        function calcE(y, q) {
+            return y + (q * q) / (2 * g * y * y);
+        }
+
+        function calcFr(y, q) {
+            return q / Math.sqrt(g * y * y * y);
+        }
+
+        function calcYc(q) {
+            return Math.pow(q * q / g, 1.0 / 3.0);
+        }
+
+        function calcEmin(q) {
+            return 1.5 * calcYc(q);
+        }
+
+        // Solve for y given E and q (cubic: y^3 - E*y^2 + q^2/(2g) = 0)
+        // Returns { ySub, ySup } (subcritical and supercritical roots)
+        function solveAlternateDepths(E, q) {
+            var yc = calcYc(q);
+            var Ec = 1.5 * yc;
+            if (E < Ec - 1e-9) return null; // no real solution
+
+            var c = q * q / (2 * g);
+            var iterations_sub = [];
+            var iterations_sup = [];
+
+            // Newton-Raphson for subcritical root (start above yc)
+            var y = Math.max(E * 0.9, yc * 1.1);
+            for (var i = 0; i < 50; i++) {
+                var f_val = y * y * y - E * y * y + c;
+                var fp = 3 * y * y - 2 * E * y;
+                if (Math.abs(fp) < 1e-15) break;
+                var Ecalc = calcE(y, q);
+                iterations_sub.push({ iteration: i + 1, y: y, Ecalc: Ecalc, error: Ecalc - E });
+                if (Math.abs(f_val) < 1e-9) break;
+                y = y - f_val / fp;
+                if (y < yc) y = yc * 1.01;
+            }
+            var ySub = y;
+
+            // Newton-Raphson for supercritical root (start below yc)
+            y = Math.min(c / (E * 0.5), yc * 0.9);
+            if (y < 0.001) y = yc * 0.5;
+            for (var i = 0; i < 50; i++) {
+                var f_val = y * y * y - E * y * y + c;
+                var fp = 3 * y * y - 2 * E * y;
+                if (Math.abs(fp) < 1e-15) break;
+                var Ecalc = calcE(y, q);
+                iterations_sup.push({ iteration: i + 1, y: y, Ecalc: Ecalc, error: Ecalc - E });
+                if (Math.abs(f_val) < 1e-9) break;
+                y = y - f_val / fp;
+                if (y > yc) y = yc * 0.99;
+                if (y < 0.001) y = 0.001;
+            }
+            var ySup = y;
+
+            return { ySub: ySub, ySup: ySup, iterations_sub: iterations_sub, iterations_sup: iterations_sup };
+        }
+
+        // ===================== MAIN COMPONENT =====================
+
+        function SpecificEnergyCalc() {
+            var _useState1 = useState('step');
+            var transType = _useState1[0], setTransType = _useState1[1];
+
+            var _useState2 = useState({ b1: '', b2: '', Q: '', y1: '', deltaZ: '' });
+            var inputs = _useState2[0], setInputs = _useState2[1];
+
+            var _useState3 = useState(null);
+            var results = _useState3[0], setResults = _useState3[1];
+
+            var chartRef = useRef(null);
+            var chartInstance = useRef(null);
+
+            useEffect(function() {
+                if (results && window.MathJax) {
+                    setTimeout(function() { window.MathJax.typesetPromise(); }, 150);
+                }
+            }, [results]);
+
+            useEffect(function() {
+                if (results && results.success) {
+                    drawChart(results);
+                }
+                return function() {
+                    if (chartInstance.current) {
+                        chartInstance.current.destroy();
+                    }
+                };
+            }, [results]);
+
+            var handleInputChange = function(field, value) {
+                setInputs(function(prev) {
+                    var next = {};
+                    for (var k in prev) next[k] = prev[k];
+                    next[field] = value;
+                    return next;
+                });
+            };
+
+            var loadExample = function(ex) {
+                var data;
+                if (ex === 'stepDown') {
+                    data = { b1: '2.5', b2: '2.5', Q: '6.0', y1: '1.5', deltaZ: '-0.25' };
+                    setTransType('step');
+                } else if (ex === 'contraction') {
+                    data = { b1: '3.0', b2: '2.4', Q: '8.0', y1: '1.5', deltaZ: '0' };
+                    setTransType('width');
+                } else if (ex === 'choking') {
+                    data = { b1: '3.0', b2: '2.0', Q: '8.0', y1: '1.5', deltaZ: '0' };
+                    setTransType('width');
+                }
+                setInputs(data);
+                setTimeout(function() {
+                    calculateWithValues(ex === 'stepDown' ? 'step' : 'width', {
+                        b1: parseFloat(data.b1), b2: parseFloat(data.b2),
+                        Q: parseFloat(data.Q), y1: parseFloat(data.y1),
+                        deltaZ: parseFloat(data.deltaZ)
+                    });
+                }, 100);
+            };
+
+            var drawChart = function(r) {
+                if (!chartRef.current) return;
+                if (chartInstance.current) chartInstance.current.destroy();
+
+                var q1 = r.q1, q2 = r.q2;
+                var yMax = Math.max(r.y1, r.y2 || r.yc2, r.yc1, r.yc2) * 2.5;
+                var EMax = Math.max(r.E1, r.E2 || r.E1) * 1.5;
+
+                // Generate E-y curve data for q1
+                var curve1E = [], curve1Y = [];
+                for (var yy = 0.05; yy <= yMax; yy += 0.02) {
+                    var E = calcE(yy, q1);
+                    if (E <= EMax) {
+                        curve1E.push(E);
+                        curve1Y.push(yy);
+                    }
+                }
+
+                // Generate E-y curve data for q2 (if different)
+                var curve2E = [], curve2Y = [];
+                if (Math.abs(q2 - q1) > 0.001) {
+                    for (var yy = 0.05; yy <= yMax; yy += 0.02) {
+                        var E = calcE(yy, q2);
+                        if (E <= EMax) {
+                            curve2E.push(E);
+                            curve2Y.push(yy);
+                        }
+                    }
+                }
+
+                // 45-degree line (E = y)
+                var lineE = [], lineY = [];
+                for (var yy = 0; yy <= Math.min(yMax, EMax); yy += 0.1) {
+                    lineE.push(yy);
+                    lineY.push(yy);
+                }
+
+                var datasets = [
+                    {
+                        label: 'q\u2081 = ' + q1.toFixed(3) + ' m\u00B3/s/m',
+                        data: curve1E.map(function(e, i) { return { x: e, y: curve1Y[i] }; }),
+                        borderColor: '#4ade80',
+                        backgroundColor: 'transparent',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'E = y',
+                        data: lineE.map(function(e, i) { return { x: e, y: lineY[i] }; }),
+                        borderColor: '#404040',
+                        borderDash: [5, 5],
+                        backgroundColor: 'transparent',
+                        borderWidth: 1,
+                        pointRadius: 0
+                    },
+                    {
+                        label: 'Section 1 (y\u2081=' + r.y1.toFixed(2) + 'm)',
+                        data: [{ x: r.E1, y: r.y1 }],
+                        borderColor: '#fbbf24',
+                        backgroundColor: '#fbbf24',
+                        pointRadius: 8,
+                        pointStyle: 'circle',
+                        showLine: false
+                    }
+                ];
+
+                if (Math.abs(q2 - q1) > 0.001) {
+                    datasets.splice(1, 0, {
+                        label: 'q\u2082 = ' + q2.toFixed(3) + ' m\u00B3/s/m',
+                        data: curve2E.map(function(e, i) { return { x: e, y: curve2Y[i] }; }),
+                        borderColor: '#ef4444',
+                        backgroundColor: 'transparent',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        tension: 0.4
+                    });
+                }
+
+                if (r.y2 && r.E2) {
+                    datasets.push({
+                        label: 'Section 2 (y\u2082=' + r.y2.toFixed(2) + 'm)',
+                        data: [{ x: r.E2, y: r.y2 }],
+                        borderColor: '#22c55e',
+                        backgroundColor: '#22c55e',
+                        pointRadius: 8,
+                        pointStyle: 'triangle',
+                        showLine: false
+                    });
+                }
+
+                // Critical points
+                datasets.push({
+                    label: 'yc\u2081=' + r.yc1.toFixed(3) + 'm',
+                    data: [{ x: r.Ec1, y: r.yc1 }],
+                    borderColor: '#4ade80',
+                    backgroundColor: 'rgba(74,222,128,0.5)',
+                    pointRadius: 6,
+                    pointStyle: 'rectRot',
+                    showLine: false
+                });
+                if (Math.abs(q2 - q1) > 0.001) {
+                    datasets.push({
+                        label: 'yc\u2082=' + r.yc2.toFixed(3) + 'm',
+                        data: [{ x: r.Ec2, y: r.yc2 }],
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239,68,68,0.5)',
+                        pointRadius: 6,
+                        pointStyle: 'rectRot',
+                        showLine: false
+                    });
+                }
+
+                chartInstance.current = new Chart(chartRef.current, {
+                    type: 'scatter',
+                    data: { datasets: datasets },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        aspectRatio: 1.2,
+                        scales: {
+                            x: {
+                                title: { display: true, text: 'Specific Energy E (m)', color: '#a3a3a3', font: { family: "'JetBrains Mono', monospace" } },
+                                grid: { color: '#2a2a2a' },
+                                ticks: { color: '#a3a3a3', font: { family: "'JetBrains Mono', monospace", size: 11 } },
+                                min: 0,
+                                max: EMax
+                            },
+                            y: {
+                                title: { display: true, text: 'Depth y (m)', color: '#a3a3a3', font: { family: "'JetBrains Mono', monospace" } },
+                                grid: { color: '#2a2a2a' },
+                                ticks: { color: '#a3a3a3', font: { family: "'JetBrains Mono', monospace", size: 11 } },
+                                min: 0,
+                                max: yMax
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                labels: { color: '#e5e5e5', font: { family: "'JetBrains Mono', monospace", size: 11 } }
+                            }
+                        }
+                    }
+                });
+            };
+
+            var calculateWithValues = function(tt, vals) {
+                var b1 = vals.b1, b2 = vals.b2, Q = vals.Q, y1 = vals.y1, deltaZ = vals.deltaZ;
+
+                // Validation
+                if (isNaN(b1) || b1 <= 0 || isNaN(Q) || Q <= 0 || isNaN(y1) || y1 <= 0) {
+                    setResults({ error: true, message: 'b\u2081, Q, and y\u2081 must be positive numbers.' });
+                    return;
+                }
+                if (tt === 'width' || tt === 'combined') {
+                    if (isNaN(b2) || b2 <= 0) {
+                        setResults({ error: true, message: 'Downstream width b\u2082 must be > 0.' });
+                        return;
+                    }
+                }
+                if (tt === 'step' || tt === 'combined') {
+                    if (isNaN(deltaZ)) {
+                        setResults({ error: true, message: 'Step height \u0394z must be a number.' });
+                        return;
+                    }
+                }
+
+                // If only step, b2 = b1
+                if (tt === 'step') b2 = b1;
+                // If only width change, deltaZ = 0
+                if (tt === 'width') deltaZ = 0;
+
+                var q1 = Q / b1;
+                var q2 = Q / b2;
+
+                var yc1 = calcYc(q1);
+                var yc2 = calcYc(q2);
+                var Ec1 = 1.5 * yc1;
+                var Ec2 = 1.5 * yc2;
+
+                var E1 = calcE(y1, q1);
+                var Fr1 = calcFr(y1, q1);
+                var V1 = Q / (b1 * y1);
+
+                // Energy available at section 2
+                // E1 = E2 + deltaZ => E2 = E1 - deltaZ
+                // Step up (deltaZ > 0): E2 = E1 - deltaZ (less energy)
+                // Step down (deltaZ < 0): E2 = E1 - deltaZ = E1 + |deltaZ| (more energy)
+                var E2 = E1 - deltaZ;
+
+                var isChoked = E2 < Ec2;
+
+                var y2, Fr2, V2, E2_final;
+                var y1_new = null;
+                var choke_iterations = [];
+                var y2_iterations = [];
+
+                if (isChoked) {
+                    // Choking: need to increase upstream depth
+                    // New E1 must satisfy E1_new - deltaZ = Ec2
+                    // E1_new = Ec2 + deltaZ
+                    var E1_new = Ec2 + deltaZ;
+
+                    // Solve for new y1 at E1_new with q1
+                    var altResult = solveAlternateDepths(E1_new, q1);
+                    if (altResult) {
+                        // Upstream is subcritical if Fr1 < 1, supercritical otherwise
+                        y1_new = Fr1 < 1 ? altResult.ySub : altResult.ySup;
+                        choke_iterations = Fr1 < 1 ? altResult.iterations_sub : altResult.iterations_sup;
+                    }
+
+                    // Downstream at critical
+                    y2 = yc2;
+                    Fr2 = 1.0;
+                    V2 = q2 / yc2;
+                    E2_final = Ec2;
+                } else {
+                    E2_final = E2;
+                    // Solve for y2 given E2 and q2
+                    var altResult = solveAlternateDepths(E2_final, q2);
+                    if (!altResult) {
+                        setResults({ error: true, message: 'Cannot solve for downstream depth.' });
+                        return;
+                    }
+
+                    // Same flow regime as upstream (unless forced transition)
+                    y2 = Fr1 < 1 ? altResult.ySub : altResult.ySup;
+                    y2_iterations = Fr1 < 1 ? altResult.iterations_sub : altResult.iterations_sup;
+                    Fr2 = calcFr(y2, q2);
+                    V2 = q2 / y2;
+                }
+
+                // Maximum step before choking (at same q)
+                var deltaZ_max = E1 - Ec2;
+
+                // Minimum width before choking
+                // E1 - deltaZ = Ec2_min = 1.5 * (Q^2/(g*b_min^2))^(1/3)
+                var E_avail = E1 - deltaZ;
+                var yc_min = (2.0 / 3.0) * E_avail;
+                var q_max = Math.sqrt(g * yc_min * yc_min * yc_min);
+                var b_min = Q / q_max;
+
+                // Water surface change relative to original datum
+                var wse1 = y1;
+                var wse2 = y2 - deltaZ; // bed at section 2 is at -deltaZ relative to section 1 bed
+                var delta_wse = wse2 - wse1;
+
+                setResults({
+                    success: true,
+                    transType: tt,
+                    b1: b1, b2: b2, Q: Q, y1: y1, deltaZ: deltaZ,
+                    q1: q1, q2: q2,
+                    yc1: yc1, yc2: yc2,
+                    Ec1: Ec1, Ec2: Ec2,
+                    E1: E1, E2: E2_final,
+                    Fr1: Fr1, Fr2: Fr2,
+                    V1: V1, V2: V2,
+                    y2: y2,
+                    isChoked: isChoked,
+                    y1_new: y1_new,
+                    choke_iterations: choke_iterations,
+                    y2_iterations: y2_iterations,
+                    deltaZ_max: deltaZ_max,
+                    b_min: b_min,
+                    delta_wse: delta_wse
+                });
+            };
+
+            var calculate = function() {
+                var vals = {
+                    b1: parseFloat(inputs.b1),
+                    b2: parseFloat(inputs.b2),
+                    Q: parseFloat(inputs.Q),
+                    y1: parseFloat(inputs.y1),
+                    deltaZ: parseFloat(inputs.deltaZ || '0')
+                };
+                calculateWithValues(transType, vals);
+            };
+
+            var showDeltaZ = transType === 'step' || transType === 'combined';
+            var showB2 = transType === 'width' || transType === 'combined';
+
+            var r = results;
+
+            return React.createElement('div', { className: 'app-container' },
+                React.createElement('header', null,
+                    React.createElement('a', { href: 'index.html', className: 'back-link' }, '\u2190 Back to HydroSolve Hub'),
+                    React.createElement('h1', null, 'Specific Energy'),
+                    React.createElement('div', { className: 'subtitle' }, 'Channel Transitions & Choking Analysis')
+                ),
+                React.createElement('div', { className: 'main-grid' },
+                    // INPUT PANEL
+                    React.createElement('div', { className: 'input-panel' },
+                        React.createElement('div', { className: 'panel-title' }, 'Input Parameters'),
+
+                        React.createElement('div', { className: 'form-section' },
+                            React.createElement('div', { className: 'section-label' }, 'Transition Type'),
+                            React.createElement('div', { className: 'selector-group' },
+                                ['step', 'width', 'combined'].map(function(t) {
+                                    var labels = { step: 'Bed Step', width: 'Width Change', combined: 'Combined' };
+                                    return React.createElement('button', {
+                                        key: t,
+                                        className: 'selector-btn' + (transType === t ? ' active' : ''),
+                                        onClick: function() { setTransType(t); setResults(null); }
+                                    }, labels[t]);
+                                })
+                            )
+                        ),
+
+                        React.createElement('div', { className: 'form-section' },
+                            React.createElement('div', { className: 'section-label' }, 'Upstream Section'),
+                            React.createElement('div', { className: 'input-group' },
+                                React.createElement('label', null, 'Width b\u2081 [m]'),
+                                React.createElement('input', { type: 'number', step: 'any', value: inputs.b1, placeholder: '2.5',
+                                    onChange: function(e) { handleInputChange('b1', e.target.value); } })
+                            ),
+                            React.createElement('div', { className: 'input-group' },
+                                React.createElement('label', null, 'Depth y\u2081 [m]'),
+                                React.createElement('input', { type: 'number', step: 'any', value: inputs.y1, placeholder: '1.5',
+                                    onChange: function(e) { handleInputChange('y1', e.target.value); } })
+                            ),
+                            React.createElement('div', { className: 'input-group' },
+                                React.createElement('label', null, 'Discharge Q [m\u00B3/s]'),
+                                React.createElement('input', { type: 'number', step: 'any', value: inputs.Q, placeholder: '6.0',
+                                    onChange: function(e) { handleInputChange('Q', e.target.value); } })
+                            )
+                        ),
+
+                        React.createElement('div', { className: 'form-section' },
+                            React.createElement('div', { className: 'section-label' }, 'Transition'),
+                            showDeltaZ && React.createElement('div', { className: 'input-group' },
+                                React.createElement('label', null, 'Step Height \u0394z [m] (+ up, \u2212 down)'),
+                                React.createElement('input', { type: 'number', step: 'any', value: inputs.deltaZ, placeholder: '-0.25',
+                                    onChange: function(e) { handleInputChange('deltaZ', e.target.value); } })
+                            ),
+                            showB2 && React.createElement('div', { className: 'input-group' },
+                                React.createElement('label', null, 'Downstream Width b\u2082 [m]'),
+                                React.createElement('input', { type: 'number', step: 'any', value: inputs.b2, placeholder: '2.4',
+                                    onChange: function(e) { handleInputChange('b2', e.target.value); } })
+                            )
+                        ),
+
+                        React.createElement('button', { className: 'calculate-button', onClick: calculate }, 'Calculate'),
+
+                        React.createElement('div', { className: 'form-section', style: { marginTop: 'calc(var(--grid) * 3)' } },
+                            React.createElement('div', { className: 'section-label' }, 'Load Example'),
+                            React.createElement('button', { className: 'example-btn', onClick: function() { loadExample('stepDown'); } },
+                                'Ex 3.3 \u2014 Step Down (\u0394z = \u22120.25m)'),
+                            React.createElement('button', { className: 'example-btn', onClick: function() { loadExample('contraction'); } },
+                                'Ex 3.4a \u2014 Width Contraction (3.0\u21922.4m)'),
+                            React.createElement('button', { className: 'example-btn', onClick: function() { loadExample('choking'); } },
+                                'Choked Contraction (3.0\u21922.0m)')
+                        )
+                    ),
+
+                    // RESULTS PANEL
+                    React.createElement('div', { className: 'results-panel' },
+                        React.createElement('div', { className: 'panel-title' }, 'Results'),
+
+                        !r && React.createElement('div', { className: 'results-empty' },
+                            React.createElement('p', { style: { color: 'var(--text-muted)', marginBottom: '16px' } },
+                                'Enter values and click Calculate, or load an example.'),
+                            React.createElement('button', { className: 'calculate-btn', onClick: function() { loadExample('stepDown'); } },
+                                'Load Example 3.3')
+                        ),
+
+                        r && r.error && React.createElement('div', { className: 'result-card error' },
+                            React.createElement('div', { className: 'result-header error' }, 'Error'),
+                            React.createElement('p', null, r.message)
+                        ),
+
+                        r && r.success && React.createElement(React.Fragment, null,
+                            // Primary result
+                            React.createElement('div', { className: 'result-card ' + (r.isChoked ? 'error' : 'success') },
+                                React.createElement('div', { className: 'result-header ' + (r.isChoked ? 'warning' : '') },
+                                    r.isChoked ? 'CHOKING DETECTED' : 'Solution Found'),
+                                React.createElement('div', { className: 'result-value' }, r.y2.toFixed(4) + ' m'),
+                                React.createElement('div', { className: 'result-label' },
+                                    r.isChoked ? 'Downstream Depth y\u2082 = yc (critical)' : 'Downstream Depth (y\u2082)')
+                            ),
+
+                            // Quick summary
+                            React.createElement('div', { className: 'result-card' },
+                                React.createElement('div', { style: { fontFamily: "'JetBrains Mono', monospace", fontSize: '1rem', fontWeight: 700, color: 'var(--primary)', marginBottom: 'calc(var(--grid) * 2)' } }, 'Quick Summary'),
+                                React.createElement('div', { className: 'result-grid' },
+                                    React.createElement('div', { className: 'result-item' },
+                                        React.createElement('div', { className: 'result-item-label' }, 'Upstream y\u2081'),
+                                        React.createElement('div', { className: 'result-item-value' },
+                                            (r.isChoked && r.y1_new ? r.y1_new.toFixed(4) + ' m (was ' + r.y1.toFixed(2) + ')' : r.y1.toFixed(4) + ' m'))
+                                    ),
+                                    React.createElement('div', { className: 'result-item' },
+                                        React.createElement('div', { className: 'result-item-label' }, 'Downstream y\u2082'),
+                                        React.createElement('div', { className: 'result-item-value' }, r.y2.toFixed(4) + ' m')
+                                    ),
+                                    React.createElement('div', { className: 'result-item' },
+                                        React.createElement('div', { className: 'result-item-label' }, 'Fr\u2081'),
+                                        React.createElement('div', { className: 'result-item-value' },
+                                            r.Fr1.toFixed(4) + ' ',
+                                            React.createElement('span', { className: 'regime-badge ' + (r.Fr1 < 0.98 ? 'subcritical' : r.Fr1 > 1.02 ? 'supercritical' : 'critical') },
+                                                r.Fr1 < 0.98 ? 'Sub' : r.Fr1 > 1.02 ? 'Super' : 'Critical'))
+                                    ),
+                                    React.createElement('div', { className: 'result-item' },
+                                        React.createElement('div', { className: 'result-item-label' }, 'Fr\u2082'),
+                                        React.createElement('div', { className: 'result-item-value' },
+                                            r.Fr2.toFixed(4) + ' ',
+                                            React.createElement('span', { className: 'regime-badge ' + (r.Fr2 < 0.98 ? 'subcritical' : r.Fr2 > 1.02 ? 'supercritical' : 'critical') },
+                                                r.Fr2 < 0.98 ? 'Sub' : r.Fr2 > 1.02 ? 'Super' : 'Critical'))
+                                    ),
+                                    React.createElement('div', { className: 'result-item' },
+                                        React.createElement('div', { className: 'result-item-label' }, 'E\u2081'),
+                                        React.createElement('div', { className: 'result-item-value' }, r.E1.toFixed(4) + ' m')
+                                    ),
+                                    React.createElement('div', { className: 'result-item' },
+                                        React.createElement('div', { className: 'result-item-label' }, 'E\u2082'),
+                                        React.createElement('div', { className: 'result-item-value' }, r.E2.toFixed(4) + ' m')
+                                    ),
+                                    React.createElement('div', { className: 'result-item' },
+                                        React.createElement('div', { className: 'result-item-label' }, '\u0394z max'),
+                                        React.createElement('div', { className: 'result-item-value' }, r.deltaZ_max.toFixed(4) + ' m')
+                                    ),
+                                    React.createElement('div', { className: 'result-item' },
+                                        React.createElement('div', { className: 'result-item-label' }, 'Water Surface \u0394'),
+                                        React.createElement('div', { className: 'result-item-value' }, (r.delta_wse >= 0 ? '+' : '') + r.delta_wse.toFixed(4) + ' m')
+                                    )
+                                )
+                            ),
+
+                            // E-y Diagram
+                            React.createElement('div', { className: 'chart-container' },
+                                React.createElement('div', { style: { fontFamily: "'JetBrains Mono', monospace", fontSize: '1rem', fontWeight: 700, color: 'var(--primary)', marginBottom: 'calc(var(--grid) * 2)' } },
+                                    'E-y Diagram'),
+                                React.createElement('canvas', { ref: chartRef })
+                            ),
+
+                            // ========== STEP-BY-STEP SOLUTION ==========
+                            React.createElement('div', { className: 'panel-title', style: { marginTop: 'calc(var(--grid) * 4)' } }, 'Step-by-Step Solution'),
+
+                            // Step 1: Unit discharge
+                            React.createElement('div', { className: 'step-section' },
+                                React.createElement('div', { className: 'step-header' }, 'Step 1: Calculate Unit Discharge'),
+                                React.createElement('div', { className: 'reasoning-box' },
+                                    Math.abs(r.q1 - r.q2) < 0.001
+                                        ? 'Unit discharge is constant when width does not change:'
+                                        : 'Width changes, so unit discharge changes at each section:'),
+                                React.createElement('div', { className: 'math-display' },
+                                    React.createElement('p', null, '$$q_1 = \\frac{Q}{b_1} = \\frac{' + r.Q.toFixed(4) + '}{' + r.b1.toFixed(4) + '} = ' + r.q1.toFixed(4) + ' \\text{ m}^3/\\text{s/m}$$'),
+                                    Math.abs(r.q1 - r.q2) > 0.001 &&
+                                        React.createElement('p', null, '$$q_2 = \\frac{Q}{b_2} = \\frac{' + r.Q.toFixed(4) + '}{' + r.b2.toFixed(4) + '} = ' + r.q2.toFixed(4) + ' \\text{ m}^3/\\text{s/m}$$')
+                                )
+                            ),
+
+                            // Step 2: Critical depths
+                            React.createElement('div', { className: 'step-section' },
+                                React.createElement('div', { className: 'step-header' }, 'Step 2: Calculate Critical Depth' + (Math.abs(r.q1 - r.q2) > 0.001 ? 's' : '')),
+                                React.createElement('div', { className: 'reasoning-box' }, 'Critical depth depends only on unit discharge:'),
+                                React.createElement('div', { className: 'math-display' },
+                                    React.createElement('p', null, '$$y_{c1} = \\sqrt[3]{\\frac{q_1^2}{g}} = \\sqrt[3]{\\frac{(' + r.q1.toFixed(4) + ')^2}{' + g + '}} = ' + r.yc1.toFixed(4) + ' \\text{ m}$$'),
+                                    Math.abs(r.q1 - r.q2) > 0.001 &&
+                                        React.createElement('p', null, '$$y_{c2} = \\sqrt[3]{\\frac{q_2^2}{g}} = \\sqrt[3]{\\frac{(' + r.q2.toFixed(4) + ')^2}{' + g + '}} = ' + r.yc2.toFixed(4) + ' \\text{ m}$$')
+                                )
+                            ),
+
+                            // Step 3: Minimum specific energies
+                            React.createElement('div', { className: 'step-section' },
+                                React.createElement('div', { className: 'step-header' }, 'Step 3: Calculate Minimum Specific Energy'),
+                                React.createElement('div', { className: 'math-display' },
+                                    React.createElement('p', null, '$$E_{c1} = \\frac{3}{2}y_{c1} = \\frac{3}{2}(' + r.yc1.toFixed(4) + ') = ' + r.Ec1.toFixed(4) + ' \\text{ m}$$'),
+                                    Math.abs(r.q1 - r.q2) > 0.001 &&
+                                        React.createElement('p', null, '$$E_{c2} = \\frac{3}{2}y_{c2} = \\frac{3}{2}(' + r.yc2.toFixed(4) + ') = ' + r.Ec2.toFixed(4) + ' \\text{ m}$$')
+                                )
+                            ),
+
+                            // Step 4: Upstream specific energy
+                            React.createElement('div', { className: 'step-section' },
+                                React.createElement('div', { className: 'step-header' }, 'Step 4: Calculate Upstream Specific Energy'),
+                                React.createElement('div', { className: 'math-display' },
+                                    React.createElement('p', null, '$$E_1 = y_1 + \\frac{q_1^2}{2gy_1^2} = ' + r.y1.toFixed(4) + ' + \\frac{(' + r.q1.toFixed(4) + ')^2}{2(' + g + ')(' + r.y1.toFixed(4) + ')^2}$$'),
+                                    React.createElement('p', null, '$$E_1 = ' + r.y1.toFixed(4) + ' + ' + (r.q1*r.q1/(2*g*r.y1*r.y1)).toFixed(4) + ' = ' + r.E1.toFixed(4) + ' \\text{ m}$$')
+                                )
+                            ),
+
+                            // Step 5: Upstream Froude number
+                            React.createElement('div', { className: 'step-section' },
+                                React.createElement('div', { className: 'step-header' }, 'Step 5: Calculate Upstream Froude Number'),
+                                React.createElement('div', { className: 'math-display' },
+                                    React.createElement('p', null, '$$F_{r1} = \\frac{q_1}{\\sqrt{gy_1^3}} = \\frac{' + r.q1.toFixed(4) + '}{\\sqrt{' + g + ' \\times (' + r.y1.toFixed(4) + ')^3}} = ' + r.Fr1.toFixed(4) + '$$')
+                                ),
+                                React.createElement('div', {
+                                    className: r.Fr1 < 0.98 ? 'success-box' : (r.Fr1 > 1.02 ? 'warning-box' : 'reasoning-box')
+                                },
+                                    'Since Fr\u2081 = ' + r.Fr1.toFixed(4) + (r.Fr1 < 1 ? ' < 1' : ' > 1') + ', upstream flow is ',
+                                    React.createElement('strong', null, r.Fr1 < 0.98 ? 'SUBCRITICAL' : r.Fr1 > 1.02 ? 'SUPERCRITICAL' : 'CRITICAL'),
+                                    '.'
+                                )
+                            ),
+
+                            // Step 6: Energy equation
+                            React.createElement('div', { className: 'step-section' },
+                                React.createElement('div', { className: 'step-header' }, 'Step 6: Apply Energy Equation'),
+                                React.createElement('div', { className: 'reasoning-box' },
+                                    r.deltaZ > 0 ? 'For a step UP, the bed rises, reducing available energy at section 2:'
+                                    : r.deltaZ < 0 ? 'For a step DOWN, the bed drops, increasing available energy at section 2:'
+                                    : 'No bed step. Energy is conserved (no losses):'),
+                                React.createElement('div', { className: 'math-display' },
+                                    React.createElement('p', null, '$$E_2 = E_1 - \\Delta z = ' + r.E1.toFixed(4) + ' - (' + r.deltaZ.toFixed(4) + ') = ' + (r.E1 - r.deltaZ).toFixed(4) + ' \\text{ m}$$')
+                                )
+                            ),
+
+                            // Step 7: Choking check
+                            React.createElement('div', { className: 'step-section' },
+                                React.createElement('div', { className: 'step-header' }, 'Step 7: Check for Choking'),
+                                React.createElement('div', { className: 'math-display' },
+                                    React.createElement('p', null, '$$E_2 = ' + (r.E1 - r.deltaZ).toFixed(4) + ' \\text{ m} ' + ((r.E1 - r.deltaZ) >= r.Ec2 ? '\\geq' : '<') + ' E_{c2} = ' + r.Ec2.toFixed(4) + ' \\text{ m}$$')
+                                ),
+                                r.isChoked
+                                    ? React.createElement('div', { className: 'warning-box' },
+                                        React.createElement('strong', null, 'CHOKING OCCURS!'),
+                                        ' Insufficient energy to pass flow through the transition. Upstream depth must increase until E\u2081\' = E_{c2} + \u0394z = ' + (r.Ec2 + r.deltaZ).toFixed(4) + ' m.')
+                                    : React.createElement('div', { className: 'success-box' },
+                                        'Since E\u2082 \u2265 E_{c2}, ', React.createElement('strong', null, 'no choking occurs'), '. Flow can pass through the transition.'),
+                                React.createElement('div', { className: 'math-display' },
+                                    React.createElement('p', null, '$$\\Delta z_{max} = E_1 - E_{c2} = ' + r.E1.toFixed(4) + ' - ' + r.Ec2.toFixed(4) + ' = ' + r.deltaZ_max.toFixed(4) + ' \\text{ m}$$'),
+                                    Math.abs(r.q1 - r.q2) > 0.001 &&
+                                        React.createElement('p', null, '$$b_{min} = \\frac{Q}{q_{max}} = ' + r.b_min.toFixed(4) + ' \\text{ m}$$')
+                                )
+                            ),
+
+                            // Step 8: Solve for y2 (or new y1 if choked)
+                            r.isChoked
+                                ? React.createElement(React.Fragment, null,
+                                    React.createElement('div', { className: 'step-section' },
+                                        React.createElement('div', { className: 'step-header' }, 'Step 8: Calculate New Upstream Depth (Choked)'),
+                                        React.createElement('div', { className: 'reasoning-box' },
+                                            'Upstream must rise until E\u2081\' = E_{c2} + \u0394z = ' + (r.Ec2 + r.deltaZ).toFixed(4) + ' m'),
+                                        React.createElement('div', { className: 'math-display' },
+                                            React.createElement('p', null, '$$E_1\' = y_1\' + \\frac{q_1^2}{2g(y_1\')^2} = ' + (r.Ec2 + r.deltaZ).toFixed(4) + '$$')
+                                        ),
+                                        r.choke_iterations.length > 0 && React.createElement('table', { className: 'f-iteration-table' },
+                                            React.createElement('thead', null,
+                                                React.createElement('tr', null,
+                                                    React.createElement('th', null, 'Iter'),
+                                                    React.createElement('th', null, 'y\u2081\' (m)'),
+                                                    React.createElement('th', null, 'E_calc (m)'),
+                                                    React.createElement('th', null, 'Error')
+                                                )
+                                            ),
+                                            React.createElement('tbody', null,
+                                                r.choke_iterations.map(function(it, idx) {
+                                                    return React.createElement('tr', { key: idx },
+                                                        React.createElement('td', null, it.iteration),
+                                                        React.createElement('td', null, it.y.toFixed(4)),
+                                                        React.createElement('td', null, it.Ecalc.toFixed(4)),
+                                                        React.createElement('td', null, (it.error >= 0 ? '+' : '') + it.error.toFixed(4))
+                                                    );
+                                                })
+                                            )
+                                        ),
+                                        r.y1_new && React.createElement('div', { className: 'math-display' },
+                                            React.createElement('p', null, '$$\\boxed{y_1\' = ' + r.y1_new.toFixed(4) + ' \\text{ m}}$$'),
+                                            React.createElement('p', null, 'Upstream depth rises from ' + r.y1.toFixed(2) + ' m to ' + r.y1_new.toFixed(4) + ' m due to choking.')
+                                        )
+                                    ),
+                                    React.createElement('div', { className: 'step-section' },
+                                        React.createElement('div', { className: 'step-header' }, 'Step 9: Downstream Depth at Choking'),
+                                        React.createElement('div', { className: 'reasoning-box' },
+                                            'At choking, flow passes through critical depth at section 2:'),
+                                        React.createElement('div', { className: 'math-display' },
+                                            React.createElement('p', null, '$$\\boxed{y_2 = y_{c2} = ' + r.yc2.toFixed(4) + ' \\text{ m}}$$')
+                                        )
+                                    )
+                                )
+                                : React.createElement('div', { className: 'step-section' },
+                                    React.createElement('div', { className: 'step-header' }, 'Step 8: Solve for Downstream Depth y\u2082'),
+                                    React.createElement('div', { className: 'math-display' },
+                                        React.createElement('p', null, '$$E_2 = y_2 + \\frac{q_2^2}{2gy_2^2}$$'),
+                                        React.createElement('p', null, '$$' + r.E2.toFixed(4) + ' = y_2 + \\frac{(' + r.q2.toFixed(4) + ')^2}{2(' + g + ')y_2^2}$$'),
+                                        React.createElement('p', { style: { marginTop: '8px' } }, 'Rearranging to cubic form:'),
+                                        React.createElement('p', null, '$$y_2^3 - ' + r.E2.toFixed(4) + 'y_2^2 + ' + (r.q2*r.q2/(2*g)).toFixed(4) + ' = 0$$')
+                                    ),
+                                    React.createElement('div', { className: 'reasoning-box' },
+                                        'Two positive roots exist (alternate depths). Since upstream is ' + (r.Fr1 < 1 ? 'subcritical' : 'supercritical') + ', downstream remains ',
+                                        React.createElement('strong', null, r.Fr1 < 1 ? 'subcritical' : 'supercritical'),
+                                        ' (', r.Fr1 < 1 ? 'larger' : 'smaller', ' root).'),
+                                    r.y2_iterations.length > 0 && React.createElement('table', { className: 'f-iteration-table' },
+                                        React.createElement('thead', null,
+                                            React.createElement('tr', null,
+                                                React.createElement('th', null, 'Iter'),
+                                                React.createElement('th', null, 'y\u2082 (m)'),
+                                                React.createElement('th', null, 'E_calc (m)'),
+                                                React.createElement('th', null, 'Error')
+                                            )
+                                        ),
+                                        React.createElement('tbody', null,
+                                            r.y2_iterations.map(function(it, idx) {
+                                                return React.createElement('tr', { key: idx },
+                                                    React.createElement('td', null, it.iteration),
+                                                    React.createElement('td', null, it.y.toFixed(4)),
+                                                    React.createElement('td', null, it.Ecalc.toFixed(4)),
+                                                    React.createElement('td', null, (it.error >= 0 ? '+' : '') + it.error.toFixed(6))
+                                                );
+                                            })
+                                        )
+                                    ),
+                                    React.createElement('div', { className: 'math-display' },
+                                        React.createElement('p', null, '$$\\boxed{y_2 = ' + r.y2.toFixed(4) + ' \\text{ m}}$$')
+                                    )
+                                ),
+
+                            // Step: Verify Froude number
+                            React.createElement('div', { className: 'step-section' },
+                                React.createElement('div', { className: 'step-header' }, 'Step ' + (r.isChoked ? '10' : '9') + ': Verify Downstream Froude Number'),
+                                React.createElement('div', { className: 'math-display' },
+                                    React.createElement('p', null, '$$F_{r2} = \\frac{q_2}{\\sqrt{gy_2^3}} = \\frac{' + r.q2.toFixed(4) + '}{\\sqrt{' + g + ' \\times (' + r.y2.toFixed(4) + ')^3}} = ' + r.Fr2.toFixed(4) + '$$')
+                                ),
+                                React.createElement('div', {
+                                    className: r.Fr2 < 0.98 ? 'success-box' : (r.Fr2 > 1.02 ? 'warning-box' : 'reasoning-box')
+                                },
+                                    r.Fr2 < 0.98 ? 'Subcritical \u2714' : (r.Fr2 > 1.02 ? 'Supercritical' : 'Critical (Fr \u2248 1) \u2714'))
+                            ),
+
+                            // Step: Water surface change
+                            React.createElement('div', { className: 'step-section' },
+                                React.createElement('div', { className: 'step-header' }, 'Step ' + (r.isChoked ? '11' : '10') + ': Calculate Water Surface Change'),
+                                React.createElement('div', { className: 'reasoning-box' }, 'Water surface elevation change relative to the original datum:'),
+                                React.createElement('div', { className: 'math-display' },
+                                    React.createElement('p', null, '$$\\Delta y_{surface} = (y_2 - \\Delta z) - y_1 = (' + r.y2.toFixed(4) + ' - (' + r.deltaZ.toFixed(4) + ')) - ' + r.y1.toFixed(4) + ' = ' + r.delta_wse.toFixed(4) + ' \\text{ m}$$'),
+                                    React.createElement('p', null, 'Water surface ' + (r.delta_wse >= 0 ? 'rises' : 'drops') + ' by ' + Math.abs(r.delta_wse).toFixed(4) + ' m.')
+                                )
+                            ),
+
+                            // Final Summary Tables
+                            React.createElement('div', { className: 'step-section' },
+                                React.createElement('div', { className: 'step-header' }, 'Final Results Summary'),
+                                React.createElement('table', { className: 'summary-table' },
+                                    React.createElement('thead', null,
+                                        React.createElement('tr', null,
+                                            React.createElement('th', null, 'Parameter'),
+                                            React.createElement('th', null, 'Section 1'),
+                                            React.createElement('th', null, 'Section 2'),
+                                            React.createElement('th', null, 'Unit')
+                                        )
+                                    ),
+                                    React.createElement('tbody', null,
+                                        Math.abs(r.b1 - r.b2) > 0.001 && React.createElement('tr', null,
+                                            React.createElement('td', null, 'Width b'),
+                                            React.createElement('td', null, r.b1.toFixed(2)),
+                                            React.createElement('td', null, r.b2.toFixed(2)),
+                                            React.createElement('td', null, 'm')),
+                                        Math.abs(r.q1 - r.q2) > 0.001 && React.createElement('tr', null,
+                                            React.createElement('td', null, 'Unit Discharge q'),
+                                            React.createElement('td', null, r.q1.toFixed(4)),
+                                            React.createElement('td', null, r.q2.toFixed(4)),
+                                            React.createElement('td', null, 'm\u00B3/s/m')),
+                                        React.createElement('tr', null,
+                                            React.createElement('td', null, 'Depth y'),
+                                            React.createElement('td', null, (r.isChoked && r.y1_new ? r.y1_new.toFixed(4) : r.y1.toFixed(4))),
+                                            React.createElement('td', null, r.y2.toFixed(4)),
+                                            React.createElement('td', null, 'm')),
+                                        React.createElement('tr', null,
+                                            React.createElement('td', null, 'Critical Depth yc'),
+                                            React.createElement('td', null, r.yc1.toFixed(4)),
+                                            React.createElement('td', null, r.yc2.toFixed(4)),
+                                            React.createElement('td', null, 'm')),
+                                        React.createElement('tr', null,
+                                            React.createElement('td', null, 'Specific Energy E'),
+                                            React.createElement('td', null, (r.isChoked ? (r.Ec2 + r.deltaZ).toFixed(4) : r.E1.toFixed(4))),
+                                            React.createElement('td', null, r.E2.toFixed(4)),
+                                            React.createElement('td', null, 'm')),
+                                        React.createElement('tr', null,
+                                            React.createElement('td', null, 'Froude Number Fr'),
+                                            React.createElement('td', null, r.Fr1.toFixed(4)),
+                                            React.createElement('td', null, r.Fr2.toFixed(4)),
+                                            React.createElement('td', null, '-')),
+                                        React.createElement('tr', null,
+                                            React.createElement('td', null, 'Flow Regime'),
+                                            React.createElement('td', null, r.Fr1 < 0.98 ? 'Subcritical' : r.Fr1 > 1.02 ? 'Supercritical' : 'Critical'),
+                                            React.createElement('td', null, r.Fr2 < 0.98 ? 'Subcritical' : r.Fr2 > 1.02 ? 'Supercritical' : 'Critical'),
+                                            React.createElement('td', null, '-'))
+                                    )
+                                ),
+                                React.createElement('table', { className: 'summary-table', style: { marginTop: 'calc(var(--grid) * 3)' } },
+                                    React.createElement('thead', null,
+                                        React.createElement('tr', null,
+                                            React.createElement('th', null, 'Transition Analysis'),
+                                            React.createElement('th', null, 'Value'),
+                                            React.createElement('th', null, 'Unit')
+                                        )
+                                    ),
+                                    React.createElement('tbody', null,
+                                        r.deltaZ !== 0 && React.createElement('tr', null,
+                                            React.createElement('td', null, 'Step Height \u0394z'),
+                                            React.createElement('td', null, r.deltaZ.toFixed(4) + (r.deltaZ > 0 ? ' (up)' : ' (down)')),
+                                            React.createElement('td', null, 'm')),
+                                        React.createElement('tr', null,
+                                            React.createElement('td', null, '\u0394z max (before choking)'),
+                                            React.createElement('td', null, r.deltaZ_max.toFixed(4)),
+                                            React.createElement('td', null, 'm')),
+                                        Math.abs(r.q1 - r.q2) > 0.001 && React.createElement('tr', null,
+                                            React.createElement('td', null, 'b min (before choking)'),
+                                            React.createElement('td', null, r.b_min.toFixed(4)),
+                                            React.createElement('td', null, 'm')),
+                                        React.createElement('tr', null,
+                                            React.createElement('td', null, 'Choking?'),
+                                            React.createElement('td', null, r.isChoked ? 'YES' : 'No'),
+                                            React.createElement('td', null, '-')),
+                                        React.createElement('tr', null,
+                                            React.createElement('td', null, 'Water Surface Change'),
+                                            React.createElement('td', null, (r.delta_wse >= 0 ? '+' : '') + r.delta_wse.toFixed(4)),
+                                            React.createElement('td', null, 'm'))
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            );
+        }
+
+        ReactDOM.render(
+            React.createElement(SpecificEnergyCalc, null),
+            document.getElementById('root')
+        );
+    </script>
+</body>
+</html>
