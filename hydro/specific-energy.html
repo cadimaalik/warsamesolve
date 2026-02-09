@@ -540,79 +540,172 @@
                 if (chartInstance.current) chartInstance.current.destroy();
 
                 var q1 = r.q1, q2 = r.q2;
+                var hasTwoQ = Math.abs(q2 - q1) > 0.001;
                 var yMax = Math.max(r.y1, r.y2 || r.yc2, r.yc1, r.yc2) * 2.5;
-                var EMax = Math.max(r.E1, r.E2 || r.E1) * 1.5;
+                var EMax = Math.max(r.E1, r.E2 || r.E1) * 1.6;
 
-                // Generate E-y curve data for q1
-                var curve1E = [], curve1Y = [];
-                for (var yy = 0.05; yy <= yMax; yy += 0.02) {
-                    var E = calcE(yy, q1);
-                    if (E <= EMax) {
-                        curve1E.push(E);
-                        curve1Y.push(yy);
+                // Generate E-y curve for a given q (fine resolution for smooth curve)
+                function genCurve(q, maxE, maxY) {
+                    var pts = [];
+                    var yc = calcYc(q);
+                    // Supercritical branch (y from small up to yc) - sorted by ascending y
+                    for (var yy = 0.02; yy <= yc; yy += 0.005) {
+                        var E = calcE(yy, q);
+                        if (E <= maxE) pts.push({ x: E, y: yy });
                     }
+                    // Critical point
+                    pts.push({ x: 1.5 * yc, y: yc });
+                    // Subcritical branch (y from yc upward)
+                    for (var yy = yc + 0.005; yy <= maxY; yy += 0.005) {
+                        var E = calcE(yy, q);
+                        if (E <= maxE) pts.push({ x: E, y: yy });
+                    }
+                    return pts;
                 }
 
-                // Generate E-y curve data for q2 (if different)
-                var curve2E = [], curve2Y = [];
-                if (Math.abs(q2 - q1) > 0.001) {
-                    for (var yy = 0.05; yy <= yMax; yy += 0.02) {
-                        var E = calcE(yy, q2);
-                        if (E <= EMax) {
-                            curve2E.push(E);
-                            curve2Y.push(yy);
-                        }
-                    }
+                var curve1 = genCurve(q1, EMax, yMax);
+                var curve2 = hasTwoQ ? genCurve(q2, EMax, yMax) : [];
+
+                // E = y line
+                var eLine = [];
+                var maxDiag = Math.min(yMax, EMax);
+                for (var v = 0; v <= maxDiag; v += 0.1) {
+                    eLine.push({ x: v, y: v });
                 }
 
-                // 45-degree line (E = y)
-                var lineE = [], lineY = [];
-                for (var yy = 0; yy <= Math.min(yMax, EMax); yy += 0.1) {
-                    lineE.push(yy);
-                    lineY.push(yy);
-                }
+                var datasets = [];
 
-                var datasets = [
-                    {
-                        label: 'q\u2081 = ' + q1.toFixed(3) + ' m\u00B3/s/m',
-                        data: curve1E.map(function(e, i) { return { x: e, y: curve1Y[i] }; }),
-                        borderColor: '#4ade80',
-                        backgroundColor: 'transparent',
-                        borderWidth: 2,
-                        pointRadius: 0,
-                        tension: 0.4
-                    },
-                    {
-                        label: 'E = y',
-                        data: lineE.map(function(e, i) { return { x: e, y: lineY[i] }; }),
-                        borderColor: '#404040',
-                        borderDash: [5, 5],
-                        backgroundColor: 'transparent',
-                        borderWidth: 1,
-                        pointRadius: 0
-                    },
-                    {
-                        label: 'Section 1 (y\u2081=' + r.y1.toFixed(2) + 'm)',
-                        data: [{ x: r.E1, y: r.y1 }],
-                        borderColor: '#fbbf24',
-                        backgroundColor: '#fbbf24',
-                        pointRadius: 8,
-                        pointStyle: 'circle',
-                        showLine: false
-                    }
-                ];
+                // q1 curve
+                datasets.push({
+                    label: 'q\u2081 = ' + q1.toFixed(3) + ' m\u00B3/s/m',
+                    data: curve1,
+                    borderColor: '#4ade80',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2.5,
+                    pointRadius: 0,
+                    showLine: true,
+                    tension: 0.3,
+                    order: 3
+                });
 
-                if (Math.abs(q2 - q1) > 0.001) {
-                    datasets.splice(1, 0, {
+                // q2 curve
+                if (hasTwoQ) {
+                    datasets.push({
                         label: 'q\u2082 = ' + q2.toFixed(3) + ' m\u00B3/s/m',
-                        data: curve2E.map(function(e, i) { return { x: e, y: curve2Y[i] }; }),
+                        data: curve2,
                         borderColor: '#ef4444',
                         backgroundColor: 'transparent',
-                        borderWidth: 2,
+                        borderWidth: 2.5,
                         pointRadius: 0,
-                        tension: 0.4
+                        showLine: true,
+                        tension: 0.3,
+                        order: 3
                     });
                 }
+
+                // E = y diagonal
+                datasets.push({
+                    label: 'E = y',
+                    data: eLine,
+                    borderColor: '#505050',
+                    borderDash: [6, 4],
+                    backgroundColor: 'transparent',
+                    borderWidth: 1.5,
+                    pointRadius: 0,
+                    showLine: true,
+                    order: 4
+                });
+
+                // Dashed reference lines: horizontal from y1 to its E, and from y2 to its E
+                // Section 1 horizontal dashed line
+                datasets.push({
+                    label: null,
+                    data: [{ x: 0, y: r.y1 }, { x: r.E1, y: r.y1 }],
+                    borderColor: 'rgba(251,191,36,0.4)',
+                    borderDash: [4, 4],
+                    backgroundColor: 'transparent',
+                    borderWidth: 1,
+                    pointRadius: 0,
+                    showLine: true,
+                    order: 5
+                });
+                // Section 1 vertical dashed line
+                datasets.push({
+                    label: null,
+                    data: [{ x: r.E1, y: 0 }, { x: r.E1, y: r.y1 }],
+                    borderColor: 'rgba(251,191,36,0.4)',
+                    borderDash: [4, 4],
+                    backgroundColor: 'transparent',
+                    borderWidth: 1,
+                    pointRadius: 0,
+                    showLine: true,
+                    order: 5
+                });
+
+                if (r.y2 && r.E2) {
+                    // Section 2 horizontal dashed
+                    datasets.push({
+                        label: null,
+                        data: [{ x: 0, y: r.y2 }, { x: r.E2, y: r.y2 }],
+                        borderColor: 'rgba(34,197,94,0.4)',
+                        borderDash: [4, 4],
+                        backgroundColor: 'transparent',
+                        borderWidth: 1,
+                        pointRadius: 0,
+                        showLine: true,
+                        order: 5
+                    });
+                    // Section 2 vertical dashed
+                    datasets.push({
+                        label: null,
+                        data: [{ x: r.E2, y: 0 }, { x: r.E2, y: r.y2 }],
+                        borderColor: 'rgba(34,197,94,0.4)',
+                        borderDash: [4, 4],
+                        backgroundColor: 'transparent',
+                        borderWidth: 1,
+                        pointRadius: 0,
+                        showLine: true,
+                        order: 5
+                    });
+                }
+
+                // Critical depth horizontal dashed for yc1
+                datasets.push({
+                    label: null,
+                    data: [{ x: 0, y: r.yc1 }, { x: r.Ec1, y: r.yc1 }],
+                    borderColor: 'rgba(74,222,128,0.25)',
+                    borderDash: [2, 3],
+                    backgroundColor: 'transparent',
+                    borderWidth: 1,
+                    pointRadius: 0,
+                    showLine: true,
+                    order: 5
+                });
+                if (hasTwoQ) {
+                    datasets.push({
+                        label: null,
+                        data: [{ x: 0, y: r.yc2 }, { x: r.Ec2, y: r.yc2 }],
+                        borderColor: 'rgba(239,68,68,0.25)',
+                        borderDash: [2, 3],
+                        backgroundColor: 'transparent',
+                        borderWidth: 1,
+                        pointRadius: 0,
+                        showLine: true,
+                        order: 5
+                    });
+                }
+
+                // Operating point markers (on top)
+                datasets.push({
+                    label: 'Section 1 (y\u2081=' + r.y1.toFixed(2) + 'm)',
+                    data: [{ x: r.E1, y: r.y1 }],
+                    borderColor: '#fbbf24',
+                    backgroundColor: '#fbbf24',
+                    pointRadius: 9,
+                    pointStyle: 'circle',
+                    showLine: false,
+                    order: 1
+                });
 
                 if (r.y2 && r.E2) {
                     datasets.push({
@@ -620,31 +713,34 @@
                         data: [{ x: r.E2, y: r.y2 }],
                         borderColor: '#22c55e',
                         backgroundColor: '#22c55e',
-                        pointRadius: 8,
+                        pointRadius: 9,
                         pointStyle: 'triangle',
-                        showLine: false
+                        showLine: false,
+                        order: 1
                     });
                 }
 
-                // Critical points
+                // Critical point markers
                 datasets.push({
                     label: 'yc\u2081=' + r.yc1.toFixed(3) + 'm',
                     data: [{ x: r.Ec1, y: r.yc1 }],
                     borderColor: '#4ade80',
-                    backgroundColor: 'rgba(74,222,128,0.5)',
-                    pointRadius: 6,
+                    backgroundColor: '#4ade80',
+                    pointRadius: 7,
                     pointStyle: 'rectRot',
-                    showLine: false
+                    showLine: false,
+                    order: 2
                 });
-                if (Math.abs(q2 - q1) > 0.001) {
+                if (hasTwoQ) {
                     datasets.push({
                         label: 'yc\u2082=' + r.yc2.toFixed(3) + 'm',
                         data: [{ x: r.Ec2, y: r.yc2 }],
                         borderColor: '#ef4444',
-                        backgroundColor: 'rgba(239,68,68,0.5)',
-                        pointRadius: 6,
+                        backgroundColor: '#ef4444',
+                        pointRadius: 7,
                         pointStyle: 'rectRot',
-                        showLine: false
+                        showLine: false,
+                        order: 2
                     });
                 }
 
@@ -657,14 +753,14 @@
                         aspectRatio: 1.2,
                         scales: {
                             x: {
-                                title: { display: true, text: 'Specific Energy E (m)', color: '#a3a3a3', font: { family: "'JetBrains Mono', monospace" } },
+                                title: { display: true, text: 'Specific Energy E (m)', color: '#a3a3a3', font: { family: "'JetBrains Mono', monospace", size: 13 } },
                                 grid: { color: '#2a2a2a' },
                                 ticks: { color: '#a3a3a3', font: { family: "'JetBrains Mono', monospace", size: 11 } },
                                 min: 0,
                                 max: EMax
                             },
                             y: {
-                                title: { display: true, text: 'Depth y (m)', color: '#a3a3a3', font: { family: "'JetBrains Mono', monospace" } },
+                                title: { display: true, text: 'Depth y (m)', color: '#a3a3a3', font: { family: "'JetBrains Mono', monospace", size: 13 } },
                                 grid: { color: '#2a2a2a' },
                                 ticks: { color: '#a3a3a3', font: { family: "'JetBrains Mono', monospace", size: 11 } },
                                 min: 0,
@@ -673,7 +769,11 @@
                         },
                         plugins: {
                             legend: {
-                                labels: { color: '#e5e5e5', font: { family: "'JetBrains Mono', monospace", size: 11 } }
+                                labels: {
+                                    color: '#e5e5e5',
+                                    font: { family: "'JetBrains Mono', monospace", size: 11 },
+                                    filter: function(item) { return item.text !== null && item.text !== 'null'; }
+                                }
                             }
                         }
                     }
