@@ -1,0 +1,1754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hydraulic Jump Calculator - HydroSolve</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Spectral:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4ade80;
+            --primary-light: #86efac;
+            --accent: #fbbf24;
+            --bg: #0a0a0a;
+            --surface: #171717;
+            --text: #e5e5e5;
+            --text-muted: #a3a3a3;
+            --border: #404040;
+            --error: #ef4444;
+            --success: #22c55e;
+            --grid: 8px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Spectral', serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .app-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: calc(var(--grid) * 6);
+        }
+
+        header {
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: calc(var(--grid) * 3);
+            margin-bottom: calc(var(--grid) * 6);
+        }
+
+        .back-link {
+            display: inline-block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            margin-bottom: calc(var(--grid) * 2);
+            transition: color 0.2s;
+        }
+        .back-link:hover { color: var(--primary); }
+
+        h1 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: -0.02em;
+            margin-bottom: calc(var(--grid) * 1);
+        }
+
+        .subtitle {
+            font-size: 1.125rem;
+            color: var(--text-muted);
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr;
+            gap: calc(var(--grid) * 4);
+            align-items: start;
+        }
+
+        .input-panel {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 4px;
+            padding: calc(var(--grid) * 4);
+            position: sticky;
+            top: calc(var(--grid) * 3);
+            max-height: calc(100vh - calc(var(--grid) * 6));
+            overflow-y: auto;
+        }
+
+        .results-panel {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 4px;
+            padding: calc(var(--grid) * 4);
+        }
+
+        .panel-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: calc(var(--grid) * 3);
+            padding-bottom: calc(var(--grid) * 2);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .form-section { margin-bottom: calc(var(--grid) * 4); }
+
+        .section-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: calc(var(--grid) * 2);
+        }
+
+        .input-group { margin-bottom: calc(var(--grid) * 2); }
+
+        label {
+            display: block;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-bottom: calc(var(--grid) * 1);
+        }
+
+        input, select {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 2px;
+            padding: calc(var(--grid) * 1.5);
+            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            transition: border-color 0.2s;
+        }
+        input:focus, select:focus { outline: none; border-color: var(--primary); }
+        input::placeholder { color: #505050; }
+        input:disabled { opacity: 0.4; cursor: not-allowed; background: var(--surface); }
+
+        .selector-group {
+            display: flex;
+            gap: calc(var(--grid) * 1);
+            flex-wrap: wrap;
+            margin-bottom: calc(var(--grid) * 3);
+        }
+
+        .selector-btn {
+            padding: calc(var(--grid) * 1) calc(var(--grid) * 2);
+            background: var(--bg);
+            border: 2px solid var(--border);
+            border-radius: 2px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .selector-btn:hover { border-color: var(--primary); }
+        .selector-btn.active {
+            background: var(--accent);
+            color: #000;
+            border-color: var(--accent);
+        }
+
+        .calculate-button {
+            width: 100%;
+            background: var(--primary);
+            color: var(--bg);
+            border: none;
+            border-radius: 4px;
+            padding: calc(var(--grid) * 2);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: calc(var(--grid) * 2);
+        }
+        .calculate-button:hover { background: var(--primary-light); }
+
+        .example-btn {
+            width: 100%;
+            background: var(--surface);
+            color: var(--text);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: calc(var(--grid) * 1.5);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: calc(var(--grid) * 1);
+            text-align: left;
+        }
+        .example-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+        .results-empty {
+            text-align: center;
+            padding: calc(var(--grid) * 8);
+        }
+
+        .result-card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: calc(var(--grid) * 3);
+            margin-bottom: calc(var(--grid) * 3);
+        }
+        .result-card.success { border-color: var(--success); }
+        .result-card.error { border-color: var(--error); }
+
+        .result-header {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--success);
+            margin-bottom: calc(var(--grid) * 2);
+        }
+        .result-header.error { color: var(--error); }
+        .result-header.warning { color: var(--accent); }
+
+        .result-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: calc(var(--grid) * 1);
+        }
+
+        .result-label { font-size: 0.875rem; color: var(--text-muted); }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: calc(var(--grid) * 2);
+        }
+
+        .result-item { display: flex; flex-direction: column; }
+
+        .result-item-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: calc(var(--grid) * 0.5);
+        }
+
+        .result-item-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            color: var(--text);
+        }
+
+        .step-section {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: calc(var(--grid) * 3);
+            margin-bottom: calc(var(--grid) * 3);
+        }
+
+        .step-header {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: calc(var(--grid) * 2);
+            padding-bottom: calc(var(--grid) * 2);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .reasoning-box {
+            background: rgba(251, 191, 36, 0.1);
+            border-left: 3px solid var(--accent);
+            padding: calc(var(--grid) * 2);
+            margin: calc(var(--grid) * 2) 0;
+            font-style: italic;
+            color: var(--text);
+        }
+
+        .warning-box {
+            background: rgba(239, 68, 68, 0.1);
+            border-left: 3px solid var(--error);
+            padding: calc(var(--grid) * 2);
+            margin: calc(var(--grid) * 2) 0;
+            color: var(--text);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+        }
+
+        .success-box {
+            background: rgba(74, 222, 128, 0.1);
+            border-left: 3px solid var(--success);
+            padding: calc(var(--grid) * 2);
+            margin: calc(var(--grid) * 2) 0;
+            color: var(--text);
+        }
+
+        .math-display {
+            background: var(--bg);
+            border-left: 3px solid var(--primary);
+            padding: calc(var(--grid) * 2);
+            margin: calc(var(--grid) * 1) 0;
+            overflow-x: auto;
+        }
+
+        .f-iteration-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: calc(var(--grid) * 2) 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+        }
+        .f-iteration-table th {
+            background: var(--primary);
+            color: #000;
+            padding: calc(var(--grid) * 1.5);
+            text-align: left;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .f-iteration-table td {
+            padding: calc(var(--grid) * 1.5);
+            border-bottom: 1px solid var(--border);
+            color: var(--text);
+        }
+        .f-iteration-table tr:last-child td { border-bottom: 2px solid var(--primary); }
+        .f-iteration-table tr:last-child { background: rgba(74, 222, 128, 0.05); }
+
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: calc(var(--grid) * 2) 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+        }
+        .summary-table th {
+            background: var(--primary);
+            color: #000;
+            padding: calc(var(--grid) * 1.5);
+            text-align: left;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .summary-table td {
+            padding: calc(var(--grid) * 1.5);
+            border-bottom: 1px solid var(--border);
+            color: var(--text);
+        }
+        .summary-table tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+
+        .regime-badge {
+            display: inline-block;
+            padding: calc(var(--grid) * 0.5) calc(var(--grid) * 1.5);
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+        .regime-badge.subcritical { background: rgba(74, 222, 128, 0.15); color: var(--primary); }
+        .regime-badge.supercritical { background: rgba(239, 68, 68, 0.15); color: var(--error); }
+
+        .chart-container {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: calc(var(--grid) * 3);
+            margin-bottom: calc(var(--grid) * 3);
+        }
+
+        .schematic-container {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: calc(var(--grid) * 2);
+            margin-bottom: calc(var(--grid) * 3);
+            text-align: center;
+        }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+        @media (max-width: 1024px) {
+            .main-grid { grid-template-columns: 1fr; }
+            .input-panel { position: static; max-height: none; }
+            h1 { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"><p style="color:#e5e5e5;font-family:monospace;padding:48px;text-align:center;">Loading calculator...</p></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+        const G = 9.81;
+
+        // ===================== CHANNEL GEOMETRY HELPERS =====================
+
+        function channelProps(shape, y, b, z) {
+            if (shape === 'rectangular') {
+                var A = b * y;
+                var T = b;
+                var ybar = y / 2;
+                var D = y;
+                return { A: A, T: T, ybar: ybar, D: D };
+            } else if (shape === 'triangular') {
+                var A = z * y * y;
+                var T = 2 * z * y;
+                var ybar = y / 3;
+                var D = y / 2;
+                return { A: A, T: T, ybar: ybar, D: D };
+            } else {
+                // trapezoidal
+                var A = (b + z * y) * y;
+                var T = b + 2 * z * y;
+                var ybar = (y * (3 * b + 2 * z * y)) / (6 * (b + z * y));
+                var D = A / T;
+                return { A: A, T: T, ybar: ybar, D: D };
+            }
+        }
+
+        function specificForce(shape, y, Q, b, z) {
+            var p = channelProps(shape, y, b, z);
+            return p.ybar * p.A + (Q * Q) / (G * p.A);
+        }
+
+        function specificForcePerB(shape, y, q, Q, b, z) {
+            if (shape === 'rectangular') {
+                return (y * y) / 2 + (q * q) / (G * y);
+            }
+            return specificForce(shape, y, Q, b, z);
+        }
+
+        function froudeNumber(shape, y, Q, b, z) {
+            var p = channelProps(shape, y, b, z);
+            var V = Q / p.A;
+            return V / Math.sqrt(G * p.D);
+        }
+
+        function specificEnergy(shape, y, Q, b, z) {
+            var p = channelProps(shape, y, b, z);
+            var V = Q / p.A;
+            return y + (V * V) / (2 * G);
+        }
+
+        // ===================== CONJUGATE DEPTH SOLVERS =====================
+
+        function conjugateRectangular(yKnown, q) {
+            var Fr = q / Math.sqrt(G * yKnown * yKnown * yKnown);
+            var ratio = 0.5 * (Math.sqrt(1 + 8 * Fr * Fr) - 1);
+            return yKnown * ratio;
+        }
+
+        function conjugateIterative(shape, yKnown, Q, b, z, knownSide) {
+            var Fknown = specificForce(shape, yKnown, Q, b, z);
+            var yGuess;
+            if (knownSide === 'downstream') {
+                yGuess = yKnown / 3;
+            } else {
+                yGuess = yKnown * 3;
+            }
+            if (yGuess < 0.001) yGuess = 0.01;
+
+            var iterations = [];
+            for (var i = 0; i < 50; i++) {
+                var F = specificForce(shape, yGuess, Q, b, z);
+                var error = F - Fknown;
+
+                iterations.push({
+                    iteration: i + 1,
+                    y: yGuess,
+                    F: F,
+                    Ftarget: Fknown,
+                    error: error
+                });
+
+                if (Math.abs(error) < 1e-6) break;
+
+                // Derivative of F w.r.t. y
+                var dy = yGuess * 1e-6;
+                var Fplus = specificForce(shape, yGuess + dy, Q, b, z);
+                var dFdy = (Fplus - F) / dy;
+
+                if (Math.abs(dFdy) < 1e-15) break;
+
+                var yNew = yGuess - error / dFdy;
+                if (yNew < 0.001) yNew = yGuess / 2;
+                yGuess = yNew;
+            }
+
+            return { y: yGuess, iterations: iterations };
+        }
+
+        // ===================== HEAD LOSS =====================
+
+        function headLossRect(y1, y2) {
+            return Math.pow(y2 - y1, 3) / (4 * y1 * y2);
+        }
+
+        function headLossGeneral(shape, y1, y2, Q, b, z) {
+            var E1 = specificEnergy(shape, y1, Q, b, z);
+            var E2 = specificEnergy(shape, y2, Q, b, z);
+            return E1 - E2;
+        }
+
+        // ===================== JUMP CLASSIFICATION =====================
+
+        function classifyJump(Fr1) {
+            if (Fr1 < 1.7) return { type: 'Undular Jump', range: '1.0 - 1.7', desc: 'Standing waves, smooth surface', loss: '< 5%' };
+            if (Fr1 < 2.5) return { type: 'Weak Jump', range: '1.7 - 2.5', desc: 'Small rollers, low turbulence', loss: '5-15%' };
+            if (Fr1 < 4.5) return { type: 'Oscillating Jump', range: '2.5 - 4.5', desc: 'Unstable, pulsating action', loss: '15-45%' };
+            if (Fr1 < 9.0) return { type: 'Steady Jump', range: '4.5 - 9.0', desc: 'Well-defined roller, best for design', loss: '45-70%' };
+            return { type: 'Strong Jump', range: '> 9.0', desc: 'Rough, intermittent, high dissipation', loss: '> 70%' };
+        }
+
+        // ===================== EXAMPLES =====================
+
+        var examples = {
+            example3_5: {
+                name: 'Ex 3.5 - Triangular Channel Jump',
+                shape: 'triangular',
+                z: '2',
+                Q: '30',
+                problemType: 'simple_given_y2',
+                y2: '3.0',
+                b: '',
+                y1: '',
+                y2_actual: '',
+                y2_conjugate: ''
+            },
+            example3_6: {
+                name: 'Ex 3.6 - Jump with Baffle Blocks',
+                shape: 'rectangular',
+                b: '10',
+                Q: '150',
+                problemType: 'baffle',
+                y2_conjugate: '5',
+                y2_actual: '4',
+                z: '',
+                y1: '',
+                y2: ''
+            },
+            rectangularJump: {
+                name: 'Simple Rectangular Jump',
+                shape: 'rectangular',
+                b: '5',
+                Q: '20',
+                problemType: 'simple_given_y1',
+                y1: '0.5',
+                z: '',
+                y2: '',
+                y2_actual: '',
+                y2_conjugate: ''
+            },
+            trapezoidalJump: {
+                name: 'Trapezoidal Channel Jump',
+                shape: 'trapezoidal',
+                b: '3',
+                z: '1.5',
+                Q: '25',
+                problemType: 'simple_given_y1',
+                y1: '0.8',
+                y2: '',
+                y2_actual: '',
+                y2_conjugate: ''
+            }
+        };
+
+        // ===================== MAIN COMPONENT =====================
+
+        function HydraulicJumpCalc() {
+            var _s1 = useState('rectangular');
+            var shape = _s1[0], setShape = _s1[1];
+
+            var _s2 = useState('simple_given_y1');
+            var problemType = _s2[0], setProblemType = _s2[1];
+
+            var _s3 = useState({ b: '', z: '', Q: '', y1: '', y2: '', y2_actual: '', y2_conjugate: '' });
+            var inputs = _s3[0], setInputs = _s3[1];
+
+            var _s4 = useState(null);
+            var results = _s4[0], setResults = _s4[1];
+
+            var schematicRef = useRef(null);
+            var chartRef = useRef(null);
+            var chartInstance = useRef(null);
+
+            useEffect(function() {
+                if (results && window.MathJax) {
+                    setTimeout(function() { window.MathJax.typesetPromise(); }, 150);
+                }
+            }, [results]);
+
+            useEffect(function() {
+                if (results && results.success) {
+                    drawSchematic(results);
+                    if (results.problemType === 'baffle') {
+                        drawFyCurve(results);
+                    }
+                }
+            }, [results]);
+
+            function handleInput(field, value) {
+                var newInputs = Object.assign({}, inputs);
+                newInputs[field] = value;
+                setInputs(newInputs);
+            }
+
+            function loadExample(key) {
+                var ex = examples[key];
+                setShape(ex.shape);
+                setProblemType(ex.problemType);
+                setInputs({
+                    b: ex.b || '',
+                    z: ex.z || '',
+                    Q: ex.Q || '',
+                    y1: ex.y1 || '',
+                    y2: ex.y2 || '',
+                    y2_actual: ex.y2_actual || '',
+                    y2_conjugate: ex.y2_conjugate || ''
+                });
+                setResults(null);
+            }
+
+            // ===================== SCHEMATIC DRAWING =====================
+
+            function drawSchematic(r) {
+                var canvas = schematicRef.current;
+                if (!canvas) return;
+                var ctx = canvas.getContext('2d');
+                var W = canvas.width;
+                var H = canvas.height;
+                ctx.clearRect(0, 0, W, H);
+
+                var bedY = H * 0.75;
+                var maxDepth = Math.max(r.y1, r.y2);
+                var scale = (H * 0.5) / maxDepth;
+                var h1 = r.y1 * scale;
+                var h2 = r.y2 * scale;
+
+                // Background
+                ctx.fillStyle = '#0a0a0a';
+                ctx.fillRect(0, 0, W, H);
+
+                // Channel bed
+                ctx.strokeStyle = '#a3a3a3';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(40, bedY);
+                ctx.lineTo(W - 40, bedY);
+                ctx.stroke();
+
+                // Bed hatching
+                ctx.strokeStyle = '#505050';
+                ctx.lineWidth = 1;
+                for (var i = 60; i < W - 40; i += 12) {
+                    ctx.beginPath();
+                    ctx.moveTo(i, bedY);
+                    ctx.lineTo(i - 8, bedY + 8);
+                    ctx.stroke();
+                }
+
+                // Upstream water surface
+                var jumpStartX = W * 0.35;
+                var jumpEndX = W * 0.6;
+
+                ctx.fillStyle = 'rgba(56, 189, 248, 0.15)';
+                ctx.beginPath();
+                ctx.moveTo(40, bedY);
+                ctx.lineTo(40, bedY - h1);
+                ctx.lineTo(jumpStartX, bedY - h1);
+                // Turbulent roller curve
+                ctx.bezierCurveTo(
+                    jumpStartX + (jumpEndX - jumpStartX) * 0.2, bedY - h2 - 15,
+                    jumpStartX + (jumpEndX - jumpStartX) * 0.6, bedY - h2 + 5,
+                    jumpEndX, bedY - h2
+                );
+                ctx.lineTo(W - 40, bedY - h2);
+                ctx.lineTo(W - 40, bedY);
+                ctx.closePath();
+                ctx.fill();
+
+                // Water surface line
+                ctx.strokeStyle = '#38bdf8';
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.moveTo(40, bedY - h1);
+                ctx.lineTo(jumpStartX, bedY - h1);
+                ctx.bezierCurveTo(
+                    jumpStartX + (jumpEndX - jumpStartX) * 0.2, bedY - h2 - 15,
+                    jumpStartX + (jumpEndX - jumpStartX) * 0.6, bedY - h2 + 5,
+                    jumpEndX, bedY - h2
+                );
+                ctx.lineTo(W - 40, bedY - h2);
+                ctx.stroke();
+
+                // Turbulent roller indication
+                ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
+                ctx.lineWidth = 1;
+                var rollerCx = (jumpStartX + jumpEndX) / 2;
+                var rollerCy = bedY - (h1 + h2) / 2 - 5;
+                for (var a = 0; a < 3; a++) {
+                    ctx.beginPath();
+                    var rx = 15 + a * 12;
+                    var ry = 6 + a * 3;
+                    ctx.ellipse(rollerCx + a * 8, rollerCy - a * 4, rx, ry, -0.2, 0, Math.PI * 1.5);
+                    ctx.stroke();
+                }
+
+                // Baffle blocks for baffle problem
+                if (r.problemType === 'baffle') {
+                    ctx.fillStyle = '#a3a3a3';
+                    var baffleX = jumpStartX + (jumpEndX - jumpStartX) * 0.5;
+                    var bh = Math.min(h1 * 0.6, 25);
+                    for (var bk = -1; bk <= 1; bk++) {
+                        ctx.fillRect(baffleX + bk * 18 - 5, bedY - bh, 10, bh);
+                    }
+                    // Label
+                    ctx.fillStyle = var_accent;
+                    ctx.font = '11px JetBrains Mono';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Baffle Blocks', baffleX, bedY + 22);
+                }
+
+                // Depth dimension lines
+                ctx.strokeStyle = var_accent;
+                ctx.lineWidth = 1;
+                ctx.setLineDash([4, 3]);
+
+                // y1 dimension
+                ctx.beginPath();
+                ctx.moveTo(70, bedY);
+                ctx.lineTo(70, bedY - h1);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(65, bedY - h1);
+                ctx.lineTo(75, bedY - h1);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(65, bedY);
+                ctx.lineTo(75, bedY);
+                ctx.stroke();
+
+                // y2 dimension
+                ctx.beginPath();
+                ctx.moveTo(W - 70, bedY);
+                ctx.lineTo(W - 70, bedY - h2);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(W - 75, bedY - h2);
+                ctx.lineTo(W - 65, bedY - h2);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(W - 75, bedY);
+                ctx.lineTo(W - 65, bedY);
+                ctx.stroke();
+
+                ctx.setLineDash([]);
+
+                // Labels
+                ctx.fillStyle = '#fbbf24';
+                ctx.font = 'bold 13px JetBrains Mono';
+                ctx.textAlign = 'center';
+                ctx.fillText('y\u2081 = ' + r.y1.toFixed(3) + ' m', 70, bedY - h1 / 2 + 4);
+                ctx.fillText('y\u2082 = ' + r.y2.toFixed(3) + ' m', W - 70, bedY - h2 / 2 + 4);
+
+                // Flow arrow
+                ctx.fillStyle = '#4ade80';
+                ctx.font = 'bold 12px JetBrains Mono';
+                ctx.fillText('\u2192 Flow', W / 2, bedY + 22);
+
+                // Fr labels
+                ctx.font = '11px JetBrains Mono';
+                ctx.fillStyle = '#ef4444';
+                ctx.fillText('Fr\u2081 = ' + r.Fr1.toFixed(2) + ' > 1', jumpStartX / 2 + 20, bedY - h1 - 12);
+                ctx.fillText('SUPERCRITICAL', jumpStartX / 2 + 20, bedY - h1 - 26);
+
+                ctx.fillStyle = '#4ade80';
+                ctx.fillText('Fr\u2082 = ' + r.Fr2.toFixed(2) + ' < 1', (jumpEndX + W - 40) / 2, bedY - h2 - 12);
+                ctx.fillText('SUBCRITICAL', (jumpEndX + W - 40) / 2, bedY - h2 - 26);
+
+                // Title
+                ctx.fillStyle = '#e5e5e5';
+                ctx.font = 'bold 14px JetBrains Mono';
+                ctx.fillText('HYDRAULIC JUMP', W / 2, 22);
+
+                // Jump length
+                ctx.strokeStyle = '#4ade80';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([3, 3]);
+                ctx.beginPath();
+                ctx.moveTo(jumpStartX, bedY + 35);
+                ctx.lineTo(jumpEndX, bedY + 35);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.beginPath();
+                ctx.moveTo(jumpStartX, bedY + 32);
+                ctx.lineTo(jumpStartX, bedY + 38);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(jumpEndX, bedY + 32);
+                ctx.lineTo(jumpEndX, bedY + 38);
+                ctx.stroke();
+                ctx.fillStyle = '#4ade80';
+                ctx.font = '10px JetBrains Mono';
+                ctx.fillText('L\u2C7C \u2248 ' + r.Lj.toFixed(1) + ' m', (jumpStartX + jumpEndX) / 2, bedY + 48);
+            }
+
+            var var_accent = '#fbbf24';
+
+            // ===================== F-Y CURVE DRAWING =====================
+
+            function drawFyCurve(r) {
+                var canvas = chartRef.current;
+                if (!canvas) return;
+
+                if (chartInstance.current) {
+                    chartInstance.current.destroy();
+                }
+
+                var q = r.q;
+                var yMax = r.y2 * 1.6;
+                if (r.y2_conjugate) yMax = Math.max(yMax, r.y2_conjugate * 1.3);
+                var numPoints = 200;
+                var yData = [];
+                var FData = [];
+
+                for (var i = 1; i <= numPoints; i++) {
+                    var yy = (i / numPoints) * yMax;
+                    var Fval;
+                    if (r.shape === 'rectangular') {
+                        Fval = (yy * yy) / 2 + (q * q) / (G * yy);
+                    } else {
+                        Fval = specificForce(r.shape, yy, r.Q, r.b || 0, r.z || 0);
+                    }
+                    yData.push(yy);
+                    FData.push(Fval);
+                }
+
+                var chartData = yData.map(function(yy, idx) { return { x: FData[idx], y: yy }; });
+
+                var pointData = [
+                    { x: r.F1display, y: r.y1, label: 'y\u2081' },
+                    { x: r.F2display, y: r.y2, label: 'y\u2082' }
+                ];
+
+                if (r.y2_conjugate && r.F2conj) {
+                    pointData.push({ x: r.F2conj, y: r.y2_conjugate, label: "y\u2082'" });
+                }
+
+                chartInstance.current = new Chart(canvas, {
+                    type: 'scatter',
+                    data: {
+                        datasets: [
+                            {
+                                label: r.shape === 'rectangular' ? 'F/b vs y (q = ' + q.toFixed(2) + ' m\u00B3/s/m)' : 'F vs y',
+                                data: chartData,
+                                showLine: true,
+                                borderColor: '#38bdf8',
+                                backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                                borderWidth: 2,
+                                pointRadius: 0,
+                                fill: false,
+                                tension: 0.4
+                            },
+                            {
+                                label: 'Operating Points',
+                                data: pointData.map(function(p) { return { x: p.x, y: p.y }; }),
+                                pointRadius: 8,
+                                pointBackgroundColor: ['#ef4444', '#4ade80', '#fbbf24'],
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
+                                showLine: false
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        scales: {
+                            x: {
+                                title: { display: true, text: r.shape === 'rectangular' ? 'F/b (m\u00B2)' : 'F (m\u00B3)', color: '#a3a3a3', font: { family: 'JetBrains Mono', size: 12 } },
+                                grid: { color: 'rgba(64, 64, 64, 0.5)' },
+                                ticks: { color: '#a3a3a3', font: { family: 'JetBrains Mono', size: 10 } }
+                            },
+                            y: {
+                                title: { display: true, text: 'y (m)', color: '#a3a3a3', font: { family: 'JetBrains Mono', size: 12 } },
+                                grid: { color: 'rgba(64, 64, 64, 0.5)' },
+                                ticks: { color: '#a3a3a3', font: { family: 'JetBrains Mono', size: 10 } }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                labels: { color: '#e5e5e5', font: { family: 'JetBrains Mono', size: 11 } }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        if (context.datasetIndex === 1) {
+                                            return pointData[context.dataIndex].label + ': y=' + context.parsed.y.toFixed(3) + ', F=' + context.parsed.x.toFixed(3);
+                                        }
+                                        return 'y=' + context.parsed.y.toFixed(3) + ', F=' + context.parsed.x.toFixed(3);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // ===================== SOLVE =====================
+
+            function solve() {
+                try {
+                    var Q = parseFloat(inputs.Q);
+                    var b = parseFloat(inputs.b) || 0;
+                    var z = parseFloat(inputs.z) || 0;
+
+                    if (isNaN(Q) || Q <= 0) { setResults({ success: false, error: 'Discharge Q must be positive.' }); return; }
+                    if (shape === 'rectangular' && (isNaN(b) || b <= 0)) { setResults({ success: false, error: 'Bottom width b must be positive for rectangular channel.' }); return; }
+                    if (shape === 'triangular' && (isNaN(z) || z <= 0)) { setResults({ success: false, error: 'Side slope z must be positive for triangular channel.' }); return; }
+                    if (shape === 'trapezoidal' && ((isNaN(b) || b <= 0) || (isNaN(z) || z <= 0))) { setResults({ success: false, error: 'Both b and z must be positive for trapezoidal channel.' }); return; }
+
+                    var q = (shape === 'rectangular') ? Q / b : 0;
+
+                    if (problemType === 'simple_given_y1') {
+                        solveSimpleGivenY1(Q, b, z, q);
+                    } else if (problemType === 'simple_given_y2') {
+                        solveSimpleGivenY2(Q, b, z, q);
+                    } else if (problemType === 'baffle') {
+                        solveBaffle(Q, b, z, q);
+                    }
+                } catch (e) {
+                    setResults({ success: false, error: 'Calculation error: ' + e.message });
+                }
+            }
+
+            function solveSimpleGivenY1(Q, b, z, q) {
+                var y1 = parseFloat(inputs.y1);
+                if (isNaN(y1) || y1 <= 0) { setResults({ success: false, error: 'Upstream depth y\u2081 must be positive.' }); return; }
+
+                var Fr1 = froudeNumber(shape, y1, Q, b, z);
+                if (Fr1 < 1.0) { setResults({ success: false, error: 'Fr\u2081 = ' + Fr1.toFixed(3) + ' < 1. The given depth is subcritical (downstream). Use "Given y\u2082" mode.' }); return; }
+
+                var y2, iterations = null;
+                if (shape === 'rectangular') {
+                    y2 = conjugateRectangular(y1, q);
+                } else {
+                    var result = conjugateIterative(shape, y1, Q, b, z, 'upstream');
+                    y2 = result.y;
+                    iterations = result.iterations;
+                }
+
+                var Fr2 = froudeNumber(shape, y2, Q, b, z);
+                var E1 = specificEnergy(shape, y1, Q, b, z);
+                var E2 = specificEnergy(shape, y2, Q, b, z);
+                var hL;
+                if (shape === 'rectangular') {
+                    hL = headLossRect(y1, y2);
+                } else {
+                    hL = headLossGeneral(shape, y1, y2, Q, b, z);
+                }
+                var eta = (E2 / E1) * 100;
+                var P = 9810 * Q * hL;
+                var Lj = 6.1 * y2;
+                var jumpClass = classifyJump(Fr1);
+
+                var p1 = channelProps(shape, y1, b, z);
+                var p2 = channelProps(shape, y2, b, z);
+                var V1 = Q / p1.A;
+                var V2 = Q / p2.A;
+                var F1 = specificForce(shape, y1, Q, b, z);
+                var F2 = specificForce(shape, y2, Q, b, z);
+                var F1display = (shape === 'rectangular') ? (y1*y1/2 + q*q/(G*y1)) : F1;
+                var F2display = (shape === 'rectangular') ? (y2*y2/2 + q*q/(G*y2)) : F2;
+
+                setResults({
+                    success: true,
+                    problemType: 'simple',
+                    shape: shape,
+                    Q: Q, b: b, z: z, q: q,
+                    y1: y1, y2: y2,
+                    Fr1: Fr1, Fr2: Fr2,
+                    E1: E1, E2: E2,
+                    hL: hL, eta: eta, P: P, Lj: Lj,
+                    jumpClass: jumpClass,
+                    p1: p1, p2: p2,
+                    V1: V1, V2: V2,
+                    F1: F1, F2: F2,
+                    F1display: F1display, F2display: F2display,
+                    iterations: iterations,
+                    givenSide: 'y1'
+                });
+            }
+
+            function solveSimpleGivenY2(Q, b, z, q) {
+                var y2 = parseFloat(inputs.y2);
+                if (isNaN(y2) || y2 <= 0) { setResults({ success: false, error: 'Downstream depth y\u2082 must be positive.' }); return; }
+
+                var Fr2 = froudeNumber(shape, y2, Q, b, z);
+                if (Fr2 > 1.0) { setResults({ success: false, error: 'Fr\u2082 = ' + Fr2.toFixed(3) + ' > 1. The given depth is supercritical (upstream). Use "Given y\u2081" mode.' }); return; }
+
+                var y1, iterations = null;
+                if (shape === 'rectangular') {
+                    y1 = conjugateRectangular(y2, q);
+                } else {
+                    var result = conjugateIterative(shape, y2, Q, b, z, 'downstream');
+                    y1 = result.y;
+                    iterations = result.iterations;
+                }
+
+                var Fr1 = froudeNumber(shape, y1, Q, b, z);
+                var E1 = specificEnergy(shape, y1, Q, b, z);
+                var E2 = specificEnergy(shape, y2, Q, b, z);
+                var hL;
+                if (shape === 'rectangular') {
+                    hL = headLossRect(y1, y2);
+                } else {
+                    hL = headLossGeneral(shape, y1, y2, Q, b, z);
+                }
+                var eta = (E2 / E1) * 100;
+                var P = 9810 * Q * hL;
+                var Lj = 6.1 * y2;
+                var jumpClass = classifyJump(Fr1);
+
+                var p1 = channelProps(shape, y1, b, z);
+                var p2 = channelProps(shape, y2, b, z);
+                var V1 = Q / p1.A;
+                var V2 = Q / p2.A;
+                var F1 = specificForce(shape, y1, Q, b, z);
+                var F2 = specificForce(shape, y2, Q, b, z);
+                var F1display = (shape === 'rectangular') ? (y1*y1/2 + q*q/(G*y1)) : F1;
+                var F2display = (shape === 'rectangular') ? (y2*y2/2 + q*q/(G*y2)) : F2;
+
+                setResults({
+                    success: true,
+                    problemType: 'simple',
+                    shape: shape,
+                    Q: Q, b: b, z: z, q: q,
+                    y1: y1, y2: y2,
+                    Fr1: Fr1, Fr2: Fr2,
+                    E1: E1, E2: E2,
+                    hL: hL, eta: eta, P: P, Lj: Lj,
+                    jumpClass: jumpClass,
+                    p1: p1, p2: p2,
+                    V1: V1, V2: V2,
+                    F1: F1, F2: F2,
+                    F1display: F1display, F2display: F2display,
+                    iterations: iterations,
+                    givenSide: 'y2'
+                });
+            }
+
+            function solveBaffle(Q, b, z, q) {
+                var y2conj = parseFloat(inputs.y2_conjugate);
+                var y2act = parseFloat(inputs.y2_actual);
+
+                if (isNaN(y2conj) || y2conj <= 0) { setResults({ success: false, error: 'Required conjugate depth y\u2082\' must be positive.' }); return; }
+                if (isNaN(y2act) || y2act <= 0) { setResults({ success: false, error: 'Actual tailwater y\u2082 must be positive.' }); return; }
+
+                // Find y1 from conjugate depth y2'
+                var Fr2conj = froudeNumber(shape, y2conj, Q, b, z);
+                var y1;
+                if (shape === 'rectangular') {
+                    y1 = conjugateRectangular(y2conj, q);
+                } else {
+                    var res = conjugateIterative(shape, y2conj, Q, b, z, 'downstream');
+                    y1 = res.y;
+                }
+
+                var Fr1 = froudeNumber(shape, y1, Q, b, z);
+                var Fr2 = froudeNumber(shape, y2act, Q, b, z);
+
+                // Specific forces
+                var F1 = specificForce(shape, y1, Q, b, z);
+                var F2act = specificForce(shape, y2act, Q, b, z);
+                var F2conj = specificForce(shape, y2conj, Q, b, z);
+
+                var F1display, F2display, F2conjDisplay;
+                if (shape === 'rectangular') {
+                    F1display = (y1*y1/2 + q*q/(G*y1));
+                    F2display = (y2act*y2act/2 + q*q/(G*y2act));
+                    F2conjDisplay = (y2conj*y2conj/2 + q*q/(G*y2conj));
+                } else {
+                    F1display = F1;
+                    F2display = F2act;
+                    F2conjDisplay = F2conj;
+                }
+
+                // Baffle force
+                var PfOverGammaB = F1display - F2display;
+                var Pf = 9810 * b * PfOverGammaB;
+
+                // E1 for baffle area calc
+                var E1 = specificEnergy(shape, y1, Q, b, z);
+                var E2 = specificEnergy(shape, y2act, Q, b, z);
+
+                // Baffle area: Pf = 2*gamma*A*E1 => A = Pf/(2*gamma*E1)
+                // PfOverGammaB = F1/b - F2/b, Pf/(gamma*b) = PfOverGammaB
+                // Pf/(gamma*b) = 2*A*E1/b => A = PfOverGammaB * b / (2*E1)
+                var baffleArea = (PfOverGammaB * b) / (2 * E1);
+
+                var p1 = channelProps(shape, y1, b, z);
+                var V1 = Q / p1.A;
+                var p2 = channelProps(shape, y2act, b, z);
+                var V2 = Q / p2.A;
+
+                var Lj = 6.1 * y2act;
+
+                setResults({
+                    success: true,
+                    problemType: 'baffle',
+                    shape: shape,
+                    Q: Q, b: b, z: z, q: q,
+                    y1: y1, y2: y2act, y2_conjugate: y2conj,
+                    Fr1: Fr1, Fr2: Fr2, Fr2conj: Fr2conj,
+                    E1: E1, E2: E2,
+                    F1display: F1display, F2display: F2display, F2conj: F2conjDisplay,
+                    PfOverGammaB: PfOverGammaB,
+                    Pf: Pf,
+                    baffleArea: baffleArea,
+                    V1: V1, V2: V2,
+                    p1: p1, p2: p2,
+                    Lj: Lj,
+                    tailwaterDeficiency: y2conj - y2act
+                });
+            }
+
+            // ===================== STEP-BY-STEP GENERATION =====================
+
+            function renderSteps(r) {
+                if (r.problemType === 'simple') return renderSimpleSteps(r);
+                if (r.problemType === 'baffle') return renderBaffleSteps(r);
+                return null;
+            }
+
+            function renderSimpleSteps(r) {
+                var steps = [];
+                var sn = 0;
+
+                // Step 1: Channel geometry
+                sn++;
+                var geomLatex = '';
+                if (r.shape === 'rectangular') {
+                    geomLatex = '\\[A = by = ' + r.b.toFixed(1) + ' \\times y, \\quad T = b = ' + r.b.toFixed(1) + ' \\text{ m}, \\quad D = y\\]';
+                } else if (r.shape === 'triangular') {
+                    geomLatex = '\\[A = zy^2 = ' + r.z.toFixed(1) + 'y^2, \\quad T = 2zy = ' + (2*r.z).toFixed(1) + 'y, \\quad \\bar{y} = \\frac{y}{3}, \\quad D = \\frac{y}{2}\\]';
+                } else {
+                    geomLatex = '\\[A = (b+zy)y = (' + r.b.toFixed(1) + '+' + r.z.toFixed(1) + 'y)y, \\quad T = b+2zy = ' + r.b.toFixed(1) + '+' + (2*r.z).toFixed(1) + 'y\\]' +
+                        '\\[\\bar{y} = \\frac{y(3b+2zy)}{6(b+zy)}, \\quad D = \\frac{A}{T}\\]';
+                }
+                steps.push(
+                    React.createElement('div', { className: 'step-section', key: 'step' + sn },
+                        React.createElement('div', { className: 'step-header' }, 'Step ' + sn + ': Define Channel Geometry'),
+                        React.createElement('div', { className: 'reasoning-box' },
+                            'For a ' + r.shape + ' channel' + (r.shape === 'triangular' ? ' with side slope z = ' + r.z.toFixed(1) + ' (' + r.z.toFixed(1) + 'H:1V)' : '') + ':'
+                        ),
+                        React.createElement('div', { className: 'math-display', dangerouslySetInnerHTML: { __html: geomLatex } })
+                    )
+                );
+
+                // Step 2: Verify given depth flow regime
+                sn++;
+                var givenY = r.givenSide === 'y1' ? r.y1 : r.y2;
+                var givenFr = r.givenSide === 'y1' ? r.Fr1 : r.Fr2;
+                var givenP = r.givenSide === 'y1' ? r.p1 : r.p2;
+                var givenV = r.givenSide === 'y1' ? r.V1 : r.V2;
+                var givenLabel = r.givenSide === 'y1' ? '1' : '2';
+                var expectedRegime = r.givenSide === 'y1' ? 'supercritical' : 'subcritical';
+                var frCheck = r.givenSide === 'y1' ? '> 1' : '< 1';
+
+                steps.push(
+                    React.createElement('div', { className: 'step-section', key: 'step' + sn },
+                        React.createElement('div', { className: 'step-header' }, 'Step ' + sn + ': Verify ' + (r.givenSide === 'y1' ? 'Upstream' : 'Downstream') + ' Flow is ' + (r.givenSide === 'y1' ? 'Supercritical' : 'Subcritical')),
+                        React.createElement('div', { className: 'math-display', dangerouslySetInnerHTML: { __html:
+                            '\\[A_' + givenLabel + ' = ' + givenP.A.toFixed(4) + ' \\text{ m}^2\\]' +
+                            '\\[V_' + givenLabel + ' = \\frac{Q}{A_' + givenLabel + '} = \\frac{' + r.Q.toFixed(1) + '}{' + givenP.A.toFixed(4) + '} = ' + givenV.toFixed(3) + ' \\text{ m/s}\\]' +
+                            '\\[D_' + givenLabel + ' = ' + givenP.D.toFixed(4) + ' \\text{ m}\\]' +
+                            '\\[Fr_' + givenLabel + ' = \\frac{V_' + givenLabel + '}{\\sqrt{gD_' + givenLabel + '}} = \\frac{' + givenV.toFixed(3) + '}{\\sqrt{9.81 \\times ' + givenP.D.toFixed(4) + '}} = ' + givenFr.toFixed(3) + '\\]'
+                        } }),
+                        React.createElement('div', { className: 'success-box' },
+                            'Since Fr' + (r.givenSide === 'y1' ? '\u2081' : '\u2082') + ' = ' + givenFr.toFixed(3) + ' ' + frCheck + ', flow is ' + expectedRegime + ' \u2713'
+                        )
+                    )
+                );
+
+                // Step 3: Specific force equation
+                sn++;
+                var sfLatex = '';
+                if (r.shape === 'rectangular') {
+                    sfLatex = '\\[\\frac{F}{b} = \\frac{y^2}{2} + \\frac{q^2}{gy}, \\quad q = \\frac{Q}{b} = ' + r.q.toFixed(3) + ' \\text{ m}^3\\text{/s/m}\\]';
+                } else if (r.shape === 'triangular') {
+                    sfLatex = '\\[F = \\frac{zy^3}{3} + \\frac{Q^2}{gzy^2} = \\frac{' + r.z.toFixed(1) + 'y^3}{3} + \\frac{' + (r.Q*r.Q).toFixed(1) + '}{' + (G*r.z).toFixed(2) + ' \\times y^2}\\]';
+                } else {
+                    sfLatex = '\\[F = \\frac{y^2(3b+2zy)}{6} + \\frac{Q^2}{g(b+zy)y}\\]';
+                }
+                steps.push(
+                    React.createElement('div', { className: 'step-section', key: 'step' + sn },
+                        React.createElement('div', { className: 'step-header' }, 'Step ' + sn + ': Write Specific Force Equation'),
+                        React.createElement('div', { className: 'reasoning-box' }, 'For hydraulic jump: F\u2081 = F\u2082 (specific force conserved)'),
+                        React.createElement('div', { className: 'math-display', dangerouslySetInnerHTML: { __html: sfLatex } })
+                    )
+                );
+
+                // Step 4: Calculate specific force at given section
+                sn++;
+                var Fgiven = r.givenSide === 'y1' ? r.F1display : r.F2display;
+                var Funit = (r.shape === 'rectangular') ? 'm\u00B2' : 'm\u00B3';
+                steps.push(
+                    React.createElement('div', { className: 'step-section', key: 'step' + sn },
+                        React.createElement('div', { className: 'step-header' }, 'Step ' + sn + ': Calculate Specific Force at Section ' + givenLabel),
+                        React.createElement('div', { className: 'math-display', dangerouslySetInnerHTML: { __html:
+                            (r.shape === 'rectangular' ?
+                                '\\[\\frac{F_' + givenLabel + '}{b} = \\frac{(' + givenY.toFixed(3) + ')^2}{2} + \\frac{(' + r.q.toFixed(3) + ')^2}{9.81 \\times ' + givenY.toFixed(3) + '} = ' + Fgiven.toFixed(3) + ' \\text{ ' + Funit + '}\\]'
+                                :
+                                '\\[F_' + givenLabel + ' = ' + Fgiven.toFixed(3) + ' \\text{ ' + Funit + '}\\]'
+                            )
+                        } })
+                    )
+                );
+
+                // Step 5: Solve for conjugate depth
+                sn++;
+                var unknownY = r.givenSide === 'y1' ? r.y2 : r.y1;
+                var unknownLabel = r.givenSide === 'y1' ? '2' : '1';
+                var conjContent = [];
+                conjContent.push(React.createElement('div', { className: 'step-header', key: 'ch' }, 'Step ' + sn + ': Solve for y' + (r.givenSide === 'y1' ? '\u2082' : '\u2081') + ' (Conjugate Depth)'));
+
+                if (r.shape === 'rectangular') {
+                    conjContent.push(React.createElement('div', { className: 'reasoning-box', key: 'cr' }, 'Direct formula available for rectangular channels:'));
+                    conjContent.push(React.createElement('div', { className: 'math-display', key: 'cm', dangerouslySetInnerHTML: { __html:
+                        '\\[\\frac{y_' + unknownLabel + '}{y_' + givenLabel + '} = \\frac{1}{2}\\left(\\sqrt{1 + 8Fr_' + givenLabel + '^2} - 1\\right)\\]' +
+                        '\\[\\frac{y_' + unknownLabel + '}{' + givenY.toFixed(3) + '} = \\frac{1}{2}\\left(\\sqrt{1 + 8(' + givenFr.toFixed(3) + ')^2} - 1\\right) = ' + (unknownY / givenY).toFixed(4) + '\\]' +
+                        '\\[\\boxed{y_' + unknownLabel + ' = ' + unknownY.toFixed(4) + ' \\text{ m}}\\]'
+                    } }));
+                } else {
+                    conjContent.push(React.createElement('div', { className: 'reasoning-box', key: 'cr' }, 'No closed-form solution for ' + r.shape + ' channels. Solving F\u2081 = F\u2082 iteratively:'));
+                    if (r.iterations && r.iterations.length > 0) {
+                        var iterRows = r.iterations.map(function(it, idx) {
+                            return React.createElement('tr', { key: idx },
+                                React.createElement('td', null, it.iteration),
+                                React.createElement('td', null, it.y.toFixed(4)),
+                                React.createElement('td', null, it.F.toFixed(4)),
+                                React.createElement('td', null, it.Ftarget.toFixed(4)),
+                                React.createElement('td', null, it.error.toFixed(6))
+                            );
+                        });
+                        conjContent.push(
+                            React.createElement('table', { className: 'f-iteration-table', key: 'ci' },
+                                React.createElement('thead', null,
+                                    React.createElement('tr', null,
+                                        React.createElement('th', null, 'Iter'),
+                                        React.createElement('th', null, 'y (m)'),
+                                        React.createElement('th', null, 'F calc'),
+                                        React.createElement('th', null, 'F target'),
+                                        React.createElement('th', null, 'Error')
+                                    )
+                                ),
+                                React.createElement('tbody', null, iterRows)
+                            )
+                        );
+                    }
+                    conjContent.push(React.createElement('div', { className: 'math-display', key: 'cf', dangerouslySetInnerHTML: { __html:
+                        '\\[\\boxed{y_' + unknownLabel + ' = ' + unknownY.toFixed(4) + ' \\text{ m}}\\]'
+                    } }));
+                }
+                steps.push(React.createElement('div', { className: 'step-section', key: 'step' + sn }, conjContent));
+
+                // Step 6: Verify conjugate depth flow regime
+                sn++;
+                var unknownFr = r.givenSide === 'y1' ? r.Fr2 : r.Fr1;
+                var unknownP = r.givenSide === 'y1' ? r.p2 : r.p1;
+                var unknownV = r.givenSide === 'y1' ? r.V2 : r.V1;
+                var unknownRegime = r.givenSide === 'y1' ? 'subcritical' : 'supercritical';
+                var frCheck2 = r.givenSide === 'y1' ? '< 1' : '> 1';
+                steps.push(
+                    React.createElement('div', { className: 'step-section', key: 'step' + sn },
+                        React.createElement('div', { className: 'step-header' }, 'Step ' + sn + ': Verify Conjugate Depth Flow Regime'),
+                        React.createElement('div', { className: 'math-display', dangerouslySetInnerHTML: { __html:
+                            '\\[A_' + unknownLabel + ' = ' + unknownP.A.toFixed(4) + ' \\text{ m}^2, \\quad V_' + unknownLabel + ' = ' + unknownV.toFixed(3) + ' \\text{ m/s}\\]' +
+                            '\\[Fr_' + unknownLabel + ' = ' + unknownFr.toFixed(3) + '\\]'
+                        } }),
+                        React.createElement('div', { className: 'success-box' },
+                            'Since Fr' + (r.givenSide === 'y1' ? '\u2082' : '\u2081') + ' = ' + unknownFr.toFixed(3) + ' ' + frCheck2 + ', flow is ' + unknownRegime + ' \u2713'
+                        )
+                    )
+                );
+
+                // Step 7: Specific energies
+                sn++;
+                steps.push(
+                    React.createElement('div', { className: 'step-section', key: 'step' + sn },
+                        React.createElement('div', { className: 'step-header' }, 'Step ' + sn + ': Calculate Specific Energies'),
+                        React.createElement('div', { className: 'math-display', dangerouslySetInnerHTML: { __html:
+                            '\\[E_1 = y_1 + \\frac{V_1^2}{2g} = ' + r.y1.toFixed(4) + ' + \\frac{(' + r.V1.toFixed(3) + ')^2}{2 \\times 9.81} = ' + r.E1.toFixed(4) + ' \\text{ m}\\]' +
+                            '\\[E_2 = y_2 + \\frac{V_2^2}{2g} = ' + r.y2.toFixed(4) + ' + \\frac{(' + r.V2.toFixed(3) + ')^2}{2 \\times 9.81} = ' + r.E2.toFixed(4) + ' \\text{ m}\\]'
+                        } })
+                    )
+                );
+
+                // Step 8: Head loss
+                sn++;
+                var hlContent = [];
+                hlContent.push(React.createElement('div', { className: 'step-header', key: 'hh' }, 'Step ' + sn + ': Calculate Head Loss'));
+
+                if (r.shape !== 'rectangular') {
+                    hlContent.push(React.createElement('div', { className: 'warning-box', key: 'hw' },
+                        '\u26A0\uFE0F WARNING: The formula h\u2097 = (y\u2082-y\u2081)\u00B3/(4y\u2081y\u2082) is ONLY valid for RECTANGULAR channels! For ' + r.shape + ' channel, use: h\u2097 = E\u2081 - E\u2082'
+                    ));
+                    hlContent.push(React.createElement('div', { className: 'math-display', key: 'hm', dangerouslySetInnerHTML: { __html:
+                        '\\[h_L = E_1 - E_2 = ' + r.E1.toFixed(4) + ' - ' + r.E2.toFixed(4) + ' = ' + r.hL.toFixed(4) + ' \\text{ m}\\]' +
+                        '\\[\\boxed{h_L = ' + r.hL.toFixed(4) + ' \\text{ m}}\\]'
+                    } }));
+                } else {
+                    hlContent.push(React.createElement('div', { className: 'math-display', key: 'hm', dangerouslySetInnerHTML: { __html:
+                        '\\[h_L = \\frac{(y_2 - y_1)^3}{4y_1y_2} = \\frac{(' + r.y2.toFixed(4) + ' - ' + r.y1.toFixed(4) + ')^3}{4 \\times ' + r.y1.toFixed(4) + ' \\times ' + r.y2.toFixed(4) + '} = ' + r.hL.toFixed(4) + ' \\text{ m}\\]' +
+                        '\\[\\boxed{h_L = ' + r.hL.toFixed(4) + ' \\text{ m}}\\]'
+                    } }));
+                }
+                steps.push(React.createElement('div', { className: 'step-section', key: 'step' + sn }, hlContent));
+
+                // Step 9: Efficiency
+                sn++;
+                steps.push(
+                    React.createElement('div', { className: 'step-section', key: 'step' + sn },
+                        React.createElement('div', { className: 'step-header' }, 'Step ' + sn + ': Jump Efficiency'),
+                        React.createElement('div', { className: 'math-display', dangerouslySetInnerHTML: { __html:
+                            '\\[\\eta = \\frac{E_2}{E_1} \\times 100\\% = \\frac{' + r.E2.toFixed(4) + '}{' + r.E1.toFixed(4) + '} \\times 100\\% = ' + r.eta.toFixed(1) + '\\%\\]' +
+                            '\\[' + (100 - r.eta).toFixed(1) + '\\% \\text{ of energy is dissipated in the jump.}\\]'
+                        } })
+                    )
+                );
+
+                // Step 10: Classify
+                sn++;
+                steps.push(
+                    React.createElement('div', { className: 'step-section', key: 'step' + sn },
+                        React.createElement('div', { className: 'step-header' }, 'Step ' + sn + ': Classify Jump Type'),
+                        React.createElement('div', { className: 'math-display', dangerouslySetInnerHTML: { __html:
+                            '\\[Fr_1 = ' + r.Fr1.toFixed(3) + ' \\quad \\text{Range: } ' + r.jumpClass.range + '\\]' +
+                            '\\[\\boxed{\\text{' + r.jumpClass.type + '}}\\]'
+                        } }),
+                        React.createElement('div', { className: 'reasoning-box' }, r.jumpClass.desc + '. Energy loss: ' + r.jumpClass.loss)
+                    )
+                );
+
+                // Step 11: Power dissipated
+                sn++;
+                steps.push(
+                    React.createElement('div', { className: 'step-section', key: 'step' + sn },
+                        React.createElement('div', { className: 'step-header' }, 'Step ' + sn + ': Power Dissipated'),
+                        React.createElement('div', { className: 'math-display', dangerouslySetInnerHTML: { __html:
+                            '\\[P = \\gamma Q h_L = 9810 \\times ' + r.Q.toFixed(1) + ' \\times ' + r.hL.toFixed(4) + ' = ' + r.P.toFixed(0) + ' \\text{ W}\\]' +
+                            '\\[\\boxed{P = ' + (r.P / 1000).toFixed(1) + ' \\text{ kW}}\\]'
+                        } })
+                    )
+                );
+
+                return steps;
+            }
+
+            function renderBaffleSteps(r) {
+                var steps = [];
+                var sn = 0;
+
+                // Step 1: Unit discharge
+                sn++;
+                steps.push(
+                    React.createElement('div', { className: 'step-section', key: 'step' + sn },
+                        React.createElement('div', { className: 'step-header' }, 'Step ' + sn + ': Calculate Unit Discharge'),
+                        React.createElement('div', { className: 'math-display', dangerouslySetInnerHTML: { __html:
+                            '\\[q = \\frac{Q}{b} = \\frac{' + r.Q.toFixed(1) + '}{' + r.b.toFixed(1) + '} = ' + r.q.toFixed(3) + ' \\text{ m}^3\\text{/s/m}\\]'
+                        } })
+                    )
+                );
+
+                // Step 2: Find y1 from conjugate depth
+                sn++;
+                var V2c = r.Q / (r.b * r.y2_conjugate);
+                steps.push(
+                    React.createElement('div', { className: 'step-section', key: 'step' + sn },
+                        React.createElement('div', { className: 'step-header' }, "Step " + sn + ": Find y\u2081 from Conjugate Depth (y\u2082' = " + r.y2_conjugate.toFixed(1) + " m)"),
+                        React.createElement('div', { className: 'reasoning-box' }, "Since y\u2082' = " + r.y2_conjugate.toFixed(1) + " m is the conjugate depth without baffle blocks, we find y\u2081 using the conjugate depth relationship:"),
+                        React.createElement('div', { className: 'math-display', dangerouslySetInnerHTML: { __html:
+                            "\\[V_2' = \\frac{Q}{by_2'} = \\frac{" + r.Q.toFixed(1) + "}{" + r.b.toFixed(1) + " \\times " + r.y2_conjugate.toFixed(1) + "} = " + V2c.toFixed(3) + " \\text{ m/s}\\]" +
+                            "\\[Fr_2' = \\frac{" + V2c.toFixed(3) + "}{\\sqrt{9.81 \\times " + r.y2_conjugate.toFixed(1) + "}} = " + r.Fr2conj.toFixed(3) + "\\]" +
+                            "\\[\\frac{y_1}{y_2'} = \\frac{1}{2}\\left(\\sqrt{1 + 8Fr_2'^2} - 1\\right) = " + (r.y1 / r.y2_conjugate).toFixed(4) + "\\]" +
+                            "\\[\\boxed{y_1 = " + r.y1.toFixed(3) + " \\text{ m}}\\]"
+                        } })
+                    )
+                );
+
+                // Step 3: Verify y1 is supercritical
+                sn++;
+                steps.push(
+                    React.createElement('div', { className: 'step-section', key: 'step' + sn },
+                        React.createElement('div', { className: 'step-header' }, 'Step ' + sn + ': Verify y\u2081 is Supercritical'),
+                        React.createElement('div', { className: 'math-display', dangerouslySetInnerHTML: { __html:
+                            '\\[V_1 = \\frac{Q}{by_1} = \\frac{' + r.Q.toFixed(1) + '}{' + r.b.toFixed(1) + ' \\times ' + r.y1.toFixed(3) + '} = ' + r.V1.toFixed(3) + ' \\text{ m/s}\\]' +
+                            '\\[Fr_1 = \\frac{' + r.V1.toFixed(3) + '}{\\sqrt{9.81 \\times ' + r.y1.toFixed(3) + '}} = ' + r.Fr1.toFixed(3) + '\\]'
+                        } }),
+                        React.createElement('div', { className: 'success-box' }, 'Since Fr\u2081 = ' + r.Fr1.toFixed(3) + ' > 1, flow is supercritical \u2713')
+                    )
+                );
+
+                // Step 4: Specific forces
+                sn++;
+                steps.push(
+                    React.createElement('div', { className: 'step-section', key: 'step' + sn },
+                        React.createElement('div', { className: 'step-header' }, 'Step ' + sn + ': Calculate Specific Forces (with actual tailwater y\u2082 = ' + r.y2.toFixed(1) + ' m)'),
+                        React.createElement('div', { className: 'math-display', dangerouslySetInnerHTML: { __html:
+                            '\\[\\frac{F_1}{b} = \\frac{(' + r.y1.toFixed(3) + ')^2}{2} + \\frac{(' + r.q.toFixed(3) + ')^2}{9.81 \\times ' + r.y1.toFixed(3) + '} = ' + r.F1display.toFixed(3) + ' \\text{ m}^2\\]' +
+                            '\\[\\frac{F_2}{b} = \\frac{(' + r.y2.toFixed(3) + ')^2}{2} + \\frac{(' + r.q.toFixed(3) + ')^2}{9.81 \\times ' + r.y2.toFixed(3) + '} = ' + r.F2display.toFixed(3) + ' \\text{ m}^2\\]'
+                        } })
+                    )
+                );
+
+                // Step 5: Baffle force
+                sn++;
+                steps.push(
+                    React.createElement('div', { className: 'step-section', key: 'step' + sn },
+                        React.createElement('div', { className: 'step-header' }, 'Step ' + sn + ': Calculate Required Baffle Force'),
+                        React.createElement('div', { className: 'reasoning-box' }, 'Momentum equation with baffle blocks: F\u2081/b = F\u2082/b + P_f/(\u03B3b)'),
+                        React.createElement('div', { className: 'math-display', dangerouslySetInnerHTML: { __html:
+                            '\\[\\frac{P_f}{\\gamma b} = \\frac{F_1}{b} - \\frac{F_2}{b} = ' + r.F1display.toFixed(3) + ' - ' + r.F2display.toFixed(3) + ' = ' + r.PfOverGammaB.toFixed(3) + ' \\text{ m}^2\\]'
+                        } })
+                    )
+                );
+
+                // Step 6: E1
+                sn++;
+                steps.push(
+                    React.createElement('div', { className: 'step-section', key: 'step' + sn },
+                        React.createElement('div', { className: 'step-header' }, 'Step ' + sn + ': Calculate Specific Energy at Section 1'),
+                        React.createElement('div', { className: 'math-display', dangerouslySetInnerHTML: { __html:
+                            '\\[E_1 = y_1 + \\frac{V_1^2}{2g} = ' + r.y1.toFixed(3) + ' + \\frac{(' + r.V1.toFixed(3) + ')^2}{2 \\times 9.81} = ' + r.E1.toFixed(3) + ' \\text{ m}\\]'
+                        } })
+                    )
+                );
+
+                // Step 7: Baffle area
+                sn++;
+                steps.push(
+                    React.createElement('div', { className: 'step-section', key: 'step' + sn },
+                        React.createElement('div', { className: 'step-header' }, 'Step ' + sn + ': Calculate Required Baffle Frontal Area'),
+                        React.createElement('div', { className: 'reasoning-box' }, 'Given: P_f = 2\u03B3AE\u2081'),
+                        React.createElement('div', { className: 'math-display', dangerouslySetInnerHTML: { __html:
+                            '\\[\\frac{P_f}{\\gamma b} = \\frac{2AE_1}{b}\\]' +
+                            '\\[' + r.PfOverGammaB.toFixed(3) + ' = \\frac{2A \\times ' + r.E1.toFixed(3) + '}{' + r.b.toFixed(1) + '} = ' + (2 * r.E1 / r.b).toFixed(4) + ' \\times A\\]' +
+                            '\\[A = \\frac{' + r.PfOverGammaB.toFixed(3) + '}{' + (2 * r.E1 / r.b).toFixed(4) + '} = ' + r.baffleArea.toFixed(3) + ' \\text{ m}^2\\]' +
+                            '\\[\\boxed{A \\approx ' + r.baffleArea.toFixed(1) + ' \\text{ m}^2}\\]'
+                        } })
+                    )
+                );
+
+                // Step 8: Interpretation
+                sn++;
+                steps.push(
+                    React.createElement('div', { className: 'step-section', key: 'step' + sn },
+                        React.createElement('div', { className: 'step-header' }, 'Step ' + sn + ': Interpret Results'),
+                        React.createElement('div', { className: 'warning-box' },
+                            "Tailwater is DEFICIENT by: \u0394y = y\u2082' - y\u2082 = " + r.y2_conjugate.toFixed(1) + ' - ' + r.y2.toFixed(1) + ' = ' + r.tailwaterDeficiency.toFixed(1) + ' m'
+                        ),
+                        React.createElement('div', { className: 'reasoning-box' },
+                            'Without baffle blocks, the jump would be swept downstream (unstable). Baffle blocks with total frontal area of ' + r.baffleArea.toFixed(1) + ' m\u00B2 provide the additional momentum resistance to stabilize the jump at the actual tailwater depth.'
+                        )
+                    )
+                );
+
+                return steps;
+            }
+
+            // ===================== SUMMARY TABLES =====================
+
+            function renderSummaryTable(r) {
+                if (r.problemType === 'simple') {
+                    return React.createElement('div', null,
+                        React.createElement('table', { className: 'summary-table' },
+                            React.createElement('thead', null,
+                                React.createElement('tr', null,
+                                    React.createElement('th', null, 'Parameter'),
+                                    React.createElement('th', null, 'Section 1 (upstream)'),
+                                    React.createElement('th', null, 'Section 2 (downstream)'),
+                                    React.createElement('th', null, 'Unit')
+                                )
+                            ),
+                            React.createElement('tbody', null,
+                                React.createElement('tr', null, React.createElement('td', null, 'Depth y'), React.createElement('td', null, r.y1.toFixed(4)), React.createElement('td', null, r.y2.toFixed(4)), React.createElement('td', null, 'm')),
+                                React.createElement('tr', null, React.createElement('td', null, 'Area A'), React.createElement('td', null, r.p1.A.toFixed(4)), React.createElement('td', null, r.p2.A.toFixed(4)), React.createElement('td', null, 'm\u00B2')),
+                                React.createElement('tr', null, React.createElement('td', null, 'Velocity V'), React.createElement('td', null, r.V1.toFixed(3)), React.createElement('td', null, r.V2.toFixed(3)), React.createElement('td', null, 'm/s')),
+                                React.createElement('tr', null, React.createElement('td', null, 'Hydraulic Depth D'), React.createElement('td', null, r.p1.D.toFixed(4)), React.createElement('td', null, r.p2.D.toFixed(4)), React.createElement('td', null, 'm')),
+                                React.createElement('tr', null, React.createElement('td', null, 'Froude Number Fr'), React.createElement('td', null, r.Fr1.toFixed(3)), React.createElement('td', null, r.Fr2.toFixed(3)), React.createElement('td', null, '-')),
+                                React.createElement('tr', null, React.createElement('td', null, 'Specific Energy E'), React.createElement('td', null, r.E1.toFixed(4)), React.createElement('td', null, r.E2.toFixed(4)), React.createElement('td', null, 'm')),
+                                React.createElement('tr', null,
+                                    React.createElement('td', null, 'Flow Regime'),
+                                    React.createElement('td', null, React.createElement('span', { className: 'regime-badge supercritical' }, 'Supercritical')),
+                                    React.createElement('td', null, React.createElement('span', { className: 'regime-badge subcritical' }, 'Subcritical')),
+                                    React.createElement('td', null, '-')
+                                )
+                            )
+                        ),
+                        React.createElement('table', { className: 'summary-table', style: { marginTop: '16px' } },
+                            React.createElement('thead', null,
+                                React.createElement('tr', null,
+                                    React.createElement('th', null, 'Jump Characteristics'),
+                                    React.createElement('th', null, 'Value'),
+                                    React.createElement('th', null, 'Unit')
+                                )
+                            ),
+                            React.createElement('tbody', null,
+                                React.createElement('tr', null, React.createElement('td', null, 'Depth Ratio y\u2082/y\u2081'), React.createElement('td', null, (r.y2 / r.y1).toFixed(3)), React.createElement('td', null, '-')),
+                                React.createElement('tr', null, React.createElement('td', null, 'Head Loss h\u2097'), React.createElement('td', null, r.hL.toFixed(4)), React.createElement('td', null, 'm')),
+                                React.createElement('tr', null, React.createElement('td', null, 'Power Dissipated P'), React.createElement('td', null, (r.P / 1000).toFixed(1)), React.createElement('td', null, 'kW')),
+                                React.createElement('tr', null, React.createElement('td', null, 'Jump Efficiency \u03B7'), React.createElement('td', null, r.eta.toFixed(1)), React.createElement('td', null, '%')),
+                                React.createElement('tr', null, React.createElement('td', null, 'Jump Type'), React.createElement('td', null, r.jumpClass.type), React.createElement('td', null, '-')),
+                                React.createElement('tr', null, React.createElement('td', null, 'Jump Length L\u2C7C (approx)'), React.createElement('td', null, r.Lj.toFixed(1)), React.createElement('td', null, 'm'))
+                            )
+                        )
+                    );
+                } else if (r.problemType === 'baffle') {
+                    return React.createElement('table', { className: 'summary-table' },
+                        React.createElement('thead', null,
+                            React.createElement('tr', null,
+                                React.createElement('th', null, 'Parameter'),
+                                React.createElement('th', null, 'Value'),
+                                React.createElement('th', null, 'Unit')
+                            )
+                        ),
+                        React.createElement('tbody', null,
+                            React.createElement('tr', null, React.createElement('td', null, 'Unit discharge q'), React.createElement('td', null, r.q.toFixed(3)), React.createElement('td', null, 'm\u00B3/s/m')),
+                            React.createElement('tr', null, React.createElement('td', null, 'Initial depth y\u2081'), React.createElement('td', null, r.y1.toFixed(3)), React.createElement('td', null, 'm')),
+                            React.createElement('tr', null, React.createElement('td', null, "Required conjugate y\u2082' (no baffle)"), React.createElement('td', null, r.y2_conjugate.toFixed(3)), React.createElement('td', null, 'm')),
+                            React.createElement('tr', null, React.createElement('td', null, 'Actual tailwater y\u2082'), React.createElement('td', null, r.y2.toFixed(3)), React.createElement('td', null, 'm')),
+                            React.createElement('tr', null, React.createElement('td', null, 'Tailwater deficiency'), React.createElement('td', null, r.tailwaterDeficiency.toFixed(3)), React.createElement('td', null, 'm')),
+                            React.createElement('tr', null, React.createElement('td', null, 'F\u2081/b'), React.createElement('td', null, r.F1display.toFixed(3)), React.createElement('td', null, 'm\u00B2')),
+                            React.createElement('tr', null, React.createElement('td', null, 'F\u2082/b'), React.createElement('td', null, r.F2display.toFixed(3)), React.createElement('td', null, 'm\u00B2')),
+                            React.createElement('tr', null, React.createElement('td', null, 'P_f/(\u03B3b)'), React.createElement('td', null, r.PfOverGammaB.toFixed(3)), React.createElement('td', null, 'm\u00B2')),
+                            React.createElement('tr', null, React.createElement('td', null, 'Specific energy E\u2081'), React.createElement('td', null, r.E1.toFixed(3)), React.createElement('td', null, 'm')),
+                            React.createElement('tr', null,
+                                React.createElement('td', { style: { fontWeight: 700, color: '#4ade80' } }, 'Required baffle frontal area A'),
+                                React.createElement('td', { style: { fontWeight: 700, color: '#4ade80' } }, r.baffleArea.toFixed(1)),
+                                React.createElement('td', { style: { fontWeight: 700, color: '#4ade80' } }, 'm\u00B2')
+                            )
+                        )
+                    );
+                }
+            }
+
+            // ===================== RENDER =====================
+
+            return React.createElement('div', { className: 'app-container' },
+                React.createElement('header', null,
+                    React.createElement('a', { href: 'index.html', className: 'back-link' }, '\u2190 Back to HydroSolve'),
+                    React.createElement('h1', null, 'Hydraulic Jump'),
+                    React.createElement('div', { className: 'subtitle' }, 'Conjugate depths, energy dissipation & stilling basin design')
+                ),
+                React.createElement('div', { className: 'main-grid' },
+                    // INPUT PANEL
+                    React.createElement('div', { className: 'input-panel' },
+                        React.createElement('div', { className: 'panel-title' }, 'Input Parameters'),
+
+                        // Channel type
+                        React.createElement('div', { className: 'form-section' },
+                            React.createElement('div', { className: 'section-label' }, '1. Channel Type'),
+                            React.createElement('div', { className: 'selector-group' },
+                                ['rectangular', 'triangular', 'trapezoidal'].map(function(s) {
+                                    return React.createElement('button', {
+                                        key: s,
+                                        className: 'selector-btn' + (shape === s ? ' active' : ''),
+                                        onClick: function() { setShape(s); setResults(null); }
+                                    }, s);
+                                })
+                            )
+                        ),
+
+                        // Problem type
+                        React.createElement('div', { className: 'form-section' },
+                            React.createElement('div', { className: 'section-label' }, '2. Problem Type'),
+                            React.createElement('div', { className: 'selector-group' },
+                                React.createElement('button', {
+                                    className: 'selector-btn' + (problemType === 'simple_given_y1' ? ' active' : ''),
+                                    onClick: function() { setProblemType('simple_given_y1'); setResults(null); }
+                                }, 'Given y\u2081'),
+                                React.createElement('button', {
+                                    className: 'selector-btn' + (problemType === 'simple_given_y2' ? ' active' : ''),
+                                    onClick: function() { setProblemType('simple_given_y2'); setResults(null); }
+                                }, 'Given y\u2082'),
+                                React.createElement('button', {
+                                    className: 'selector-btn' + (problemType === 'baffle' ? ' active' : ''),
+                                    onClick: function() { setProblemType('baffle'); setResults(null); }
+                                }, 'Baffle Blocks')
+                            )
+                        ),
+
+                        // Channel geometry
+                        React.createElement('div', { className: 'form-section' },
+                            React.createElement('div', { className: 'section-label' }, '3. Channel Geometry'),
+                            (shape === 'rectangular' || shape === 'trapezoidal') ?
+                                React.createElement('div', { className: 'input-group' },
+                                    React.createElement('label', null, 'Bottom Width b (m)'),
+                                    React.createElement('input', { type: 'number', value: inputs.b, placeholder: 'e.g. 10', step: 'any', onChange: function(e) { handleInput('b', e.target.value); } })
+                                ) : null,
+                            (shape === 'triangular' || shape === 'trapezoidal') ?
+                                React.createElement('div', { className: 'input-group' },
+                                    React.createElement('label', null, 'Side Slope z (zH:1V)'),
+                                    React.createElement('input', { type: 'number', value: inputs.z, placeholder: 'e.g. 2', step: 'any', onChange: function(e) { handleInput('z', e.target.value); } })
+                                ) : null
+                        ),
+
+                        // Flow data
+                        React.createElement('div', { className: 'form-section' },
+                            React.createElement('div', { className: 'section-label' }, '4. Flow Data'),
+                            React.createElement('div', { className: 'input-group' },
+                                React.createElement('label', null, 'Discharge Q (m\u00B3/s)'),
+                                React.createElement('input', { type: 'number', value: inputs.Q, placeholder: 'e.g. 30', step: 'any', onChange: function(e) { handleInput('Q', e.target.value); } })
+                            )
+                        ),
+
+                        // Depth inputs
+                        React.createElement('div', { className: 'form-section' },
+                            React.createElement('div', { className: 'section-label' }, '5. Known Depth'),
+                            problemType === 'simple_given_y1' ?
+                                React.createElement('div', { className: 'input-group' },
+                                    React.createElement('label', null, 'Upstream depth y\u2081 (m)'),
+                                    React.createElement('input', { type: 'number', value: inputs.y1, placeholder: 'e.g. 0.5', step: 'any', onChange: function(e) { handleInput('y1', e.target.value); } })
+                                ) : null,
+                            problemType === 'simple_given_y2' ?
+                                React.createElement('div', { className: 'input-group' },
+                                    React.createElement('label', null, 'Downstream depth y\u2082 (m)'),
+                                    React.createElement('input', { type: 'number', value: inputs.y2, placeholder: 'e.g. 3.0', step: 'any', onChange: function(e) { handleInput('y2', e.target.value); } })
+                                ) : null,
+                            problemType === 'baffle' ? [
+                                React.createElement('div', { className: 'input-group', key: 'bc' },
+                                    React.createElement('label', null, "Required conjugate depth y\u2082' (m)"),
+                                    React.createElement('input', { type: 'number', value: inputs.y2_conjugate, placeholder: 'e.g. 5', step: 'any', onChange: function(e) { handleInput('y2_conjugate', e.target.value); } })
+                                ),
+                                React.createElement('div', { className: 'input-group', key: 'ba' },
+                                    React.createElement('label', null, 'Actual tailwater y\u2082 (m)'),
+                                    React.createElement('input', { type: 'number', value: inputs.y2_actual, placeholder: 'e.g. 4', step: 'any', onChange: function(e) { handleInput('y2_actual', e.target.value); } })
+                                ),
+                                React.createElement('div', { className: 'reasoning-box', key: 'bf', style: { fontSize: '0.8rem', fontStyle: 'normal' } },
+                                    'Force formula: P_f = 2\u03B3AE\u2081'
+                                )
+                            ] : null
+                        ),
+
+                        // Calculate button
+                        React.createElement('button', { className: 'calculate-button', onClick: solve }, 'Calculate'),
+
+                        // Example buttons
+                        React.createElement('div', { className: 'form-section', style: { marginTop: '24px' } },
+                            React.createElement('div', { className: 'section-label' }, 'Load Example'),
+                            Object.keys(examples).map(function(key) {
+                                return React.createElement('button', {
+                                    key: key,
+                                    className: 'example-btn',
+                                    onClick: function() { loadExample(key); }
+                                }, '\u2192 ' + examples[key].name);
+                            })
+                        )
+                    ),
+
+                    // RESULTS PANEL
+                    React.createElement('div', { className: 'results-panel' },
+                        React.createElement('div', { className: 'panel-title' }, 'Solution'),
+
+                        !results ?
+                            React.createElement('div', { className: 'results-empty' },
+                                React.createElement('p', { style: { color: 'var(--text-muted)', fontSize: '1.1rem' } }, 'Enter parameters and click Calculate to see the step-by-step solution.'),
+                                React.createElement('p', { style: { color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '8px' } }, 'Or load one of the examples to get started.')
+                            ) : null,
+
+                        results && !results.success ?
+                            React.createElement('div', { className: 'result-card error' },
+                                React.createElement('div', { className: 'result-header error' }, 'Error'),
+                                React.createElement('p', null, results.error)
+                            ) : null,
+
+                        results && results.success ? [
+                            // Key results card
+                            React.createElement('div', { className: 'result-card success', key: 'rc' },
+                                React.createElement('div', { className: 'result-header' },
+                                    results.problemType === 'baffle' ? 'Baffle Block Analysis' : 'Hydraulic Jump Analysis'
+                                ),
+                                React.createElement('div', { className: 'result-grid' },
+                                    React.createElement('div', { className: 'result-item' },
+                                        React.createElement('div', { className: 'result-item-label' }, 'Upstream Depth y\u2081'),
+                                        React.createElement('div', { className: 'result-item-value' }, results.y1.toFixed(4) + ' m')
+                                    ),
+                                    React.createElement('div', { className: 'result-item' },
+                                        React.createElement('div', { className: 'result-item-label' }, 'Downstream Depth y\u2082'),
+                                        React.createElement('div', { className: 'result-item-value' }, results.y2.toFixed(4) + ' m')
+                                    ),
+                                    React.createElement('div', { className: 'result-item' },
+                                        React.createElement('div', { className: 'result-item-label' }, 'Froude Fr\u2081'),
+                                        React.createElement('div', { className: 'result-item-value' }, results.Fr1.toFixed(3))
+                                    ),
+                                    results.problemType === 'simple' ?
+                                        React.createElement('div', { className: 'result-item' },
+                                            React.createElement('div', { className: 'result-item-label' }, 'Head Loss h\u2097'),
+                                            React.createElement('div', { className: 'result-item-value' }, results.hL.toFixed(4) + ' m')
+                                        ) :
+                                        React.createElement('div', { className: 'result-item' },
+                                            React.createElement('div', { className: 'result-item-label' }, 'Baffle Area A'),
+                                            React.createElement('div', { className: 'result-item-value' }, results.baffleArea.toFixed(1) + ' m\u00B2')
+                                        )
+                                )
+                            ),
+
+                            // Schematic
+                            React.createElement('div', { className: 'schematic-container', key: 'sc' },
+                                React.createElement('div', { style: { fontFamily: 'JetBrains Mono', fontSize: '0.875rem', color: 'var(--accent)', marginBottom: '8px', textTransform: 'uppercase', fontWeight: 600 } }, 'Jump Schematic'),
+                                React.createElement('canvas', { ref: schematicRef, width: 650, height: 260, style: { maxWidth: '100%' } })
+                            ),
+
+                            // F-y Curve (baffle only)
+                            results.problemType === 'baffle' ?
+                                React.createElement('div', { className: 'chart-container', key: 'fy' },
+                                    React.createElement('div', { style: { fontFamily: 'JetBrains Mono', fontSize: '0.875rem', color: 'var(--accent)', marginBottom: '8px', textTransform: 'uppercase', fontWeight: 600 } }, 'F-y Curve (Specific Force Diagram)'),
+                                    React.createElement('canvas', { ref: chartRef, height: 300 })
+                                ) : null,
+
+                            // Step-by-step solution
+                            React.createElement('div', { key: 'steps', style: { marginTop: '16px' } },
+                                React.createElement('div', { style: { fontFamily: 'JetBrains Mono', fontSize: '1rem', color: 'var(--accent)', marginBottom: '16px', textTransform: 'uppercase', fontWeight: 700 } }, 'Step-by-Step Solution'),
+                                renderSteps(results)
+                            ),
+
+                            // Summary tables
+                            React.createElement('div', { key: 'summary', style: { marginTop: '16px' } },
+                                React.createElement('div', { style: { fontFamily: 'JetBrains Mono', fontSize: '1rem', color: 'var(--accent)', marginBottom: '16px', textTransform: 'uppercase', fontWeight: 700 } }, 'Final Results Summary'),
+                                renderSummaryTable(results)
+                            )
+                        ] : null
+                    )
+                )
+            );
+        }
+
+        ReactDOM.render(React.createElement(HydraulicJumpCalc), document.getElementById('root'));
+    </script>
+</body>
+</html>
