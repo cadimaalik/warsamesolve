@@ -592,6 +592,9 @@
             var _s4 = useState(null);
             var results = _s4[0], setResults = _s4[1];
 
+            var _s5 = useState(false);
+            var pendingSolve = _s5[0], setPendingSolve = _s5[1];
+
             var schematicRef = useRef(null);
             var chartRef = useRef(null);
             var chartInstance = useRef(null);
@@ -605,11 +608,17 @@
             useEffect(function() {
                 if (results && results.success) {
                     drawSchematic(results);
-                    if (results.problemType === 'baffle') {
-                        drawFyCurve(results);
-                    }
+                    drawFyCurve(results);
                 }
             }, [results]);
+
+            // Auto-calculate after loading an example
+            useEffect(function() {
+                if (pendingSolve) {
+                    setPendingSolve(false);
+                    solve();
+                }
+            }, [pendingSolve]);
 
             function handleInput(field, value) {
                 var newInputs = Object.assign({}, inputs);
@@ -630,7 +639,7 @@
                     y2_actual: ex.y2_actual || '',
                     y2_conjugate: ex.y2_conjugate || ''
                 });
-                setResults(null);
+                setPendingSolve(true);
             }
 
             // ===================== SCHEMATIC DRAWING =====================
@@ -1724,12 +1733,11 @@
                                 React.createElement('canvas', { ref: schematicRef, width: 650, height: 260, style: { maxWidth: '100%' } })
                             ),
 
-                            // F-y Curve (baffle only)
-                            results.problemType === 'baffle' ?
-                                React.createElement('div', { className: 'chart-container', key: 'fy' },
-                                    React.createElement('div', { style: { fontFamily: 'JetBrains Mono', fontSize: '0.875rem', color: 'var(--accent)', marginBottom: '8px', textTransform: 'uppercase', fontWeight: 600 } }, 'F-y Curve (Specific Force Diagram)'),
-                                    React.createElement('canvas', { ref: chartRef, height: 300 })
-                                ) : null,
+                            // F-y Curve
+                            React.createElement('div', { className: 'chart-container', key: 'fy' },
+                                React.createElement('div', { style: { fontFamily: 'JetBrains Mono', fontSize: '0.875rem', color: 'var(--accent)', marginBottom: '8px', textTransform: 'uppercase', fontWeight: 600 } }, 'F-y Curve (Specific Force Diagram)'),
+                                React.createElement('canvas', { ref: chartRef, height: 300 })
+                            ),
 
                             // Step-by-step solution
                             React.createElement('div', { key: 'steps', style: { marginTop: '16px' } },
