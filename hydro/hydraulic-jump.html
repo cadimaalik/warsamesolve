@@ -8,7 +8,6 @@
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Spectral:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -596,8 +595,6 @@
             var pendingSolve = _s5[0], setPendingSolve = _s5[1];
 
             var schematicRef = useRef(null);
-            var chartRef = useRef(null);
-            var chartInstance = useRef(null);
 
             useEffect(function() {
                 if (results && window.MathJax) {
@@ -607,8 +604,7 @@
 
             useEffect(function() {
                 if (results && results.success) {
-                    drawSchematic(results);
-                    drawFyCurve(results);
+                    drawCombinedDiagram(results);
                 }
             }, [results]);
 
@@ -642,61 +638,245 @@
                 setPendingSolve(true);
             }
 
-            // ===================== SCHEMATIC DRAWING =====================
+            // ===================== COMBINED 3-PANEL DIAGRAM =====================
+            // Left: Specific-energy curve (E vs y)
+            // Center: Hydraulic jump schematic
+            // Right: Specific-force curve (F vs y)
 
-            function drawSchematic(r) {
+            function drawCombinedDiagram(r) {
                 var canvas = schematicRef.current;
                 if (!canvas) return;
                 var ctx = canvas.getContext('2d');
                 var W = canvas.width;
                 var H = canvas.height;
                 ctx.clearRect(0, 0, W, H);
-
-                var bedY = H * 0.75;
-                var maxDepth = Math.max(r.y1, r.y2);
-                var scale = (H * 0.5) / maxDepth;
-                var h1 = r.y1 * scale;
-                var h2 = r.y2 * scale;
-
-                // Background
                 ctx.fillStyle = '#0a0a0a';
                 ctx.fillRect(0, 0, W, H);
+
+                // Panel geometry
+                var pad = 45;
+                var panelGap = 30;
+                var panelW = (W - 2 * pad - 2 * panelGap) / 3;
+                var topY = 40;
+                var botY = H - 50;
+                var plotH = botY - topY;
+
+                // Shared y-axis scale
+                var yMax = Math.max(r.y2, r.y1) * 1.5;
+                if (r.y2_conjugate) yMax = Math.max(yMax, r.y2_conjugate * 1.35);
+                function yToPixel(y) { return botY - (y / yMax) * plotH; }
+
+                // ---- Critical depth for reference ----
+                var yc = 0;
+                if (r.shape === 'rectangular' && r.q > 0) {
+                    yc = Math.pow(r.q * r.q / G, 1.0 / 3.0);
+                } else {
+                    // Find yc iteratively: Fr = 1
+                    var lo = 0.001, hi = yMax;
+                    for (var it = 0; it < 60; it++) {
+                        var mid = (lo + hi) / 2;
+                        var fr = froudeNumber(r.shape, mid, r.Q, r.b || 0, r.z || 0);
+                        if (fr > 1) lo = mid; else hi = mid;
+                    }
+                    yc = (lo + hi) / 2;
+                }
+
+                // ===== LEFT PANEL: E-y diagram =====
+                var eL = pad;
+                var eR = pad + panelW;
+
+                // Generate E-y curve data
+                var numPts = 200;
+                var ePoints = [];
+                var eMax = 0;
+                for (var i = 1; i <= numPts; i++) {
+                    var yy = (i / numPts) * yMax;
+                    var Ev = specificEnergy(r.shape, yy, r.Q, r.b || 0, r.z || 0);
+                    if (isFinite(Ev) && Ev > 0 && Ev < yMax * 5) {
+                        ePoints.push({ y: yy, E: Ev });
+                        if (Ev > eMax) eMax = Ev;
+                    }
+                }
+                // Clamp eMax for display
+                eMax = Math.min(eMax, Math.max(r.E1, r.E2) * 1.6);
+                function eToX(E) { return eL + (E / eMax) * panelW; }
+
+                // Axes
+                ctx.strokeStyle = '#a3a3a3';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(eL, topY); ctx.lineTo(eL, botY); ctx.lineTo(eR, botY);
+                ctx.stroke();
+
+                // 45-degree line y = E
+                ctx.strokeStyle = 'rgba(163,163,163,0.3)';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([4, 4]);
+                ctx.beginPath();
+                ctx.moveTo(eToX(0), yToPixel(0));
+                var diagEnd = Math.min(eMax, yMax);
+                ctx.lineTo(eToX(diagEnd), yToPixel(diagEnd));
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // E-y curve
+                ctx.strokeStyle = '#38bdf8';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                var started = false;
+                for (var i = 0; i < ePoints.length; i++) {
+                    var px = eToX(ePoints[i].E);
+                    var py = yToPixel(ePoints[i].y);
+                    if (px >= eL && px <= eR) {
+                        if (!started) { ctx.moveTo(px, py); started = true; }
+                        else ctx.lineTo(px, py);
+                    }
+                }
+                ctx.stroke();
+
+                // Operating points on E-y
+                // P1 (upstream, supercritical - bottom)
+                var E1px = eToX(r.E1);
+                var E1py = yToPixel(r.y1);
+                ctx.beginPath();
+                ctx.arc(E1px, E1py, 6, 0, Math.PI * 2);
+                ctx.fillStyle = '#ef4444';
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+
+                // P2 (downstream, subcritical - top)
+                var E2px = eToX(r.E2);
+                var E2py = yToPixel(r.y2);
+                ctx.beginPath();
+                ctx.arc(E2px, E2py, 6, 0, Math.PI * 2);
+                ctx.fillStyle = '#4ade80';
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+
+                // yc line
+                ctx.strokeStyle = 'rgba(251,191,36,0.4)';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([4, 4]);
+                ctx.beginPath();
+                ctx.moveTo(eL, yToPixel(yc));
+                ctx.lineTo(eR, yToPixel(yc));
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Horizontal dashed lines from y1, y2 to E-y points
+                ctx.strokeStyle = 'rgba(163,163,163,0.35)';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([3, 3]);
+                ctx.beginPath(); ctx.moveTo(eL, E1py); ctx.lineTo(E1px, E1py); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(eL, E2py); ctx.lineTo(E2px, E2py); ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Delta E annotation
+                ctx.strokeStyle = '#fbbf24';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(E2px, botY - 3);
+                ctx.lineTo(E2px, botY + 8);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(E1px, botY - 3);
+                ctx.lineTo(E1px, botY + 8);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(E2px, botY + 4);
+                ctx.lineTo(E1px, botY + 4);
+                ctx.stroke();
+                // Arrow heads
+                ctx.beginPath(); ctx.moveTo(E2px, botY + 4); ctx.lineTo(E2px + 4, botY + 1); ctx.lineTo(E2px + 4, botY + 7); ctx.closePath(); ctx.fillStyle = '#fbbf24'; ctx.fill();
+                ctx.beginPath(); ctx.moveTo(E1px, botY + 4); ctx.lineTo(E1px - 4, botY + 1); ctx.lineTo(E1px - 4, botY + 7); ctx.closePath(); ctx.fill();
+
+                // Labels
+                ctx.fillStyle = '#fbbf24';
+                ctx.font = '10px JetBrains Mono';
+                ctx.textAlign = 'center';
+                ctx.fillText('\u0394E', (E1px + E2px) / 2, botY + 16);
+                ctx.fillText('E\u2082', E2px, botY + 28);
+                ctx.fillText('E\u2081', E1px, botY + 28);
+
+                // y-axis labels
+                ctx.fillStyle = '#a3a3a3';
+                ctx.font = '10px JetBrains Mono';
+                ctx.textAlign = 'right';
+                ctx.fillText('y\u2082', eL - 5, E2py + 4);
+                ctx.fillText('y\u2081', eL - 5, E1py + 4);
+                ctx.fillStyle = 'rgba(251,191,36,0.7)';
+                ctx.fillText('y\u1D04', eL - 5, yToPixel(yc) + 4);
+
+                // Panel title
+                ctx.fillStyle = '#e5e5e5';
+                ctx.font = 'bold 11px JetBrains Mono';
+                ctx.textAlign = 'center';
+                ctx.fillText('Specific-energy curve', (eL + eR) / 2, botY + 44);
+
+                // Axis labels
+                ctx.fillStyle = '#a3a3a3';
+                ctx.font = '10px JetBrains Mono';
+                ctx.textAlign = 'center';
+                ctx.fillText('E', eR, botY + 16);
+                ctx.save();
+                ctx.translate(eL - 25, (topY + botY) / 2);
+                ctx.rotate(-Math.PI / 2);
+                ctx.textAlign = 'center';
+                ctx.fillText('y', 0, 0);
+                ctx.restore();
+
+
+                // ===== CENTER PANEL: Hydraulic Jump Schematic =====
+                var cL = eR + panelGap;
+                var cR = cL + panelW;
+                var cMid = (cL + cR) / 2;
+
+                // Scale depths to panel
+                var maxD = Math.max(r.y1, r.y2);
+                if (r.y2_conjugate) maxD = Math.max(maxD, r.y2_conjugate);
+                var dScale = (plotH * 0.6) / maxD;
+                var bedYc = botY - 10;
+                var h1 = r.y1 * dScale;
+                var h2 = r.y2 * dScale;
 
                 // Channel bed
                 ctx.strokeStyle = '#a3a3a3';
                 ctx.lineWidth = 2;
                 ctx.beginPath();
-                ctx.moveTo(40, bedY);
-                ctx.lineTo(W - 40, bedY);
+                ctx.moveTo(cL + 5, bedYc);
+                ctx.lineTo(cR - 5, bedYc);
                 ctx.stroke();
 
                 // Bed hatching
                 ctx.strokeStyle = '#505050';
                 ctx.lineWidth = 1;
-                for (var i = 60; i < W - 40; i += 12) {
+                for (var i = cL + 15; i < cR - 5; i += 10) {
                     ctx.beginPath();
-                    ctx.moveTo(i, bedY);
-                    ctx.lineTo(i - 8, bedY + 8);
+                    ctx.moveTo(i, bedYc);
+                    ctx.lineTo(i - 6, bedYc + 6);
                     ctx.stroke();
                 }
 
-                // Upstream water surface
-                var jumpStartX = W * 0.35;
-                var jumpEndX = W * 0.6;
+                // Water body
+                var jStartX = cL + panelW * 0.28;
+                var jEndX = cL + panelW * 0.62;
 
-                ctx.fillStyle = 'rgba(56, 189, 248, 0.15)';
+                ctx.fillStyle = 'rgba(56, 189, 248, 0.12)';
                 ctx.beginPath();
-                ctx.moveTo(40, bedY);
-                ctx.lineTo(40, bedY - h1);
-                ctx.lineTo(jumpStartX, bedY - h1);
-                // Turbulent roller curve
+                ctx.moveTo(cL + 5, bedYc);
+                ctx.lineTo(cL + 5, bedYc - h1);
+                ctx.lineTo(jStartX, bedYc - h1);
                 ctx.bezierCurveTo(
-                    jumpStartX + (jumpEndX - jumpStartX) * 0.2, bedY - h2 - 15,
-                    jumpStartX + (jumpEndX - jumpStartX) * 0.6, bedY - h2 + 5,
-                    jumpEndX, bedY - h2
+                    jStartX + (jEndX - jStartX) * 0.15, bedYc - h2 - 12,
+                    jStartX + (jEndX - jStartX) * 0.55, bedYc - h2 + 4,
+                    jEndX, bedYc - h2
                 );
-                ctx.lineTo(W - 40, bedY - h2);
-                ctx.lineTo(W - 40, bedY);
+                ctx.lineTo(cR - 5, bedYc - h2);
+                ctx.lineTo(cR - 5, bedYc);
                 ctx.closePath();
                 ctx.fill();
 
@@ -704,228 +884,312 @@
                 ctx.strokeStyle = '#38bdf8';
                 ctx.lineWidth = 2.5;
                 ctx.beginPath();
-                ctx.moveTo(40, bedY - h1);
-                ctx.lineTo(jumpStartX, bedY - h1);
+                ctx.moveTo(cL + 5, bedYc - h1);
+                ctx.lineTo(jStartX, bedYc - h1);
                 ctx.bezierCurveTo(
-                    jumpStartX + (jumpEndX - jumpStartX) * 0.2, bedY - h2 - 15,
-                    jumpStartX + (jumpEndX - jumpStartX) * 0.6, bedY - h2 + 5,
-                    jumpEndX, bedY - h2
+                    jStartX + (jEndX - jStartX) * 0.15, bedYc - h2 - 12,
+                    jStartX + (jEndX - jStartX) * 0.55, bedYc - h2 + 4,
+                    jEndX, bedYc - h2
                 );
-                ctx.lineTo(W - 40, bedY - h2);
+                ctx.lineTo(cR - 5, bedYc - h2);
                 ctx.stroke();
 
-                // Turbulent roller indication
+                // Rollers
                 ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
                 ctx.lineWidth = 1;
-                var rollerCx = (jumpStartX + jumpEndX) / 2;
-                var rollerCy = bedY - (h1 + h2) / 2 - 5;
+                var rcx = (jStartX + jEndX) / 2;
+                var rcy = bedYc - (h1 + h2) / 2 - 3;
                 for (var a = 0; a < 3; a++) {
                     ctx.beginPath();
-                    var rx = 15 + a * 12;
-                    var ry = 6 + a * 3;
-                    ctx.ellipse(rollerCx + a * 8, rollerCy - a * 4, rx, ry, -0.2, 0, Math.PI * 1.5);
+                    ctx.ellipse(rcx + a * 7, rcy - a * 3, 10 + a * 8, 4 + a * 2, -0.2, 0, Math.PI * 1.5);
                     ctx.stroke();
                 }
 
-                // Baffle blocks for baffle problem
+                // Baffle blocks
                 if (r.problemType === 'baffle') {
                     ctx.fillStyle = '#a3a3a3';
-                    var baffleX = jumpStartX + (jumpEndX - jumpStartX) * 0.5;
-                    var bh = Math.min(h1 * 0.6, 25);
+                    var bx = jStartX + (jEndX - jStartX) * 0.5;
+                    var bh = Math.min(h1 * 0.5, 18);
                     for (var bk = -1; bk <= 1; bk++) {
-                        ctx.fillRect(baffleX + bk * 18 - 5, bedY - bh, 10, bh);
+                        ctx.fillRect(bx + bk * 14 - 4, bedYc - bh, 8, bh);
                     }
-                    // Label
-                    ctx.fillStyle = var_accent;
-                    ctx.font = '11px JetBrains Mono';
-                    ctx.textAlign = 'center';
-                    ctx.fillText('Baffle Blocks', baffleX, bedY + 22);
                 }
 
-                // Depth dimension lines
-                ctx.strokeStyle = var_accent;
-                ctx.lineWidth = 1;
-                ctx.setLineDash([4, 3]);
-
-                // y1 dimension
+                // Energy line
+                var eLineY1 = bedYc - h1 - (r.E1 - r.y1) * dScale;
+                var eLineY2 = bedYc - h2 - (r.E2 - r.y2) * dScale;
+                ctx.strokeStyle = 'rgba(251,191,36,0.6)';
+                ctx.lineWidth = 1.5;
+                ctx.setLineDash([6, 4]);
                 ctx.beginPath();
-                ctx.moveTo(70, bedY);
-                ctx.lineTo(70, bedY - h1);
+                ctx.moveTo(cL + 5, eLineY1);
+                ctx.lineTo(jStartX, eLineY1);
+                ctx.lineTo(jEndX, eLineY2);
+                ctx.lineTo(cR - 5, eLineY2);
                 ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(65, bedY - h1);
-                ctx.lineTo(75, bedY - h1);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(65, bedY);
-                ctx.lineTo(75, bedY);
-                ctx.stroke();
-
-                // y2 dimension
-                ctx.beginPath();
-                ctx.moveTo(W - 70, bedY);
-                ctx.lineTo(W - 70, bedY - h2);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(W - 75, bedY - h2);
-                ctx.lineTo(W - 65, bedY - h2);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(W - 75, bedY);
-                ctx.lineTo(W - 65, bedY);
-                ctx.stroke();
-
                 ctx.setLineDash([]);
 
-                // Labels
+                // Energy line label
                 ctx.fillStyle = '#fbbf24';
-                ctx.font = 'bold 13px JetBrains Mono';
+                ctx.font = '9px JetBrains Mono';
+                ctx.textAlign = 'left';
+                ctx.fillText('Energy line', cL + 8, eLineY1 - 5);
+
+                // Delta E drop
+                var deX = (jStartX + jEndX) / 2;
+                ctx.strokeStyle = '#fbbf24';
+                ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.moveTo(deX, eLineY1); ctx.lineTo(deX, eLineY2); ctx.stroke();
+                ctx.font = '9px JetBrains Mono';
+                ctx.textAlign = 'left';
+                ctx.fillText('\u0394E', deX + 3, (eLineY1 + eLineY2) / 2 + 3);
+
+                // Depth labels
+                ctx.fillStyle = '#fbbf24';
+                ctx.font = 'bold 10px JetBrains Mono';
                 ctx.textAlign = 'center';
-                ctx.fillText('y\u2081 = ' + r.y1.toFixed(3) + ' m', 70, bedY - h1 / 2 + 4);
-                ctx.fillText('y\u2082 = ' + r.y2.toFixed(3) + ' m', W - 70, bedY - h2 / 2 + 4);
+                ctx.fillText('y\u2081', cL + 20, bedYc - h1 / 2 + 3);
+                ctx.fillText('y\u2082', cR - 20, bedYc - h2 / 2 + 3);
+
+                // Section labels (circled 1 and 2)
+                var circR = 9;
+                // Section 1
+                ctx.strokeStyle = '#e5e5e5';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath(); ctx.arc(jStartX - 5, topY + 15, circR, 0, Math.PI * 2); ctx.stroke();
+                ctx.fillStyle = '#e5e5e5'; ctx.font = 'bold 11px JetBrains Mono'; ctx.textAlign = 'center';
+                ctx.fillText('1', jStartX - 5, topY + 19);
+                // Section 2
+                ctx.strokeStyle = '#e5e5e5';
+                ctx.beginPath(); ctx.arc(jEndX + 5, topY + 15, circR, 0, Math.PI * 2); ctx.stroke();
+                ctx.fillText('2', jEndX + 5, topY + 19);
+
+                // Dashed vertical lines from sections to bed
+                ctx.strokeStyle = 'rgba(229,229,229,0.25)';
+                ctx.setLineDash([3, 4]);
+                ctx.beginPath(); ctx.moveTo(jStartX - 5, topY + 25); ctx.lineTo(jStartX - 5, bedYc); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(jEndX + 5, topY + 25); ctx.lineTo(jEndX + 5, bedYc); ctx.stroke();
+                ctx.setLineDash([]);
 
                 // Flow arrow
                 ctx.fillStyle = '#4ade80';
-                ctx.font = 'bold 12px JetBrains Mono';
-                ctx.fillText('\u2192 Flow', W / 2, bedY + 22);
+                ctx.font = '10px JetBrains Mono';
+                ctx.textAlign = 'center';
+                ctx.fillText('\u2192', cMid, bedYc - h1 / 2);
+                ctx.fillText('Q', cMid, bedYc - h1 / 2 + 12);
 
                 // Fr labels
-                ctx.font = '11px JetBrains Mono';
+                ctx.font = '9px JetBrains Mono';
                 ctx.fillStyle = '#ef4444';
-                ctx.fillText('Fr\u2081 = ' + r.Fr1.toFixed(2) + ' > 1', jumpStartX / 2 + 20, bedY - h1 - 12);
-                ctx.fillText('SUPERCRITICAL', jumpStartX / 2 + 20, bedY - h1 - 26);
-
+                ctx.fillText('Fr\u2081=' + r.Fr1.toFixed(2), cL + panelW * 0.15, bedYc - h1 - 8);
                 ctx.fillStyle = '#4ade80';
-                ctx.fillText('Fr\u2082 = ' + r.Fr2.toFixed(2) + ' < 1', (jumpEndX + W - 40) / 2, bedY - h2 - 12);
-                ctx.fillText('SUBCRITICAL', (jumpEndX + W - 40) / 2, bedY - h2 - 26);
+                ctx.fillText('Fr\u2082=' + r.Fr2.toFixed(2), cR - panelW * 0.15, bedYc - h2 - 8);
 
-                // Title
+                // Panel title
                 ctx.fillStyle = '#e5e5e5';
-                ctx.font = 'bold 14px JetBrains Mono';
-                ctx.fillText('HYDRAULIC JUMP', W / 2, 22);
+                ctx.font = 'bold 11px JetBrains Mono';
+                ctx.textAlign = 'center';
+                ctx.fillText('Hydraulic jump', cMid, botY + 44);
 
-                // Jump length
-                ctx.strokeStyle = '#4ade80';
+                // Bed labels
+                ctx.fillStyle = '#a3a3a3';
+                ctx.font = '9px JetBrains Mono';
+                ctx.fillText('Critical depth', cMid - 20, bedYc + 22);
+                ctx.fillText('Initial depth', cR - 30, bedYc + 22);
+
+
+                // ===== RIGHT PANEL: F-y diagram =====
+                var fL = cR + panelGap;
+                var fR = W - pad;
+
+                // Generate F-y curve data
+                var fPoints = [];
+                var fMax = 0;
+                for (var i = 1; i <= numPts; i++) {
+                    var yy = (i / numPts) * yMax;
+                    var Fv;
+                    if (r.shape === 'rectangular' && r.q > 0) {
+                        Fv = (yy * yy) / 2 + (r.q * r.q) / (G * yy);
+                    } else {
+                        Fv = specificForce(r.shape, yy, r.Q, r.b || 0, r.z || 0);
+                    }
+                    if (isFinite(Fv) && Fv > 0 && Fv < yMax * 50) {
+                        fPoints.push({ y: yy, F: Fv });
+                        if (Fv > fMax) fMax = Fv;
+                    }
+                }
+                fMax = Math.min(fMax, Math.max(r.F1display, r.F2display) * 1.6);
+                function fToX(F) { return fL + (F / fMax) * panelW; }
+
+                // Axes
+                ctx.strokeStyle = '#a3a3a3';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(fL, topY); ctx.lineTo(fL, botY); ctx.lineTo(fR, botY);
+                ctx.stroke();
+
+                // F-y curve
+                ctx.strokeStyle = '#38bdf8';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                started = false;
+                for (var i = 0; i < fPoints.length; i++) {
+                    var px = fToX(fPoints[i].F);
+                    var py = yToPixel(fPoints[i].y);
+                    if (px >= fL && px <= fR) {
+                        if (!started) { ctx.moveTo(px, py); started = true; }
+                        else ctx.lineTo(px, py);
+                    }
+                }
+                ctx.stroke();
+
+                // yc line
+                ctx.strokeStyle = 'rgba(251,191,36,0.4)';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([4, 4]);
+                ctx.beginPath();
+                ctx.moveTo(fL, yToPixel(yc));
+                ctx.lineTo(fR, yToPixel(yc));
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.fillStyle = 'rgba(251,191,36,0.7)';
+                ctx.font = '9px JetBrains Mono';
+                ctx.textAlign = 'left';
+                ctx.fillText('y\u1D04', fR + 3, yToPixel(yc) + 3);
+
+                // C label at minimum
+                var Fmin = Infinity, ycF = 0;
+                for (var i = 0; i < fPoints.length; i++) {
+                    if (fPoints[i].F < Fmin) { Fmin = fPoints[i].F; ycF = fPoints[i].y; }
+                }
+                ctx.fillStyle = '#fbbf24';
+                ctx.font = 'bold 10px JetBrains Mono';
+                ctx.textAlign = 'center';
+                ctx.fillText('C', fToX(Fmin) - 10, yToPixel(ycF) + 4);
+
+                // Operating points
+                var F1px = fToX(r.F1display);
+                var F1py = yToPixel(r.y1);
+                ctx.beginPath();
+                ctx.arc(F1px, F1py, 6, 0, Math.PI * 2);
+                ctx.fillStyle = '#ef4444';
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+
+                // P1 label
+                ctx.fillStyle = '#e5e5e5';
+                ctx.font = '10px JetBrains Mono';
+                ctx.textAlign = 'left';
+                ctx.fillText('P\u2081', F1px + 8, F1py + 3);
+
+                var F2px = fToX(r.F2display);
+                var F2py = yToPixel(r.y2);
+                ctx.beginPath();
+                ctx.arc(F2px, F2py, 6, 0, Math.PI * 2);
+                ctx.fillStyle = '#4ade80';
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+
+                // P2 label
+                ctx.fillStyle = '#e5e5e5';
+                ctx.textAlign = 'left';
+                ctx.fillText('P\u2082', F2px + 8, F2py + 3);
+
+                // Conjugate depth point for baffle
+                if (r.y2_conjugate && r.F2conj) {
+                    var Fcpx = fToX(r.F2conj);
+                    var Fcpy = yToPixel(r.y2_conjugate);
+                    ctx.beginPath();
+                    ctx.arc(Fcpx, Fcpy, 6, 0, Math.PI * 2);
+                    ctx.fillStyle = '#fbbf24';
+                    ctx.fill();
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                    ctx.fillStyle = '#e5e5e5';
+                    ctx.fillText("P\u2082'", Fcpx + 8, Fcpy + 3);
+                }
+
+                // Horizontal dashed line connecting P1 and P2 (F1=F2 for simple, or showing Pf gap for baffle)
+                ctx.strokeStyle = 'rgba(163,163,163,0.35)';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([3, 3]);
+                ctx.beginPath(); ctx.moveTo(fL, F1py); ctx.lineTo(F1px, F1py); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(fL, F2py); ctx.lineTo(F2px, F2py); ctx.stroke();
+                ctx.setLineDash([]);
+
+                // y-axis labels
+                ctx.fillStyle = '#a3a3a3';
+                ctx.font = '10px JetBrains Mono';
+                ctx.textAlign = 'right';
+                ctx.fillText('y\u2082', fL - 5, F2py + 4);
+                ctx.fillText('y\u2081', fL - 5, F1py + 4);
+
+                // F1=F2 vertical line on x-axis
+                ctx.strokeStyle = 'rgba(163,163,163,0.3)';
                 ctx.lineWidth = 1;
                 ctx.setLineDash([3, 3]);
                 ctx.beginPath();
-                ctx.moveTo(jumpStartX, bedY + 35);
-                ctx.lineTo(jumpEndX, bedY + 35);
+                ctx.moveTo(F1px, F1py);
+                ctx.lineTo(F1px, F2py);
                 ctx.stroke();
                 ctx.setLineDash([]);
-                ctx.beginPath();
-                ctx.moveTo(jumpStartX, bedY + 32);
-                ctx.lineTo(jumpStartX, bedY + 38);
-                ctx.stroke();
-                ctx.beginPath();
-                ctx.moveTo(jumpEndX, bedY + 32);
-                ctx.lineTo(jumpEndX, bedY + 38);
-                ctx.stroke();
-                ctx.fillStyle = '#4ade80';
+
+                // Bottom label F1=F2
+                ctx.fillStyle = '#fbbf24';
                 ctx.font = '10px JetBrains Mono';
-                ctx.fillText('L\u2C7C \u2248 ' + r.Lj.toFixed(1) + ' m', (jumpStartX + jumpEndX) / 2, bedY + 48);
-            }
-
-            var var_accent = '#fbbf24';
-
-            // ===================== F-Y CURVE DRAWING =====================
-
-            function drawFyCurve(r) {
-                var canvas = chartRef.current;
-                if (!canvas) return;
-
-                if (chartInstance.current) {
-                    chartInstance.current.destroy();
+                ctx.textAlign = 'center';
+                if (r.problemType === 'baffle') {
+                    ctx.fillText('F\u2082', F2px, botY + 16);
+                    ctx.fillText('F\u2081', F1px, botY + 16);
+                } else {
+                    ctx.fillText('F\u2081=F\u2082', F1px, botY + 16);
                 }
 
-                var q = r.q;
-                var yMax = r.y2 * 1.6;
-                if (r.y2_conjugate) yMax = Math.max(yMax, r.y2_conjugate * 1.3);
-                var numPoints = 200;
-                var yData = [];
-                var FData = [];
+                // Axis label
+                ctx.fillStyle = '#a3a3a3';
+                ctx.font = '10px JetBrains Mono';
+                ctx.textAlign = 'center';
+                ctx.fillText('F', fR, botY + 16);
+                ctx.save();
+                ctx.translate(fL - 25, (topY + botY) / 2);
+                ctx.rotate(-Math.PI / 2);
+                ctx.textAlign = 'center';
+                ctx.fillText('y', 0, 0);
+                ctx.restore();
 
-                for (var i = 1; i <= numPoints; i++) {
-                    var yy = (i / numPoints) * yMax;
-                    var Fval;
-                    if (r.shape === 'rectangular') {
-                        Fval = (yy * yy) / 2 + (q * q) / (G * yy);
-                    } else {
-                        Fval = specificForce(r.shape, yy, r.Q, r.b || 0, r.z || 0);
-                    }
-                    yData.push(yy);
-                    FData.push(Fval);
-                }
+                // Panel title
+                ctx.fillStyle = '#e5e5e5';
+                ctx.font = 'bold 11px JetBrains Mono';
+                ctx.textAlign = 'center';
+                ctx.fillText('Specific-force curve', (fL + fR) / 2, botY + 44);
 
-                var chartData = yData.map(function(yy, idx) { return { x: FData[idx], y: yy }; });
+                // Sequent depth label
+                ctx.fillStyle = '#a3a3a3';
+                ctx.font = '9px JetBrains Mono';
+                ctx.textAlign = 'right';
+                var seqX = fL - 3;
+                ctx.save();
+                ctx.translate(fR + 18, (F1py + F2py) / 2);
+                ctx.rotate(-Math.PI / 2);
+                ctx.textAlign = 'center';
+                ctx.fillText('Sequent depth', 0, 0);
+                ctx.restore();
 
-                var pointData = [
-                    { x: r.F1display, y: r.y1, label: 'y\u2081' },
-                    { x: r.F2display, y: r.y2, label: 'y\u2082' }
-                ];
-
-                if (r.y2_conjugate && r.F2conj) {
-                    pointData.push({ x: r.F2conj, y: r.y2_conjugate, label: "y\u2082'" });
-                }
-
-                chartInstance.current = new Chart(canvas, {
-                    type: 'scatter',
-                    data: {
-                        datasets: [
-                            {
-                                label: r.shape === 'rectangular' ? 'F/b vs y (q = ' + q.toFixed(2) + ' m\u00B3/s/m)' : 'F vs y',
-                                data: chartData,
-                                showLine: true,
-                                borderColor: '#38bdf8',
-                                backgroundColor: 'rgba(56, 189, 248, 0.1)',
-                                borderWidth: 2,
-                                pointRadius: 0,
-                                fill: false,
-                                tension: 0.4
-                            },
-                            {
-                                label: 'Operating Points',
-                                data: pointData.map(function(p) { return { x: p.x, y: p.y }; }),
-                                pointRadius: 8,
-                                pointBackgroundColor: ['#ef4444', '#4ade80', '#fbbf24'],
-                                pointBorderColor: '#fff',
-                                pointBorderWidth: 2,
-                                showLine: false
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: true,
-                        scales: {
-                            x: {
-                                title: { display: true, text: r.shape === 'rectangular' ? 'F/b (m\u00B2)' : 'F (m\u00B3)', color: '#a3a3a3', font: { family: 'JetBrains Mono', size: 12 } },
-                                grid: { color: 'rgba(64, 64, 64, 0.5)' },
-                                ticks: { color: '#a3a3a3', font: { family: 'JetBrains Mono', size: 10 } }
-                            },
-                            y: {
-                                title: { display: true, text: 'y (m)', color: '#a3a3a3', font: { family: 'JetBrains Mono', size: 12 } },
-                                grid: { color: 'rgba(64, 64, 64, 0.5)' },
-                                ticks: { color: '#a3a3a3', font: { family: 'JetBrains Mono', size: 10 } }
-                            }
-                        },
-                        plugins: {
-                            legend: {
-                                labels: { color: '#e5e5e5', font: { family: 'JetBrains Mono', size: 11 } }
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        if (context.datasetIndex === 1) {
-                                            return pointData[context.dataIndex].label + ': y=' + context.parsed.y.toFixed(3) + ', F=' + context.parsed.x.toFixed(3);
-                                        }
-                                        return 'y=' + context.parsed.y.toFixed(3) + ', F=' + context.parsed.x.toFixed(3);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
+                // Horizontal connecting lines from center panel to side panels
+                ctx.strokeStyle = 'rgba(163,163,163,0.15)';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([2, 4]);
+                // y1 horizontal line across all panels
+                var y1py = yToPixel(r.y1);
+                var y2py = yToPixel(r.y2);
+                ctx.beginPath(); ctx.moveTo(eL, y1py); ctx.lineTo(fR, y1py); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(eL, y2py); ctx.lineTo(fR, y2py); ctx.stroke();
+                ctx.setLineDash([]);
             }
 
             // ===================== SOLVE =====================
@@ -1727,16 +1991,9 @@
                                 )
                             ),
 
-                            // Schematic
+                            // Combined 3-panel diagram: E-y | Jump Schematic | F-y
                             React.createElement('div', { className: 'schematic-container', key: 'sc' },
-                                React.createElement('div', { style: { fontFamily: 'JetBrains Mono', fontSize: '0.875rem', color: 'var(--accent)', marginBottom: '8px', textTransform: 'uppercase', fontWeight: 600 } }, 'Jump Schematic'),
-                                React.createElement('canvas', { ref: schematicRef, width: 650, height: 260, style: { maxWidth: '100%' } })
-                            ),
-
-                            // F-y Curve
-                            React.createElement('div', { className: 'chart-container', key: 'fy' },
-                                React.createElement('div', { style: { fontFamily: 'JetBrains Mono', fontSize: '0.875rem', color: 'var(--accent)', marginBottom: '8px', textTransform: 'uppercase', fontWeight: 600 } }, 'F-y Curve (Specific Force Diagram)'),
-                                React.createElement('canvas', { ref: chartRef, height: 300 })
+                                React.createElement('canvas', { ref: schematicRef, width: 1100, height: 500, style: { maxWidth: '100%' } })
                             ),
 
                             // Step-by-step solution
