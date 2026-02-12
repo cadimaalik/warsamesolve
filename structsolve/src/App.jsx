@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { FONTS } from './constants/brand.js';
+import { COLORS, FONTS } from './constants/brand.js';
 import { realDistance } from './utils/geometry.js';
 import useStructure from './state/useStructure.js';
 import useUI from './state/useUI.js';
@@ -185,7 +185,7 @@ export default function App() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', fontFamily: FONTS.mono }}>
       <Header onClear={handleClear} onUndo={undo} canUndo={canUndo} nodeCount={nodes.length} />
 
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden', background: COLORS.canvasBg }}>
         <SidePanel
           nodes={nodes} members={members}
           activeNodeId={ui.activeNodeId} activeMemberId={ui.activeMemberId}
@@ -194,7 +194,7 @@ export default function App() {
           onUpdateMember={updateMember}
         />
 
-        <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+        <div style={{ flex: 1, position: 'relative', overflow: 'hidden', background: COLORS.canvasBg }}>
           <Canvas
             nodes={nodes} members={members} ui={ui}
             svgRef={svgRef} viewBox={viewBox} svgProps={svgProps}
