@@ -6,6 +6,10 @@ import Canvas from './components/Canvas.jsx';
 import ActionBar from './components/popups/ActionBar.jsx';
 import CompassPicker from './components/popups/CompassPicker.jsx';
 import LengthInput from './components/popups/LengthInput.jsx';
+import SupportPicker from './components/popups/SupportPicker.jsx';
+import LoadInput from './components/popups/LoadInput.jsx';
+import ConnectFlow from './components/popups/ConnectFlow.jsx';
+import StartOverlay from './components/popups/StartOverlay.jsx';
 
 export default function App() {
   const { structure, setNodeSupport, setNodeLoads } = useStructure();
@@ -68,6 +72,21 @@ export default function App() {
             <div style={{ fontSize: 10, color: COLORS.textDim, marginBottom: 8 }}>POPUP PREVIEW</div>
             <div style={{ background: COLORS.bgCard, borderRadius: 8, padding: 10, marginBottom: 8 }}>
               <ActionBar nodeId="A" onAction={(a) => console.log('action:', a)} />
+            </div>
+
+            <div style={{ background: COLORS.bgCard, borderRadius: 8, padding: 10, marginBottom: 8 }}>
+              <SupportPicker nodeId="A" currentSupport="pin"
+                onSelect={(s) => console.log('support:', s)} onClose={() => {}} />
+            </div>
+
+            <div style={{ background: COLORS.bgCard, borderRadius: 8, padding: 10, marginBottom: 8 }}>
+              <LoadInput nodeId="B" currentLoads={{ fx: 0, fy: -100, moment: 0 }}
+                onApply={(l) => console.log('loads:', l)} onClose={() => {}} />
+            </div>
+
+            <div style={{ background: COLORS.bgCard, borderRadius: 8, padding: 10, marginBottom: 8 }}>
+              <ConnectFlow fromId="C" toId="A" autoLength={7.21}
+                onConfirm={(c) => console.log('connect:', c)} onCancel={() => {}} />
             </div>
           </div>
         </div>
