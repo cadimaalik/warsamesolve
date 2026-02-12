@@ -1,70 +1,77 @@
+import React from 'react';
 import { COLORS } from './constants/brand.js';
-import SupportSymbol from './components/svg/SupportSymbol.jsx';
-import NodeDot from './components/svg/NodeDot.jsx';
-import NodeLabel from './components/svg/NodeLabel.jsx';
-import MemberLine from './components/svg/MemberLine.jsx';
-import DimensionLine from './components/svg/DimensionLine.jsx';
-import LoadArrows from './components/svg/LoadArrows.jsx';
-import MomentArc from './components/svg/MomentArc.jsx';
+import useStructure from './state/useStructure.js';
+import useUI from './state/useUI.js';
+import Canvas from './components/Canvas.jsx';
 
 export default function App() {
-  // Test structure: A-B horizontal beam, B-C vertical column
-  const nodes = [
-    { id: 'A', x: 100, y: 200, support: 'pin', loads: { fx: 0, fy: 0, moment: 50 } },
-    { id: 'B', x: 400, y: 200, support: 'roller-h', loads: { fx: 0, fy: -100, moment: 0 } },
-    { id: 'C', x: 400, y: 50, support: null, loads: { fx: 30, fy: 0, moment: 0 } },
+  const { structure, setNodeSupport, setNodeLoads } = useStructure();
+  const { ui, selectNode, selectMember, reset, cancelConnect } = useUI();
+
+  // Create test structure on first render
+  const [init, setInit] = React.useState(false);
+  React.useEffect(() => {
+    if (init) return;
+    setInit(true);
+    // Manually set initial structure for testing
+  }, [init]);
+
+  // For now, use a hardcoded test structure
+  const testNodes = [
+    { id: 'A', x: 150, y: 250, support: 'pin', loads: { fx: 0, fy: 0, moment: 50 } },
+    { id: 'B', x: 450, y: 250, support: 'roller-h', loads: { fx: 0, fy: -80, moment: 0 } },
+    { id: 'C', x: 450, y: 80, support: null, loads: { fx: 30, fy: 0, moment: 0 } },
+    { id: 'D', x: 150, y: 80, support: null, loads: { fx: 0, fy: 0, moment: 0 } },
   ];
-  const members = [
+  const testMembers = [
     { id: 'm1', startNodeId: 'A', endNodeId: 'B', length: 6, type: 'frame', EI_factor: 1, startHinge: false, endHinge: false },
     { id: 'm2', startNodeId: 'B', endNodeId: 'C', length: 4, type: 'frame', EI_factor: 2, startHinge: false, endHinge: true },
+    { id: 'm3', startNodeId: 'C', endNodeId: 'D', length: 6, type: 'truss', EI_factor: 1, startHinge: false, endHinge: false },
+    { id: 'm4', startNodeId: 'D', endNodeId: 'A', length: 4, type: 'frame', EI_factor: 1, startHinge: true, endHinge: false },
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center',
-      justifyContent: 'center', height: '100vh', fontFamily: "'JetBrains Mono', monospace" }}>
-      <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 16 }}>
-        <span style={{ color: '#fff' }}>Struct</span>
-        <span style={{ color: COLORS.green }}>SOLVE</span>
-        <span style={{ color: COLORS.textDim, fontSize: 14, marginLeft: 12 }}>Rendering Test</span>
-      </h1>
-      <svg width={600} height={320} style={{ background: '#fff', borderRadius: 8 }}>
-        {/* Dimensions */}
-        <DimensionLine startNode={nodes[0]} endNode={nodes[1]} length={6} />
-        <DimensionLine startNode={nodes[1]} endNode={nodes[2]} length={4} />
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh',
+      fontFamily: "'JetBrains Mono', monospace" }}>
+      {/* Temp header */}
+      <div style={{
+        height: 48, background: COLORS.bgDark, display: 'flex',
+        alignItems: 'center', padding: '0 16px',
+        borderBottom: `1px solid ${COLORS.border}`,
+      }}>
+        <span style={{ fontSize: 20, fontWeight: 700 }}>
+          <span style={{ color: '#fff' }}>Struct</span>
+          <span style={{ color: COLORS.green }}>SOLVE</span>
+        </span>
+        <span style={{ marginLeft: 16, color: COLORS.textDim, fontSize: 12 }}>
+          Canvas Test · Pan (drag svg) · Zoom (scroll) · Click nodes
+        </span>
+      </div>
 
-        {/* Members */}
-        <MemberLine member={members[0]} startNode={nodes[0]} endNode={nodes[1]}
-          isSelected={false} onSelect={() => {}} />
-        <MemberLine member={members[1]} startNode={nodes[1]} endNode={nodes[2]}
-          isSelected={true} onSelect={() => {}} />
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+        {/* LEFT sidebar placeholder */}
+        <div style={{
+          width: 280, background: COLORS.bgPanel, borderRight: `1px solid ${COLORS.border}`,
+          padding: 16, fontSize: 12, color: COLORS.textMuted, overflowY: 'auto',
+        }}>
+          <div style={{ fontWeight: 600, color: COLORS.green, marginBottom: 12 }}>Side Panel</div>
+          <div>Selected: {ui.activeNodeId || ui.activeMemberId || 'none'}</div>
+          <div style={{ marginTop: 8 }}>Connect mode: {ui.connectMode ? 'ON' : 'off'}</div>
+          <div style={{ marginTop: 16, color: COLORS.textDim }}>
+            Nodes: {testNodes.length} · Members: {testMembers.length}
+          </div>
+        </div>
 
-        {/* Supports */}
-        {nodes.map(n => (
-          <SupportSymbol key={n.id} node={n} allNodes={nodes} members={members} />
-        ))}
-
-        {/* Loads */}
-        {nodes.map(n => (
-          <LoadArrows key={'load-' + n.id} node={n} />
-        ))}
-
-        {/* Moments */}
-        <MomentArc x={nodes[0].x} y={nodes[0].y} moment={nodes[0].loads.moment} />
-
-        {/* Nodes */}
-        {nodes.map(n => (
-          <NodeDot key={'dot-' + n.id} node={n} members={members}
-            isSelected={n.id === 'A'} isConnectTarget={false} />
-        ))}
-
-        {/* Labels */}
-        {nodes.map(n => (
-          <NodeLabel key={'lbl-' + n.id} node={n} allNodes={nodes} members={members} />
-        ))}
-      </svg>
-      <p style={{ color: COLORS.textDim, marginTop: 12, fontSize: 12 }}>
-        A(pin, 50kN·m) → B(roller, -100kN↓) → C(none, 30kN→) · m2 selected (teal, EI=2)
-      </p>
+        {/* Canvas on the RIGHT */}
+        <Canvas
+          nodes={testNodes}
+          members={testMembers}
+          ui={ui}
+          onSelectNode={selectNode}
+          onSelectMember={selectMember}
+          onCanvasClick={reset}
+        />
+      </div>
     </div>
   );
 }
