@@ -185,10 +185,6 @@
             border-color: var(--primary-light);
         }
         
-        .calc-card.coming-soon {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
         
         .calc-card h3 {
             font-family: 'JetBrains Mono', monospace;
@@ -218,20 +214,6 @@
             letter-spacing: 0.1em;
         }
         
-        .coming-soon-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: calc(var(--grid) * 3);
-            margin-top: calc(var(--grid) * 4);
-        }
-        
-        .coming-soon-note {
-            text-align: center;
-            color: var(--accent);
-            font-style: italic;
-            margin-top: calc(var(--grid) * 4);
-            font-size: 1.125rem;
-        }
         
         .verified-badge {
             text-align: center;
@@ -393,35 +375,18 @@
                 <div class="button-text">Hesapla →</div>
             </a>
             
-            <!-- Coming Soon Cards -->
-            <div class="coming-soon-grid">
-                <div class="calc-card coming-soon">
-                    <h3>NumericSolve</h3>
-                    <div class="description">
-                        Root finding • Integration • ODE solvers
-                    </div>
-                    <div class="button-text">Coming Soon</div>
+            <!-- StructSolve - Featured -->
+            <a href="struct/index.html" class="calc-card featured">
+                <h3>StructSolve</h3>
+                <div class="description">
+                    Beams • Trusses • Frames
                 </div>
-                
-                <div class="calc-card coming-soon">
-                    <h3>TransportSolve</h3>
-                    <div class="description">
-                        Traffic flow • LOS analysis • Capacity
-                    </div>
-                    <div class="button-text">Coming Soon</div>
+                <div class="turkish-subtitle">
+                    Yapısal analiz artık kolay
                 </div>
-                
-                <div class="calc-card coming-soon">
-                    <h3>LabReportSolve</h3>
-                    <div class="description">
-                        Auto-format your lab reports
-                    </div>
-                    <div class="button-text">Coming Soon</div>
-                </div>
-            </div>
+                <div class="button-text">Hesapla →</div>
+            </a>
         </div>
-        
-        <div class="coming-soon-note">Ve daha fazlası yolda...</div>
     </section>
     
     <!-- Contribute Section -->
