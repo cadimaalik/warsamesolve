@@ -65,7 +65,7 @@ export default function ConnectFlow({ fromId, toId, autoLength, onConfirm, onCan
         <div style={{ marginBottom: 8 }}>
           <div style={labelStyle}>EI Factor</div>
           <input type="number" value={eiFactor} onChange={e => setEiFactor(e.target.value)}
-            style={inputStyle} min="0.1" step="0.5" />
+            style={inputStyle} min="0.1" step="1" />
         </div>
       )}
 

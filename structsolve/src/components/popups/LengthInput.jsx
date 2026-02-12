@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { COLORS } from '../../constants/brand.js';
-import { SUPPORT_TYPES } from '../../constants/supports.js';
+import SupportGrid from './SupportGrid.jsx';
 
 const inputStyle = {
   width: '100%', padding: '6px 8px', borderRadius: 4,
@@ -19,18 +19,42 @@ const toggleBtn = (active) => ({
 
 const labelStyle = { fontSize: 10, color: COLORS.textDim, marginBottom: 3, fontWeight: 600 };
 
+const DIAGONALS = ['NE', 'SE', 'SW', 'NW'];
+
 export default function LengthInput({ direction, onConfirm, onCancel }) {
+  const isDiag = DIAGONALS.includes(direction);
+
   const [length, setLength] = useState('4');
+  const [dx, setDx] = useState('3');
+  const [dy, setDy] = useState('3');
+  const [angleMode, setAngleMode] = useState(false);
+  const [angle, setAngle] = useState('45');
   const [type, setType] = useState('frame');
   const [eiFactor, setEiFactor] = useState('1');
   const [startConn, setStartConn] = useState('rigid');
   const [newSupport, setNewSupport] = useState(null);
 
+  const computedLen = isDiag && !angleMode
+    ? Math.sqrt((parseFloat(dx) || 0) ** 2 + (parseFloat(dy) || 0) ** 2)
+    : 0;
+
+  const angleDx = isDiag && angleMode
+    ? (parseFloat(length) || 0) * Math.cos((parseFloat(angle) || 0) * Math.PI / 180)
+    : 0;
+  const angleDy = isDiag && angleMode
+    ? (parseFloat(length) || 0) * Math.sin((parseFloat(angle) || 0) * Math.PI / 180)
+    : 0;
+
   function handleSubmit() {
-    const len = parseFloat(length);
+    let len;
+    if (isDiag) {
+      len = angleMode ? (parseFloat(length) || 0) : computedLen;
+    } else {
+      len = parseFloat(length) || 0;
+    }
     if (!len || len <= 0) return;
     onConfirm({
-      length: len,
+      length: Math.round(len * 100) / 100,
       type,
       eiFactor: parseFloat(eiFactor) || 1,
       startHinge: startConn === 'hinge',
@@ -44,12 +68,60 @@ export default function LengthInput({ direction, onConfirm, onCancel }) {
         New member &middot; {direction}
       </div>
 
-      {/* Length */}
-      <div style={{ marginBottom: 8 }}>
-        <div style={labelStyle}>Length (m)</div>
-        <input type="number" value={length} onChange={e => setLength(e.target.value)}
-          style={inputStyle} min="0.1" step="0.1" autoFocus />
-      </div>
+      {/* Length — cardinal vs diagonal */}
+      {!isDiag ? (
+        <div style={{ marginBottom: 8 }}>
+          <div style={labelStyle}>Length (m)</div>
+          <input type="number" value={length} onChange={e => setLength(e.target.value)}
+            style={inputStyle} min="0.1" step="1" autoFocus />
+        </div>
+      ) : !angleMode ? (
+        <>
+          <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
+            <div style={{ flex: 1 }}>
+              <div style={labelStyle}>Horizontal (m)</div>
+              <input type="number" value={dx} onChange={e => setDx(e.target.value)}
+                style={inputStyle} min="0" step="1" autoFocus />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={labelStyle}>Vertical (m)</div>
+              <input type="number" value={dy} onChange={e => setDy(e.target.value)}
+                style={inputStyle} min="0" step="1" />
+            </div>
+          </div>
+          <div style={{ fontSize: 11, color: COLORS.green, marginBottom: 6, fontWeight: 600 }}>
+            Length: {computedLen ? computedLen.toFixed(2) : '0'}m
+          </div>
+          <button onClick={() => setAngleMode(true)} style={{
+            background: 'none', border: 'none', color: COLORS.textDim, fontSize: 10,
+            cursor: 'pointer', textDecoration: 'underline', padding: 0, marginBottom: 8,
+            fontFamily: "'JetBrains Mono', monospace",
+          }}>Switch to angle mode</button>
+        </>
+      ) : (
+        <>
+          <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
+            <div style={{ flex: 1 }}>
+              <div style={labelStyle}>Length (m)</div>
+              <input type="number" value={length} onChange={e => setLength(e.target.value)}
+                style={inputStyle} min="0.1" step="1" autoFocus />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={labelStyle}>Angle (&deg;)</div>
+              <input type="number" value={angle} onChange={e => setAngle(e.target.value)}
+                style={inputStyle} min="0" max="90" step="1" />
+            </div>
+          </div>
+          <div style={{ fontSize: 10, color: COLORS.textDim, marginBottom: 6 }}>
+            dx={angleDx.toFixed(2)}m &middot; dy={angleDy.toFixed(2)}m
+          </div>
+          <button onClick={() => setAngleMode(false)} style={{
+            background: 'none', border: 'none', color: COLORS.textDim, fontSize: 10,
+            cursor: 'pointer', textDecoration: 'underline', padding: 0, marginBottom: 8,
+            fontFamily: "'JetBrains Mono', monospace",
+          }}>Switch to dx/dy mode</button>
+        </>
+      )}
 
       {/* Member type */}
       <div style={{ marginBottom: 8 }}>
@@ -65,7 +137,7 @@ export default function LengthInput({ direction, onConfirm, onCancel }) {
         <div style={{ marginBottom: 8 }}>
           <div style={labelStyle}>EI Factor</div>
           <input type="number" value={eiFactor} onChange={e => setEiFactor(e.target.value)}
-            style={inputStyle} min="0.1" step="0.5" />
+            style={inputStyle} min="0.1" step="1" />
         </div>
       )}
 
@@ -81,15 +153,7 @@ export default function LengthInput({ direction, onConfirm, onCancel }) {
       {/* Support at new node */}
       <div style={{ marginBottom: 10 }}>
         <div style={labelStyle}>Support at New Node</div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-          <button style={toggleBtn(newSupport === null)} onClick={() => setNewSupport(null)}>None</button>
-          {Object.entries(SUPPORT_TYPES).map(([key, info]) => (
-            <button key={key} style={toggleBtn(newSupport === key)}
-              onClick={() => setNewSupport(key)}>
-              {info.label.split(' ')[0]}
-            </button>
-          ))}
-        </div>
+        <SupportGrid value={newSupport} onChange={setNewSupport} />
       </div>
 
       {/* Actions */}

@@ -52,7 +52,7 @@ export default function MemberDetail({ member, nodes, onUpdate, onDelete, onClos
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: COLORS.textPrimary }}>
-          Member {member.id}
+          Member {startNode?.id || '?'}&rarr;{endNode?.id || '?'}
         </span>
         <button onClick={onClose} style={{
           background: 'none', border: 'none', color: COLORS.textDim,
@@ -60,17 +60,12 @@ export default function MemberDetail({ member, nodes, onUpdate, onDelete, onClos
         }}>&times;</button>
       </div>
 
-      {/* Endpoints */}
-      <div style={{ fontSize: 11, color: COLORS.textDim, marginBottom: 10 }}>
-        {startNode?.id || '?'} &rarr; {endNode?.id || '?'}
-      </div>
-
       {/* Length */}
       <div style={{ marginBottom: 8 }}>
         <div style={labelStyle}>Length (m)</div>
         <input type="number" value={length} onChange={e => setLength(e.target.value)}
           onBlur={commitLength} onKeyDown={e => handleKey(e, commitLength)}
-          style={inputStyle} min="0.1" step="0.1" />
+          style={inputStyle} min="0.1" step="1" />
       </div>
 
       {/* Type */}
@@ -90,7 +85,7 @@ export default function MemberDetail({ member, nodes, onUpdate, onDelete, onClos
           <div style={labelStyle}>EI Factor</div>
           <input type="number" value={eiFactor} onChange={e => setEiFactor(e.target.value)}
             onBlur={commitEI} onKeyDown={e => handleKey(e, commitEI)}
-            style={inputStyle} min="0.1" step="0.5" />
+            style={inputStyle} min="0.1" step="1" />
         </div>
       )}
 

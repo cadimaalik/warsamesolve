@@ -19,3 +19,15 @@ html, body, #root {
   background: #0a0a0a;
   color: #e5e5e5;
 }
+
+/* Number input stepper styling */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  opacity: 1;
+  height: 24px;
+  cursor: pointer;
+}
+input[type="number"]::-webkit-inner-spin-button:hover {
+  background: #059669;
+  border-radius: 2px;
+}

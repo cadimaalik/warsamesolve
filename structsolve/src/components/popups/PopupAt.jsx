@@ -1,46 +1,96 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { COLORS } from '../../constants/brand.js';
 
 export default function PopupAt({ svgRef, nodeX, nodeY, viewBox, children }) {
   const popupRef = useRef(null);
-  const [pos, setPos] = useState({ left: 0, top: 0 });
+  const [pos, setPos] = useState(null);
+  const dragRef = useRef({ active: false, startX: 0, startY: 0, origLeft: 0, origTop: 0 });
 
+  // Compute initial position from SVG coordinates
   useEffect(() => {
     if (!svgRef?.current) return;
     const svg = svgRef.current;
     const rect = svg.getBoundingClientRect();
 
-    // Convert SVG coords to screen coords
     const scaleX = rect.width / viewBox.w;
     const scaleY = rect.height / viewBox.h;
-    let screenX = (nodeX - viewBox.x) * scaleX + rect.left;
-    let screenY = (nodeY - viewBox.y) * scaleY + rect.top;
+    const screenX = (nodeX - viewBox.x) * scaleX + rect.left;
+    const screenY = (nodeY - viewBox.y) * scaleY + rect.top;
 
-    // Position above the node by default
-    const popupW = 220;
-    const popupH = 160;
-    let left = screenX - popupW / 2;
-    let top = screenY - popupH - 20;
+    // Measure popup after render
+    requestAnimationFrame(() => {
+      const el = popupRef.current;
+      if (!el) return;
+      const pw = el.offsetWidth || 240;
+      const ph = el.offsetHeight || 180;
+      const pad = 12;
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
 
-    // Clamp to viewport
-    if (left < 8) left = 8;
-    if (left + popupW > window.innerWidth - 8) left = window.innerWidth - popupW - 8;
-    if (top < 8) top = screenY + 30; // flip below if no room above
+      // Default: above-right of node
+      let left = screenX + 16;
+      let top = screenY - ph - 16;
 
-    setPos({ left, top });
+      // Flip below if no room above
+      if (top < pad) top = screenY + 24;
+      // Flip left if no room on right
+      if (left + pw > vw - pad) left = screenX - pw - 16;
+      // Clamp all edges
+      if (left < pad) left = pad;
+      if (left + pw > vw - pad) left = vw - pw - pad;
+      if (top < pad) top = pad;
+      if (top + ph > vh - pad) top = vh - ph - pad;
+
+      setPos({ left, top });
+    });
   }, [svgRef, nodeX, nodeY, viewBox]);
+
+  // Drag handlers
+  const onDragStart = useCallback((e) => {
+    e.preventDefault();
+    dragRef.current = {
+      active: true,
+      startX: e.clientX, startY: e.clientY,
+      origLeft: pos?.left || 0, origTop: pos?.top || 0,
+    };
+
+    function onMove(ev) {
+      if (!dragRef.current.active) return;
+      const dx = ev.clientX - dragRef.current.startX;
+      const dy = ev.clientY - dragRef.current.startY;
+      setPos({ left: dragRef.current.origLeft + dx, top: dragRef.current.origTop + dy });
+    }
+    function onUp() {
+      dragRef.current.active = false;
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    }
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  }, [pos]);
+
+  if (!pos) return null;
 
   return (
     <div ref={popupRef} style={{
       position: 'fixed', left: pos.left, top: pos.top, zIndex: 100,
       background: COLORS.bgCard, border: `1px solid ${COLORS.borderLight}`,
-      borderRadius: 10, padding: 12, minWidth: 200,
+      borderRadius: 10, minWidth: 200, overflow: 'hidden',
       boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
       fontFamily: "'JetBrains Mono', monospace", color: COLORS.textPrimary,
     }}
       onClick={e => e.stopPropagation()}
     >
-      {children}
+      {/* Drag handle */}
+      <div onMouseDown={onDragStart} style={{
+        height: 20, cursor: 'grab', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'rgba(255,255,255,0.04)', borderBottom: `1px solid ${COLORS.borderLight}`,
+      }}>
+        <div style={{ width: 32, height: 3, borderRadius: 2, background: COLORS.borderLight }} />
+      </div>
+      <div style={{ padding: 12 }}>
+        {children}
+      </div>
     </div>
   );
 }

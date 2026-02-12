@@ -42,27 +42,16 @@ export default function App() {
 
   // --- Handlers ---
 
-  const handleCreateBeam = useCallback((length) => {
-    createInitialBeam(length);
+  const handleCreateBeam = useCallback((opts) => {
+    createInitialBeam(opts);
     hideStartOverlay();
   }, [createInitialBeam, hideStartOverlay]);
 
   const handleActionBar = useCallback((action) => {
-    if (action === 'compass') { openPopup('compass'); return; }
-    if (action === 'support') { openPopup('support'); return; }
-    if (action === 'load') { openPopup('load'); return; }
-    if (action === 'hinge') {
-      // Toggle startHinge on first connected member
-      const m = members.find(mb =>
-        mb.startNodeId === ui.activeNodeId || mb.endNodeId === ui.activeNodeId
-      );
-      if (m) {
-        if (m.startNodeId === ui.activeNodeId) updateMember(m.id, { startHinge: !m.startHinge });
-        else updateMember(m.id, { endHinge: !m.endHinge });
-      }
-      closePopup();
-    }
-  }, [members, ui.activeNodeId, openPopup, closePopup, updateMember]);
+    if (action === 'compass') openPopup('compass');
+    else if (action === 'support') openPopup('support');
+    else if (action === 'load') openPopup('load');
+  }, [openPopup]);
 
   const handleAddMember = useCallback((conf) => {
     addMember(ui.activeNodeId, ui.pendingDirection, conf.length, conf.type, conf.eiFactor, conf.newNodeSupport, conf.startHinge);

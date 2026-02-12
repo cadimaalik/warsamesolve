@@ -4,12 +4,19 @@ const FILL = '#1a1f2b';
 const STROKE = '#374151';
 
 export default function NodeDot({ node, members, isSelected, isConnectTarget }) {
-  // Check if any connected member has a hinge at this node's end
-  const hasHinge = members.some(m => {
+  const connected = members.filter(m => m.startNodeId === node.id || m.endNodeId === node.id);
+  const connCount = connected.length;
+
+  const hasHinge = connected.some(m => {
     if (m.startNodeId === node.id && m.startHinge) return true;
     if (m.endNodeId === node.id && m.endHinge) return true;
     return false;
   });
+
+  const hasSupport = !!node.support;
+  const isFreeEnd = connCount === 1;
+  // Show dot only when: has support, has hinge, or is a free end (1 connected member)
+  const showDot = hasSupport || hasHinge || isFreeEnd || connCount === 0;
 
   return (
     <g>
@@ -26,11 +33,13 @@ export default function NodeDot({ node, members, isSelected, isConnectTarget }) 
           fill="rgba(74, 222, 128, 0.15)" stroke="#4ade80" strokeWidth={2} />
       )}
 
-      {/* Node dot */}
-      <circle cx={node.x} cy={node.y} r={4.5}
-        fill={FILL} stroke={STROKE} strokeWidth={1.5} />
+      {/* Node dot — only when rules say to show */}
+      {showDot && !hasHinge && (
+        <circle cx={node.x} cy={node.y} r={4.5}
+          fill={FILL} stroke={STROKE} strokeWidth={1.5} />
+      )}
 
-      {/* Hinge indicator: open white circle on top */}
+      {/* Hinge indicator: open white circle */}
       {hasHinge && (
         <circle cx={node.x} cy={node.y} r={7}
           fill="#ffffff" stroke={STROKE} strokeWidth={2} />
