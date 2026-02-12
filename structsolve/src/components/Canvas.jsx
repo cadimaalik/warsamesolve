@@ -13,7 +13,8 @@ export default function Canvas({
   onSelectNode, onSelectMember, onCanvasClick, onConnectTarget,
 }) {
   function handleSvgClick(e) {
-    if (e.target.tagName === 'svg' || e.target.tagName === 'rect') {
+    const tag = e.target.tagName;
+    if (tag === 'svg' || tag === 'rect' || tag === 'path') {
       onCanvasClick && onCanvasClick();
     }
   }
@@ -53,9 +54,19 @@ export default function Canvas({
         onClick={handleSvgClick}
         {...svgProps}
       >
-        {/* Background rect for click detection */}
-        <rect x={viewBox.x} y={viewBox.y} width={viewBox.w} height={viewBox.h}
+        <defs>
+          <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke={COLORS.gridLine} strokeWidth="1" />
+          </pattern>
+        </defs>
+
+        {/* Graph-paper background */}
+        <rect x={viewBox.x - viewBox.w} y={viewBox.y - viewBox.h}
+          width={viewBox.w * 3} height={viewBox.h * 3}
           fill={COLORS.canvasBg} />
+        <rect x={viewBox.x - viewBox.w} y={viewBox.y - viewBox.h}
+          width={viewBox.w * 3} height={viewBox.h * 3}
+          fill="url(#grid)" />
 
         {/* Layer 1: Dimension lines (behind everything) */}
         {members.map(m => {
