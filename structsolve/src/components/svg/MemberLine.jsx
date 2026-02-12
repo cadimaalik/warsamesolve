@@ -31,6 +31,7 @@ export default function MemberLine({ member, startNode, endNode, isSelected, onS
 
       {/* Invisible fat hit area for clicking */}
       <line x1={startNode.x} y1={startNode.y} x2={endNode.x} y2={endNode.y}
+        data-interactive="true"
         stroke="transparent" strokeWidth={16}
         style={{ cursor: 'pointer' }}
         onClick={(e) => { e.stopPropagation(); onSelect && onSelect(member.id); }}

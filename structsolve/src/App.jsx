@@ -28,7 +28,7 @@ export default function App() {
   } = useUI();
 
   const svgRef = useRef(null);
-  const { viewBox, svgProps, fitToNodes } = usePanZoom();
+  const { viewBox, panning, svgProps, fitToNodes } = usePanZoom();
   const { nodes, members } = structure;
 
   // Connect flow state
@@ -197,7 +197,7 @@ export default function App() {
         <div style={{ flex: 1, position: 'relative', overflow: 'hidden', background: COLORS.canvasBg }}>
           <Canvas
             nodes={nodes} members={members} ui={ui}
-            svgRef={svgRef} viewBox={viewBox} svgProps={svgProps}
+            svgRef={svgRef} viewBox={viewBox} svgProps={svgProps} panning={panning}
             onSelectNode={selectNode} onSelectMember={selectMember}
             onCanvasClick={reset} onConnectTarget={handleConnectTarget}
           />
