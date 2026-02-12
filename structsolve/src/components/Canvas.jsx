@@ -50,7 +50,7 @@ export default function Canvas({
       <svg
         ref={svgRef}
         width="100%" height="100%" viewBox={vb}
-        style={{ display: 'block', cursor: ui.connectMode ? 'crosshair' : 'default' }}
+        style={{ display: 'block', background: COLORS.canvasBg, cursor: ui.connectMode ? 'crosshair' : 'default' }}
         onClick={handleSvgClick}
         {...svgProps}
       >
