@@ -1,0 +1,32 @@
+export const COLORS = {
+  bgDark: '#0a0a0a',
+  bgPanel: '#171717',
+  bgCard: '#1e1e1e',
+  bgInput: '#262626',
+  green: '#4ade80',
+  greenDark: '#059669',
+  greenDarker: '#047857',
+  greenGlow: 'rgba(74, 222, 128, 0.15)',
+  canvasBg: '#ffffff',
+  memberFrame: '#1a1f2b',
+  memberDeform: '#0d9488',
+  memberTruss: '#c2410c',
+  support: '#374151',
+  load: '#dc2626',
+  dimLine: '#94a3b8',
+  dimText: '#64748b',
+  textPrimary: '#e5e5e5',
+  textMuted: '#94a3b8',
+  textDim: '#64748b',
+  border: '#2a2a2a',
+  borderLight: '#404040',
+  nodeFill: '#1a1f2b',
+  nodeStroke: '#374151',
+  hingeFill: '#ffffff',
+  hingeStroke: '#374151',
+};
+
+export const FONTS = {
+  mono: "'JetBrains Mono', monospace",
+  body: "'Spectral', serif",
+};
