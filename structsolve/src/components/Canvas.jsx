@@ -1,5 +1,4 @@
-import React, { useEffect } from 'react';
-import usePanZoom from '../hooks/usePanZoom.js';
+import React from 'react';
 import { COLORS } from '../constants/brand.js';
 import SupportSymbol from './svg/SupportSymbol.jsx';
 import NodeDot from './svg/NodeDot.jsx';
@@ -10,16 +9,9 @@ import LoadArrows from './svg/LoadArrows.jsx';
 import MomentArc from './svg/MomentArc.jsx';
 
 export default function Canvas({
-  nodes, members, ui,
+  nodes, members, ui, svgRef, viewBox, svgProps,
   onSelectNode, onSelectMember, onCanvasClick, onConnectTarget,
 }) {
-  const { viewBox, svgProps, fitToNodes } = usePanZoom();
-
-  // Fit view when nodes change significantly
-  useEffect(() => {
-    if (nodes.length > 0) fitToNodes(nodes);
-  }, [nodes.length]);
-
   function handleSvgClick(e) {
     if (e.target.tagName === 'svg' || e.target.tagName === 'rect') {
       onCanvasClick && onCanvasClick();
@@ -50,11 +42,12 @@ export default function Canvas({
           fontFamily: "'JetBrains Mono', monospace", fontSize: 12,
           color: COLORS.greenDark, borderBottom: `1px solid ${COLORS.green}`,
         }}>
-          Click a pulsing node to connect · <strong>Esc</strong> to cancel
+          Click a pulsing node to connect &middot; <strong>Esc</strong> to cancel
         </div>
       )}
 
       <svg
+        ref={svgRef}
         width="100%" height="100%" viewBox={vb}
         style={{ display: 'block', cursor: ui.connectMode ? 'crosshair' : 'default' }}
         onClick={handleSvgClick}

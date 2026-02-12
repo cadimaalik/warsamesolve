@@ -1,76 +1,214 @@
-import React from 'react';
-import { COLORS } from './constants/brand.js';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
+import { FONTS } from './constants/brand.js';
+import { realDistance } from './utils/geometry.js';
 import useStructure from './state/useStructure.js';
 import useUI from './state/useUI.js';
-import Canvas from './components/Canvas.jsx';
+import usePanZoom from './hooks/usePanZoom.js';
+import useKeyboard from './hooks/useKeyboard.js';
+import Header from './components/Header.jsx';
 import SidePanel from './components/SidePanel.jsx';
+import Canvas from './components/Canvas.jsx';
+import PopupAt from './components/popups/PopupAt.jsx';
+import ActionBar from './components/popups/ActionBar.jsx';
+import CompassPicker from './components/popups/CompassPicker.jsx';
+import LengthInput from './components/popups/LengthInput.jsx';
+import SupportPicker from './components/popups/SupportPicker.jsx';
+import LoadInput from './components/popups/LoadInput.jsx';
+import ConnectFlow from './components/popups/ConnectFlow.jsx';
+import StartOverlay from './components/popups/StartOverlay.jsx';
 
 export default function App() {
-  const { structure, setNodeSupport, setNodeLoads } = useStructure();
-  const { ui, selectNode, selectMember, reset, cancelConnect } = useUI();
+  const {
+    structure, undo, addMember, connectNodes, removeNode, removeMember,
+    setNodeSupport, setNodeLoads, updateMember, clearAll, createInitialBeam, canUndo,
+  } = useStructure();
+  const {
+    ui, selectNode, selectMember, openPopup, closePopup,
+    startConnect, cancelConnect, reset, hideStartOverlay, setDirection,
+  } = useUI();
 
-  // Create test structure on first render
-  const [init, setInit] = React.useState(false);
-  React.useEffect(() => {
-    if (init) return;
-    setInit(true);
-    // Manually set initial structure for testing
-  }, [init]);
+  const svgRef = useRef(null);
+  const { viewBox, svgProps, fitToNodes } = usePanZoom();
+  const { nodes, members } = structure;
 
-  // For now, use a hardcoded test structure
-  const testNodes = [
-    { id: 'A', x: 150, y: 250, support: 'pin', loads: { fx: 0, fy: 0, moment: 50 } },
-    { id: 'B', x: 450, y: 250, support: 'roller-h', loads: { fx: 0, fy: -80, moment: 0 } },
-    { id: 'C', x: 450, y: 80, support: null, loads: { fx: 30, fy: 0, moment: 0 } },
-    { id: 'D', x: 150, y: 80, support: null, loads: { fx: 0, fy: 0, moment: 0 } },
-  ];
-  const testMembers = [
-    { id: 'm1', startNodeId: 'A', endNodeId: 'B', length: 6, type: 'frame', EI_factor: 1, startHinge: false, endHinge: false },
-    { id: 'm2', startNodeId: 'B', endNodeId: 'C', length: 4, type: 'frame', EI_factor: 2, startHinge: false, endHinge: true },
-    { id: 'm3', startNodeId: 'C', endNodeId: 'D', length: 6, type: 'truss', EI_factor: 1, startHinge: false, endHinge: false },
-    { id: 'm4', startNodeId: 'D', endNodeId: 'A', length: 4, type: 'frame', EI_factor: 1, startHinge: true, endHinge: false },
-  ];
+  // Connect flow state
+  const [connectTarget, setConnectTarget] = useState(null);
+  const [connectAutoLen, setConnectAutoLen] = useState(0);
+
+  // Fit view when nodes change
+  useEffect(() => {
+    if (nodes.length > 0) fitToNodes(nodes);
+  }, [nodes.length]);
+
+  // --- Handlers ---
+
+  const handleCreateBeam = useCallback((length) => {
+    createInitialBeam(length);
+    hideStartOverlay();
+  }, [createInitialBeam, hideStartOverlay]);
+
+  const handleActionBar = useCallback((action) => {
+    if (action === 'compass') { openPopup('compass'); return; }
+    if (action === 'support') { openPopup('support'); return; }
+    if (action === 'load') { openPopup('load'); return; }
+    if (action === 'hinge') {
+      // Toggle startHinge on first connected member
+      const m = members.find(mb =>
+        mb.startNodeId === ui.activeNodeId || mb.endNodeId === ui.activeNodeId
+      );
+      if (m) {
+        if (m.startNodeId === ui.activeNodeId) updateMember(m.id, { startHinge: !m.startHinge });
+        else updateMember(m.id, { endHinge: !m.endHinge });
+      }
+      closePopup();
+    }
+  }, [members, ui.activeNodeId, openPopup, closePopup, updateMember]);
+
+  const handleAddMember = useCallback((conf) => {
+    addMember(ui.activeNodeId, ui.pendingDirection, conf.length, conf.type, conf.eiFactor, conf.newNodeSupport, conf.startHinge);
+    reset();
+  }, [addMember, ui.activeNodeId, ui.pendingDirection, reset]);
+
+  const handleConnectTarget = useCallback((targetId) => {
+    const autoLen = realDistance(ui.connectFromId, targetId, nodes, members) || 1;
+    setConnectTarget(targetId);
+    setConnectAutoLen(Math.round(autoLen * 100) / 100);
+  }, [ui.connectFromId, nodes, members]);
+
+  const handleConnectConfirm = useCallback((conf) => {
+    connectNodes(ui.connectFromId, connectTarget, connectAutoLen, conf.type, conf.eiFactor, conf.startHinge, conf.endHinge);
+    setConnectTarget(null);
+    cancelConnect();
+    reset();
+  }, [connectNodes, ui.connectFromId, connectTarget, connectAutoLen, cancelConnect, reset]);
+
+  const handleConnectCancel = useCallback(() => {
+    setConnectTarget(null);
+    cancelConnect();
+    reset();
+  }, [cancelConnect, reset]);
+
+  const handleDeleteNode = useCallback((id) => { removeNode(id); reset(); }, [removeNode, reset]);
+  const handleDeleteMember = useCallback((id) => { removeMember(id); reset(); }, [removeMember, reset]);
+
+  const handleClear = useCallback(() => { clearAll(); reset(); }, [clearAll, reset]);
+
+  // --- Keyboard ---
+  useKeyboard({
+    onUndo: undo,
+    onDelete: useCallback(() => {
+      if (ui.activeMemberId) { removeMember(ui.activeMemberId); reset(); }
+      else if (ui.activeNodeId) { removeNode(ui.activeNodeId); reset(); }
+    }, [ui.activeMemberId, ui.activeNodeId, removeMember, removeNode, reset]),
+    onEscape: useCallback(() => {
+      if (ui.connectMode) { setConnectTarget(null); cancelConnect(); }
+      closePopup();
+    }, [ui.connectMode, cancelConnect, closePopup]),
+    onFit: useCallback(() => { if (nodes.length > 0) fitToNodes(nodes); }, [nodes, fitToNodes]),
+  });
+
+  // --- Active node for popups ---
+  const activeNode = ui.activeNodeId ? nodes.find(n => n.id === ui.activeNodeId) : null;
+  const connectFromNode = ui.connectFromId ? nodes.find(n => n.id === ui.connectFromId) : null;
+
+  // --- Popup content ---
+  function renderPopup() {
+    if (!activeNode || !ui.activePopup) return null;
+    let content = null;
+
+    switch (ui.activePopup) {
+      case 'actions':
+        content = <ActionBar nodeId={activeNode.id} onAction={handleActionBar} />;
+        break;
+      case 'compass':
+        content = (
+          <CompassPicker
+            nodeId={activeNode.id} existingNodes={nodes}
+            onSelectDirection={setDirection}
+            onConnect={() => startConnect(activeNode.id)}
+            onClose={closePopup}
+          />
+        );
+        break;
+      case 'length':
+        content = (
+          <LengthInput
+            direction={ui.pendingDirection}
+            onConfirm={handleAddMember}
+            onCancel={() => openPopup('compass')}
+          />
+        );
+        break;
+      case 'support':
+        content = (
+          <SupportPicker
+            nodeId={activeNode.id} currentSupport={activeNode.support}
+            onSelect={(type) => setNodeSupport(activeNode.id, type)}
+            onClose={closePopup}
+          />
+        );
+        break;
+      case 'load':
+        content = (
+          <LoadInput
+            nodeId={activeNode.id} currentLoads={activeNode.loads}
+            onApply={(loads) => setNodeLoads(activeNode.id, loads)}
+            onClose={closePopup}
+          />
+        );
+        break;
+      default:
+        return null;
+    }
+
+    return (
+      <PopupAt svgRef={svgRef} nodeX={activeNode.x} nodeY={activeNode.y} viewBox={viewBox}>
+        {content}
+      </PopupAt>
+    );
+  }
+
+  // --- Connect flow popup ---
+  function renderConnectFlow() {
+    if (!connectTarget || !connectFromNode) return null;
+    return (
+      <PopupAt svgRef={svgRef} nodeX={connectFromNode.x} nodeY={connectFromNode.y} viewBox={viewBox}>
+        <ConnectFlow
+          fromId={ui.connectFromId} toId={connectTarget} autoLength={connectAutoLen}
+          onConfirm={handleConnectConfirm} onCancel={handleConnectCancel}
+        />
+      </PopupAt>
+    );
+  }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh',
-      fontFamily: "'JetBrains Mono', monospace" }}>
-      {/* Temp header */}
-      <div style={{
-        height: 48, background: COLORS.bgDark, display: 'flex',
-        alignItems: 'center', padding: '0 16px',
-        borderBottom: `1px solid ${COLORS.border}`,
-      }}>
-        <span style={{ fontSize: 20, fontWeight: 700 }}>
-          <span style={{ color: '#fff' }}>Struct</span>
-          <span style={{ color: COLORS.green }}>SOLVE</span>
-        </span>
-        <span style={{ marginLeft: 16, color: COLORS.textDim, fontSize: 12 }}>
-          Canvas Test · Pan (drag svg) · Zoom (scroll) · Click nodes
-        </span>
-      </div>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', fontFamily: FONTS.mono }}>
+      <Header onClear={handleClear} onUndo={undo} canUndo={canUndo} nodeCount={nodes.length} />
 
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         <SidePanel
-          nodes={testNodes}
-          members={testMembers}
-          activeNodeId={ui.activeNodeId}
-          activeMemberId={ui.activeMemberId}
-          onSelectNode={selectNode}
-          onSelectMember={selectMember}
-          onDeleteNode={(id) => console.log('delete node', id)}
-          onDeleteMember={(id) => console.log('delete member', id)}
-          onUpdateMember={(id, updates) => console.log('update member', id, updates)}
+          nodes={nodes} members={members}
+          activeNodeId={ui.activeNodeId} activeMemberId={ui.activeMemberId}
+          onSelectNode={selectNode} onSelectMember={selectMember}
+          onDeleteNode={handleDeleteNode} onDeleteMember={handleDeleteMember}
+          onUpdateMember={updateMember}
         />
 
-        {/* Canvas on the RIGHT */}
-        <Canvas
-          nodes={testNodes}
-          members={testMembers}
-          ui={ui}
-          onSelectNode={selectNode}
-          onSelectMember={selectMember}
-          onCanvasClick={reset}
-        />
+        <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+          <Canvas
+            nodes={nodes} members={members} ui={ui}
+            svgRef={svgRef} viewBox={viewBox} svgProps={svgProps}
+            onSelectNode={selectNode} onSelectMember={selectMember}
+            onCanvasClick={reset} onConnectTarget={handleConnectTarget}
+          />
+
+          {ui.showStartOverlay && nodes.length === 0 && (
+            <StartOverlay onCreate={handleCreateBeam} />
+          )}
+
+          {renderPopup()}
+          {renderConnectFlow()}
+        </div>
       </div>
     </div>
   );

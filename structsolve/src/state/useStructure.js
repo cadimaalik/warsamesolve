@@ -126,9 +126,20 @@ export default function useStructure() {
     setStructure({ nodes: [], members: [], settings: structure.settings });
   }, [structure]);
 
+  const createInitialBeam = useCallback((length) => {
+    const nodeA = createNode('A', 200, 300, 'pin');
+    const nodeB = createNode('B', 200 + MEMBER_SPACING, 300, null);
+    const mem = createMember('A', 'B', length);
+    setStructure(prev => ({
+      ...prev,
+      nodes: [nodeA, nodeB],
+      members: [mem],
+    }));
+  }, []);
+
   return {
     structure, undo, addMember, connectNodes, removeNode, removeMember,
-    setNodeSupport, setNodeLoads, updateMember, clearAll,
+    setNodeSupport, setNodeLoads, updateMember, clearAll, createInitialBeam,
     canUndo: historyRef.current.length > 0,
   };
 }
