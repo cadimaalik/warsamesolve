@@ -37,6 +37,8 @@ export default function usePanZoom() {
 
   const onWheel = useCallback((e) => {
     e.preventDefault();
+    if (!e.currentTarget) return;
+    const target = e.currentTarget;
     const factor = 1 + e.deltaY * ZOOM_SPEED;
     const clampedFactor = Math.min(Math.max(factor, MIN_ZOOM / MAX_ZOOM), MAX_ZOOM / MIN_ZOOM);
 
@@ -45,7 +47,7 @@ export default function usePanZoom() {
       const newH = v.h * clampedFactor;
       if (newW < 100 || newW > 5000) return v;
       // Zoom toward mouse position
-      const rect = e.currentTarget.getBoundingClientRect();
+      const rect = target.getBoundingClientRect();
       const mx = (e.clientX - rect.left) / rect.width;
       const my = (e.clientY - rect.top) / rect.height;
       return {
