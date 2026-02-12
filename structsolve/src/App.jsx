@@ -3,6 +3,9 @@ import { COLORS } from './constants/brand.js';
 import useStructure from './state/useStructure.js';
 import useUI from './state/useUI.js';
 import Canvas from './components/Canvas.jsx';
+import ActionBar from './components/popups/ActionBar.jsx';
+import CompassPicker from './components/popups/CompassPicker.jsx';
+import LengthInput from './components/popups/LengthInput.jsx';
 
 export default function App() {
   const { structure, setNodeSupport, setNodeLoads } = useStructure();
@@ -59,6 +62,13 @@ export default function App() {
           <div style={{ marginTop: 8 }}>Connect mode: {ui.connectMode ? 'ON' : 'off'}</div>
           <div style={{ marginTop: 16, color: COLORS.textDim }}>
             Nodes: {testNodes.length} · Members: {testMembers.length}
+          </div>
+
+          <div style={{ marginTop: 20, borderTop: `1px solid ${COLORS.border}`, paddingTop: 12 }}>
+            <div style={{ fontSize: 10, color: COLORS.textDim, marginBottom: 8 }}>POPUP PREVIEW</div>
+            <div style={{ background: COLORS.bgCard, borderRadius: 8, padding: 10, marginBottom: 8 }}>
+              <ActionBar nodeId="A" onAction={(a) => console.log('action:', a)} />
+            </div>
           </div>
         </div>
 
