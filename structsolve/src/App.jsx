@@ -3,13 +3,7 @@ import { COLORS } from './constants/brand.js';
 import useStructure from './state/useStructure.js';
 import useUI from './state/useUI.js';
 import Canvas from './components/Canvas.jsx';
-import ActionBar from './components/popups/ActionBar.jsx';
-import CompassPicker from './components/popups/CompassPicker.jsx';
-import LengthInput from './components/popups/LengthInput.jsx';
-import SupportPicker from './components/popups/SupportPicker.jsx';
-import LoadInput from './components/popups/LoadInput.jsx';
-import ConnectFlow from './components/popups/ConnectFlow.jsx';
-import StartOverlay from './components/popups/StartOverlay.jsx';
+import SidePanel from './components/SidePanel.jsx';
 
 export default function App() {
   const { structure, setNodeSupport, setNodeLoads } = useStructure();
@@ -56,40 +50,17 @@ export default function App() {
       </div>
 
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        {/* LEFT sidebar placeholder */}
-        <div style={{
-          width: 280, background: COLORS.bgPanel, borderRight: `1px solid ${COLORS.border}`,
-          padding: 16, fontSize: 12, color: COLORS.textMuted, overflowY: 'auto',
-        }}>
-          <div style={{ fontWeight: 600, color: COLORS.green, marginBottom: 12 }}>Side Panel</div>
-          <div>Selected: {ui.activeNodeId || ui.activeMemberId || 'none'}</div>
-          <div style={{ marginTop: 8 }}>Connect mode: {ui.connectMode ? 'ON' : 'off'}</div>
-          <div style={{ marginTop: 16, color: COLORS.textDim }}>
-            Nodes: {testNodes.length} · Members: {testMembers.length}
-          </div>
-
-          <div style={{ marginTop: 20, borderTop: `1px solid ${COLORS.border}`, paddingTop: 12 }}>
-            <div style={{ fontSize: 10, color: COLORS.textDim, marginBottom: 8 }}>POPUP PREVIEW</div>
-            <div style={{ background: COLORS.bgCard, borderRadius: 8, padding: 10, marginBottom: 8 }}>
-              <ActionBar nodeId="A" onAction={(a) => console.log('action:', a)} />
-            </div>
-
-            <div style={{ background: COLORS.bgCard, borderRadius: 8, padding: 10, marginBottom: 8 }}>
-              <SupportPicker nodeId="A" currentSupport="pin"
-                onSelect={(s) => console.log('support:', s)} onClose={() => {}} />
-            </div>
-
-            <div style={{ background: COLORS.bgCard, borderRadius: 8, padding: 10, marginBottom: 8 }}>
-              <LoadInput nodeId="B" currentLoads={{ fx: 0, fy: -100, moment: 0 }}
-                onApply={(l) => console.log('loads:', l)} onClose={() => {}} />
-            </div>
-
-            <div style={{ background: COLORS.bgCard, borderRadius: 8, padding: 10, marginBottom: 8 }}>
-              <ConnectFlow fromId="C" toId="A" autoLength={7.21}
-                onConfirm={(c) => console.log('connect:', c)} onCancel={() => {}} />
-            </div>
-          </div>
-        </div>
+        <SidePanel
+          nodes={testNodes}
+          members={testMembers}
+          activeNodeId={ui.activeNodeId}
+          activeMemberId={ui.activeMemberId}
+          onSelectNode={selectNode}
+          onSelectMember={selectMember}
+          onDeleteNode={(id) => console.log('delete node', id)}
+          onDeleteMember={(id) => console.log('delete member', id)}
+          onUpdateMember={(id, updates) => console.log('update member', id, updates)}
+        />
 
         {/* Canvas on the RIGHT */}
         <Canvas
