@@ -3,6 +3,16 @@
   publish = "dist"
 
 [[redirects]]
+  from = "/structsolve"
+  to = "/structsolve/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/structsolve/"
+  to = "/structsolve/index.html"
+  status = 200
+
+[[redirects]]
   from = "/structsolve/*"
   to = "/structsolve/index.html"
   status = 200
