@@ -1,6 +1,14 @@
 [build]
-  command = "cd structsolve && npm install && npm run build"
-  publish = "structsolve/dist"
+  command = """
+    mkdir -p dist && \
+    cp index.html dist/ && \
+    cp contact.html dist/ && \
+    cp contribution.html dist/ && \
+    cp -r hydro dist/ && \
+    cd structsolve && npm install && npm run build && \
+    cp -r dist ../dist/structsolve
+  """
+  publish = "dist"
 
 [[redirects]]
   from = "/structsolve/*"
