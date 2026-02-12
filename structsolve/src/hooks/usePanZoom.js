@@ -6,13 +6,15 @@ const ZOOM_SPEED = 0.001;
 
 export default function usePanZoom() {
   const [viewBox, setViewBox] = useState({ x: -50, y: -50, w: 800, h: 500 });
+  const [panning, setPanning] = useState(false);
   const isPanning = useRef(false);
   const panStart = useRef({ x: 0, y: 0 });
 
   const onMouseDown = useCallback((e) => {
-    // Middle-click or left-click on empty canvas
-    if (e.button === 1 || (e.button === 0 && e.target.tagName === 'svg')) {
+    // Middle-click always pans; left-click pans if not on an interactive element
+    if (e.button === 1 || (e.button === 0 && !e.target.closest('[data-interactive]'))) {
       isPanning.current = true;
+      setPanning(true);
       panStart.current = { x: e.clientX, y: e.clientY };
       e.preventDefault();
     }
@@ -20,6 +22,7 @@ export default function usePanZoom() {
 
   const onMouseMove = useCallback((e) => {
     if (!isPanning.current) return;
+    e.preventDefault();
     const dx = e.clientX - panStart.current.x;
     const dy = e.clientY - panStart.current.y;
     panStart.current = { x: e.clientX, y: e.clientY };
@@ -33,6 +36,7 @@ export default function usePanZoom() {
 
   const onMouseUp = useCallback(() => {
     isPanning.current = false;
+    setPanning(false);
   }, []);
 
   const onWheel = useCallback((e) => {
@@ -74,7 +78,7 @@ export default function usePanZoom() {
   }, []);
 
   return {
-    viewBox,
+    viewBox, panning,
     svgProps: { onMouseDown, onMouseMove, onMouseUp, onWheel },
     fitToNodes,
   };

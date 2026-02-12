@@ -9,7 +9,7 @@ import LoadArrows from './svg/LoadArrows.jsx';
 import MomentArc from './svg/MomentArc.jsx';
 
 export default function Canvas({
-  nodes, members, ui, svgRef, viewBox, svgProps,
+  nodes, members, ui, svgRef, viewBox, svgProps, panning,
   onSelectNode, onSelectMember, onCanvasClick, onConnectTarget,
 }) {
   function handleSvgClick(e) {
@@ -33,6 +33,7 @@ export default function Canvas({
   return (
     <div style={{
       flex: 1, position: 'relative', background: COLORS.canvasBg, overflow: 'hidden',
+      userSelect: 'none', WebkitUserSelect: 'none',
     }}>
       {/* Connect mode banner */}
       {ui.connectMode && (
@@ -50,7 +51,11 @@ export default function Canvas({
       <svg
         ref={svgRef}
         width="100%" height="100%" viewBox={vb}
-        style={{ display: 'block', background: COLORS.canvasBg, cursor: ui.connectMode ? 'crosshair' : 'default' }}
+        style={{
+          display: 'block', background: COLORS.canvasBg,
+          userSelect: 'none', WebkitUserSelect: 'none',
+          cursor: panning ? 'grabbing' : ui.connectMode ? 'crosshair' : 'grab',
+        }}
         onClick={handleSvgClick}
         {...svgProps}
       >
@@ -110,6 +115,7 @@ export default function Canvas({
           const isTarget = ui.connectMode && ui.connectFromId !== n.id;
           return (
             <g key={'node-' + n.id}
+              data-interactive="true"
               onClick={(e) => handleNodeClick(n.id, e)}
               style={{ cursor: 'pointer' }}
             >
