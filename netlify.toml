@@ -1,0 +1,8 @@
+[build]
+  command = "cd structsolve && npm install && npm run build"
+  publish = "structsolve/dist"
+
+[[redirects]]
+  from = "/structsolve/*"
+  to = "/structsolve/index.html"
+  status = 200
