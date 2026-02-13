@@ -83,10 +83,10 @@ export default function PopupAt({ svgRef, nodeX, nodeY, viewBox, children }) {
     >
       {/* Drag handle */}
       <div onMouseDown={onDragStart} style={{
-        height: 20, cursor: 'grab', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'rgba(255,255,255,0.04)', borderBottom: `1px solid ${COLORS.borderLight}`,
+        height: 14, cursor: 'grab', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'rgba(255,255,255,0.04)',
       }}>
-        <div style={{ width: 32, height: 3, borderRadius: 2, background: COLORS.borderLight }} />
+        <div style={{ width: 40, height: 4, borderRadius: 4, background: '#404040' }} />
       </div>
       <div style={{ padding: 12 }}>
         {children}

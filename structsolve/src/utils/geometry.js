@@ -1,7 +1,10 @@
 /**
- * Compute support auto-rotation angle.
- * Returns 0 if support should face DOWN (default).
- * Returns 180 if ALL connected members go downward (support faces UP).
+ * Compute support auto-rotation angle based on connected members.
+ * Returns:
+ *   0   — support faces DOWN (default, member goes up)
+ *   180 — support faces UP (all members go down)
+ *   90  — support faces LEFT (all members go right, wall-mounted)
+ *  -90  — support faces RIGHT (all members go left, wall-mounted)
  */
 export function computeSupportAngle(node, allNodes, members) {
   const connected = members.filter(
@@ -9,13 +12,28 @@ export function computeSupportAngle(node, allNodes, members) {
   );
   if (connected.length === 0) return 0;
 
-  let allDown = true;
+  // Compute average direction of connected members
+  let sumDx = 0, sumDy = 0;
   connected.forEach(m => {
     const otherId = m.startNodeId === node.id ? m.endNodeId : m.startNodeId;
     const other = allNodes.find(n => n.id === otherId);
-    if (other && other.y <= node.y) allDown = false;
+    if (!other) return;
+    const dx = other.x - node.x;
+    const dy = other.y - node.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist > 0) { sumDx += dx / dist; sumDy += dy / dist; }
   });
-  return allDown ? 180 : 0;
+
+  const avgAngle = Math.atan2(sumDy, sumDx) * 180 / Math.PI;
+
+  // Members go UP (avg angle ~ -90): support faces down → 0
+  if (avgAngle < -45 && avgAngle > -135) return 0;
+  // Members go DOWN (avg angle ~ 90): support faces up → 180
+  if (avgAngle > 45 && avgAngle < 135) return 180;
+  // Members go RIGHT (avg angle ~ 0): support faces left → 90
+  if (avgAngle >= -45 && avgAngle <= 45) return 90;
+  // Members go LEFT (avg angle ~ ±180): support faces right → -90
+  return -90;
 }
 
 /**

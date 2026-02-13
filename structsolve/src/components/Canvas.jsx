@@ -103,9 +103,9 @@ export default function Canvas({
         {/* Layer 4: Load arrows + moment arcs */}
         {nodes.map(n => (
           <React.Fragment key={'load-' + n.id}>
-            <LoadArrows node={n} />
+            <LoadArrows node={n} members={members} allNodes={nodes} />
             {n.loads.moment !== 0 && (
-              <MomentArc x={n.x} y={n.y} moment={n.loads.moment} />
+              <MomentArc x={n.x} y={n.y} moment={n.loads.moment} members={members} allNodes={nodes} />
             )}
           </React.Fragment>
         ))}

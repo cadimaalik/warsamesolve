@@ -47,9 +47,13 @@ export default function useUI() {
     setUI(u => ({ ...u, showStartOverlay: false }));
   }, []);
 
+  const showStartOverlay = useCallback(() => {
+    setUI(u => ({ ...u, showStartOverlay: true }));
+  }, []);
+
   const setDirection = useCallback((dir) => {
     setUI(u => ({ ...u, pendingDirection: dir, activePopup: 'length' }));
   }, []);
 
-  return { ui, selectNode, selectMember, openPopup, closePopup, startConnect, cancelConnect, reset, hideStartOverlay, setDirection };
+  return { ui, selectNode, selectMember, openPopup, closePopup, startConnect, cancelConnect, reset, hideStartOverlay, showStartOverlay, setDirection };
 }

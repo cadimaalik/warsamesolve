@@ -24,7 +24,7 @@ export default function App() {
   } = useStructure();
   const {
     ui, selectNode, selectMember, openPopup, closePopup,
-    startConnect, cancelConnect, reset, hideStartOverlay, setDirection,
+    startConnect, cancelConnect, reset, hideStartOverlay, showStartOverlay, setDirection,
   } = useUI();
 
   const svgRef = useRef(null);
@@ -80,7 +80,7 @@ export default function App() {
   const handleDeleteNode = useCallback((id) => { removeNode(id); reset(); }, [removeNode, reset]);
   const handleDeleteMember = useCallback((id) => { removeMember(id); reset(); }, [removeMember, reset]);
 
-  const handleClear = useCallback(() => { clearAll(); reset(); }, [clearAll, reset]);
+  const handleClear = useCallback(() => { clearAll(); reset(); showStartOverlay(); }, [clearAll, reset, showStartOverlay]);
 
   // --- Keyboard ---
   useKeyboard({
