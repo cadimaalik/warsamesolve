@@ -20,6 +20,8 @@ const toggleBtn = (active) => ({
 const labelStyle = { fontSize: 10, color: COLORS.textDim, marginBottom: 3, fontWeight: 600 };
 
 const DIAGONALS = ['NE', 'SE', 'SW', 'NW'];
+const DIAG_SIGNS = { NE: { sx: 1, sy: -1 }, SE: { sx: 1, sy: 1 }, SW: { sx: -1, sy: 1 }, NW: { sx: -1, sy: -1 } };
+const CARDINAL_DIR = { N: [0, -1], S: [0, 1], E: [1, 0], W: [-1, 0] };
 
 export default function LengthInput({ direction, onConfirm, onCancel }) {
   const isDiag = DIAGONALS.includes(direction);
@@ -46,15 +48,29 @@ export default function LengthInput({ direction, onConfirm, onCancel }) {
     : 0;
 
   function handleSubmit() {
-    let len;
+    let len, rdx = 0, rdy = 0;
     if (isDiag) {
-      len = angleMode ? (parseFloat(length) || 0) : computedLen;
+      const signs = DIAG_SIGNS[direction];
+      if (angleMode) {
+        len = parseFloat(length) || 0;
+        rdx = Math.abs(angleDx) * signs.sx;
+        rdy = Math.abs(angleDy) * signs.sy;
+      } else {
+        len = computedLen;
+        rdx = (parseFloat(dx) || 0) * signs.sx;
+        rdy = (parseFloat(dy) || 0) * signs.sy;
+      }
     } else {
       len = parseFloat(length) || 0;
+      const [cx, cy] = CARDINAL_DIR[direction] || [0, 0];
+      rdx = cx * len;
+      rdy = cy * len;
     }
     if (!len || len <= 0) return;
     onConfirm({
       length: Math.round(len * 100) / 100,
+      realDx: Math.round(rdx * 100) / 100,
+      realDy: Math.round(rdy * 100) / 100,
       type,
       eiFactor: parseFloat(eiFactor) || 1,
       startHinge: startConn === 'hinge',
