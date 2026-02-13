@@ -55,7 +55,8 @@ export function nextNodeLabel(existingIds) {
 
 /**
  * Compute real-world coordinates via BFS graph traversal.
- * Each node gets a real-world {x, y} computed from member lengths and pixel directions.
+ * Each node gets a real-world {x, y} computed from stored member realDx/realDy.
+ * Falls back to pixel-direction scaling only for legacy members without realDx/realDy.
  */
 export function computeRealCoordinates(nodes, members) {
   const realCoords = {};
@@ -67,8 +68,6 @@ export function computeRealCoordinates(nodes, members) {
 
   while (queue.length > 0) {
     const curId = queue.shift();
-    const curNode = nodes.find(n => n.id === curId);
-    if (!curNode) continue;
 
     members.forEach(m => {
       let otherId = null;
@@ -76,18 +75,30 @@ export function computeRealCoordinates(nodes, members) {
       else if (m.endNodeId === curId) otherId = m.startNodeId;
       if (!otherId || visited.has(otherId)) return;
 
-      const otherNode = nodes.find(n => n.id === otherId);
-      if (!otherNode) return;
-      const pdx = otherNode.x - curNode.x;
-      const pdy = otherNode.y - curNode.y;
-      const pixDist = Math.sqrt(pdx * pdx + pdy * pdy);
-      if (pixDist < 1) return;
+      if (m.realDx != null && m.realDy != null) {
+        // Use stored real-world displacement (start → end)
+        // If we're traversing end → start, flip the sign
+        const flip = (m.endNodeId === curId) ? -1 : 1;
+        realCoords[otherId] = {
+          x: realCoords[curId].x + m.realDx * flip,
+          y: realCoords[curId].y + m.realDy * flip,
+        };
+      } else {
+        // Fallback: pixel direction scaled by member length
+        const curNode = nodes.find(n => n.id === curId);
+        const otherNode = nodes.find(n => n.id === otherId);
+        if (!curNode || !otherNode) return;
+        const pdx = otherNode.x - curNode.x;
+        const pdy = otherNode.y - curNode.y;
+        const pixDist = Math.sqrt(pdx * pdx + pdy * pdy);
+        if (pixDist < 1) return;
+        const scale = m.length / pixDist;
+        realCoords[otherId] = {
+          x: realCoords[curId].x + pdx * scale,
+          y: realCoords[curId].y + pdy * scale,
+        };
+      }
 
-      const scale = m.length / pixDist;
-      realCoords[otherId] = {
-        x: realCoords[curId].x + pdx * scale,
-        y: realCoords[curId].y + pdy * scale,
-      };
       visited.add(otherId);
       queue.push(otherId);
     });

@@ -54,7 +54,7 @@ export default function App() {
   }, [openPopup]);
 
   const handleAddMember = useCallback((conf) => {
-    addMember(ui.activeNodeId, ui.pendingDirection, conf.length, conf.type, conf.eiFactor, conf.newNodeSupport, conf.startHinge);
+    addMember(ui.activeNodeId, ui.pendingDirection, conf.length, conf.type, conf.eiFactor, conf.newNodeSupport, conf.startHinge, conf.realDx, conf.realDy);
     reset();
   }, [addMember, ui.activeNodeId, ui.pendingDirection, reset]);
 

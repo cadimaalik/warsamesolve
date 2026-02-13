@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import { nextNodeLabel, findOverlappingNode, realDistance } from '../utils/geometry.js';
+import { nextNodeLabel, findOverlappingNode, computeRealCoordinates } from '../utils/geometry.js';
 import { DIRECTIONS, MEMBER_SPACING } from '../constants/directions.js';
 
 function createNode(id, x, y, support = null) {
@@ -32,7 +32,7 @@ export default function useStructure() {
     setStructure(historyRef.current.pop());
   }, []);
 
-  const addMember = useCallback((fromNodeId, direction, length, type, eiFactor, newNodeSupport, startHinge = false) => {
+  const addMember = useCallback((fromNodeId, direction, length, type, eiFactor, newNodeSupport, startHinge = false, realDx, realDy) => {
     pushHistory();
     setStructure(prev => {
       const fromNode = prev.nodes.find(n => n.id === fromNodeId);
@@ -49,10 +49,22 @@ export default function useStructure() {
       // Check overlap with existing node
       const overlap = findOverlappingNode(newX, newY, prev.nodes);
       if (overlap) {
-        // Connect to existing node instead of creating new one
-        const autoLen = realDistance(fromNodeId, overlap.id, prev.nodes, prev.members) || length;
+        // Connect to existing node — compute length from BFS real coordinates
+        const coords = computeRealCoordinates(prev.nodes, prev.members);
+        let rdx, rdy, autoLen;
+        if (coords[fromNodeId] && coords[overlap.id]) {
+          rdx = coords[overlap.id].x - coords[fromNodeId].x;
+          rdy = coords[overlap.id].y - coords[fromNodeId].y;
+          autoLen = Math.round(Math.sqrt(rdx * rdx + rdy * rdy) * 100) / 100;
+        } else {
+          autoLen = length;
+          rdx = realDx || 0;
+          rdy = realDy || 0;
+        }
         const newMem = createMember(fromNodeId, overlap.id, autoLen, type, eiFactor);
         newMem.startHinge = startHinge;
+        newMem.realDx = rdx;
+        newMem.realDy = rdy;
         return { ...prev, members: [...prev.members, newMem] };
       }
 
@@ -60,6 +72,8 @@ export default function useStructure() {
       const newNode = createNode(newId, newX, newY, newNodeSupport || null);
       const newMem = createMember(fromNodeId, newId, length, type, eiFactor);
       newMem.startHinge = startHinge;
+      newMem.realDx = realDx || 0;
+      newMem.realDy = realDy || 0;
 
       return { ...prev, nodes: [...prev.nodes, newNode], members: [...prev.members, newMem] };
     });
@@ -73,9 +87,15 @@ export default function useStructure() {
         (m.startNodeId === toId && m.endNodeId === fromId)
       );
       if (dup) return prev;
+      // Compute realDx/realDy from BFS coordinates of existing nodes
+      const coords = computeRealCoordinates(prev.nodes, prev.members);
+      const rdx = (coords[toId]?.x ?? 0) - (coords[fromId]?.x ?? 0);
+      const rdy = (coords[toId]?.y ?? 0) - (coords[fromId]?.y ?? 0);
       const newMem = createMember(fromId, toId, length, type, eiFactor);
       newMem.startHinge = startHinge;
       newMem.endHinge = endHinge;
+      newMem.realDx = rdx;
+      newMem.realDy = rdy;
       return { ...prev, members: [...prev.members, newMem] };
     });
   }, [structure]);
@@ -141,6 +161,8 @@ export default function useStructure() {
     const nodeA = createNode('A', 200, 300, supportA);
     const nodeB = createNode('B', bx, by, supportB);
     const mem = createMember('A', 'B', length, type);
+    mem.realDx = isVert ? 0 : length;
+    mem.realDy = isVert ? length : 0;
     setStructure(prev => ({
       ...prev,
       nodes: [nodeA, nodeB],
