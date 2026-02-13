@@ -49,27 +49,39 @@ export default function useStructure() {
       // Check overlap with existing node
       const overlap = findOverlappingNode(newX, newY, prev.nodes);
       if (overlap) {
-        // Connect to existing node — compute length from BFS real coordinates
+        // Verify the real-world displacement to overlapping node matches user intent
         const coords = computeRealCoordinates(prev.nodes, prev.members);
+        const intendedRdx = realDx || 0;
+        const intendedRdy = realDy || 0;
+        let useOverlap = false;
         let rdx, rdy;
+
         if (coords[fromNodeId] && coords[overlap.id]) {
           rdx = coords[overlap.id].x - coords[fromNodeId].x;
           rdy = coords[overlap.id].y - coords[fromNodeId].y;
-        } else {
-          rdx = realDx || 0;
-          rdy = realDy || 0;
+          // Only connect to existing node if real-world displacement roughly matches
+          const tol = 0.5;
+          useOverlap = Math.abs(rdx - intendedRdx) < tol && Math.abs(rdy - intendedRdy) < tol;
         }
-        // Always compute length from real-world displacement
-        const autoLen = Math.round(Math.sqrt(rdx * rdx + rdy * rdy) * 100) / 100;
-        const newMem = createMember(fromNodeId, overlap.id, autoLen, type, eiFactor);
-        newMem.startHinge = startHinge;
-        newMem.realDx = rdx;
-        newMem.realDy = rdy;
-        return { ...prev, members: [...prev.members, newMem] };
+
+        if (useOverlap) {
+          const autoLen = Math.round(Math.sqrt(rdx * rdx + rdy * rdy) * 100) / 100;
+          const newMem = createMember(fromNodeId, overlap.id, autoLen, type, eiFactor);
+          newMem.startHinge = startHinge;
+          newMem.realDx = rdx;
+          newMem.realDy = rdy;
+          return { ...prev, members: [...prev.members, newMem] };
+        }
       }
 
       const newId = nextNodeLabel(prev.nodes.map(n => n.id));
-      const newNode = createNode(newId, newX, newY, newNodeSupport || null);
+      // Nudge pixel position if it collides with an existing node
+      let finalX = newX, finalY = newY;
+      if (findOverlappingNode(finalX, finalY, prev.nodes)) {
+        finalX += dir.dx * MEMBER_SPACING * 0.5;
+        finalY += dir.dy * MEMBER_SPACING * 0.5;
+      }
+      const newNode = createNode(newId, finalX, finalY, newNodeSupport || null);
       // Always compute length from real-world displacement to avoid pixel-based errors
       const rdx = realDx || 0;
       const rdy = realDy || 0;
