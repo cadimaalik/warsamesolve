@@ -46,6 +46,7 @@ export default function StartOverlay({ onCreate }) {
         fontFamily: "'JetBrains Mono', monospace",
       }}>
         <div style={{ textAlign: 'center', marginBottom: 16 }}>
+          <img src="/structsolve/logo.svg" alt="StructSOLVE" style={{ height: 48, marginBottom: 8 }} />
           <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>
             <span style={{ color: '#fff' }}>Struct</span>
             <span style={{ color: COLORS.green }}>SOLVE</span>

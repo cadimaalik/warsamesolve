@@ -37,10 +37,13 @@ export default function Header({ onClear, onUndo, canUndo, nodeCount }) {
       fontFamily: FONTS.mono, flexShrink: 0,
     }}>
       {/* Logo */}
-      <span style={{ fontSize: 20, fontWeight: 700 }}>
-        <span style={{ color: '#fff' }}>Struct</span>
-        <span style={{ color: COLORS.green }}>SOLVE</span>
-      </span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <img src="/structsolve/logo.svg" alt="StructSOLVE" style={{ height: 24 }} />
+        <span style={{ fontSize: 20, fontWeight: 700 }}>
+          <span style={{ color: '#fff' }}>Struct</span>
+          <span style={{ color: COLORS.green }}>SOLVE</span>
+        </span>
+      </div>
 
       <span style={{ flex: 1 }} />
 
