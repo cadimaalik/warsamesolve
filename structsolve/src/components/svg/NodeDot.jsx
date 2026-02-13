@@ -11,6 +11,10 @@ export default function NodeDot({ node, members, isSelected, isConnectTarget }) 
     return false;
   });
 
+  const hasSupport = !!node.support;
+  const isFreeEnd = connected.length <= 1;
+  const showDot = hasSupport || isFreeEnd || hasHinge;
+
   return (
     <g>
       {/* Connect mode: pulsing green ring */}
@@ -26,15 +30,22 @@ export default function NodeDot({ node, members, isSelected, isConnectTarget }) 
           fill="rgba(74, 222, 128, 0.15)" stroke="#4ade80" strokeWidth={2} />
       )}
 
-      {/* Node dot — always visible */}
-      <circle cx={node.x} cy={node.y} r={4.5}
-        fill="#1a1f2b" stroke={STROKE} strokeWidth={1.5} />
+      {/* Visible dot: only at supports, free ends, or hinges */}
+      {showDot && (
+        <circle cx={node.x} cy={node.y} r={4.5}
+          fill="#1a1f2b" stroke={STROKE} strokeWidth={1.5} />
+      )}
 
       {/* Hinge indicator: open white circle (drawn on top of dot) */}
       {hasHinge && (
         <circle cx={node.x} cy={node.y} r={5}
           fill="#ffffff" stroke={STROKE} strokeWidth={1.5} />
       )}
+
+      {/* Invisible click target — always present at every node */}
+      <circle cx={node.x} cy={node.y} r={15}
+        fill="transparent" stroke="none"
+        style={{ cursor: 'pointer' }} />
     </g>
   );
 }
