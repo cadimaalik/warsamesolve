@@ -51,16 +51,16 @@ export default function useStructure() {
       if (overlap) {
         // Connect to existing node — compute length from BFS real coordinates
         const coords = computeRealCoordinates(prev.nodes, prev.members);
-        let rdx, rdy, autoLen;
+        let rdx, rdy;
         if (coords[fromNodeId] && coords[overlap.id]) {
           rdx = coords[overlap.id].x - coords[fromNodeId].x;
           rdy = coords[overlap.id].y - coords[fromNodeId].y;
-          autoLen = Math.round(Math.sqrt(rdx * rdx + rdy * rdy) * 100) / 100;
         } else {
-          autoLen = length;
           rdx = realDx || 0;
           rdy = realDy || 0;
         }
+        // Always compute length from real-world displacement
+        const autoLen = Math.round(Math.sqrt(rdx * rdx + rdy * rdy) * 100) / 100;
         const newMem = createMember(fromNodeId, overlap.id, autoLen, type, eiFactor);
         newMem.startHinge = startHinge;
         newMem.realDx = rdx;
@@ -70,10 +70,14 @@ export default function useStructure() {
 
       const newId = nextNodeLabel(prev.nodes.map(n => n.id));
       const newNode = createNode(newId, newX, newY, newNodeSupport || null);
-      const newMem = createMember(fromNodeId, newId, length, type, eiFactor);
+      // Always compute length from real-world displacement to avoid pixel-based errors
+      const rdx = realDx || 0;
+      const rdy = realDy || 0;
+      const computedLength = Math.round(Math.sqrt(rdx * rdx + rdy * rdy) * 100) / 100;
+      const newMem = createMember(fromNodeId, newId, computedLength, type, eiFactor);
       newMem.startHinge = startHinge;
-      newMem.realDx = realDx || 0;
-      newMem.realDy = realDy || 0;
+      newMem.realDx = rdx;
+      newMem.realDy = rdy;
 
       return { ...prev, nodes: [...prev.nodes, newNode], members: [...prev.members, newMem] };
     });
@@ -91,7 +95,9 @@ export default function useStructure() {
       const coords = computeRealCoordinates(prev.nodes, prev.members);
       const rdx = (coords[toId]?.x ?? 0) - (coords[fromId]?.x ?? 0);
       const rdy = (coords[toId]?.y ?? 0) - (coords[fromId]?.y ?? 0);
-      const newMem = createMember(fromId, toId, length, type, eiFactor);
+      // Always compute length from real-world displacement
+      const computedLength = Math.round(Math.sqrt(rdx * rdx + rdy * rdy) * 100) / 100;
+      const newMem = createMember(fromId, toId, computedLength, type, eiFactor);
       newMem.startHinge = startHinge;
       newMem.endHinge = endHinge;
       newMem.realDx = rdx;
