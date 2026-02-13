@@ -69,11 +69,13 @@ export default function PopupAt({ svgRef, nodeX, nodeY, viewBox, children }) {
     window.addEventListener('mouseup', onUp);
   }, [pos]);
 
-  if (!pos) return null;
-
   return (
     <div ref={popupRef} style={{
-      position: 'fixed', left: pos.left, top: pos.top, zIndex: 100,
+      position: 'fixed',
+      left: pos ? pos.left : -9999,
+      top: pos ? pos.top : -9999,
+      visibility: pos ? 'visible' : 'hidden',
+      zIndex: 100,
       background: COLORS.bgCard, border: `1px solid ${COLORS.borderLight}`,
       borderRadius: 10, minWidth: 200, overflow: 'hidden',
       boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
