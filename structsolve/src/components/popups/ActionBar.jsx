@@ -14,7 +14,6 @@ export default function ActionBar({ nodeId, onAction }) {
     { key: 'compass', icon: '+', label: 'Add Member' },
     { key: 'support', icon: '\u25B3', label: 'Support' },
     { key: 'load',    icon: '\u2193', label: 'Load' },
-    { key: 'hinge',   icon: '\u25CB', label: 'Toggle Hinge' },
   ];
 
   return (
@@ -25,8 +24,8 @@ export default function ActionBar({ nodeId, onAction }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         {actions.map(a => (
           <button key={a.key} style={btnStyle}
-            onMouseOver={e => e.target.style.background = COLORS.greenGlow}
-            onMouseOut={e => e.target.style.background = 'transparent'}
+            onMouseOver={e => e.currentTarget.style.background = COLORS.greenGlow}
+            onMouseOut={e => e.currentTarget.style.background = 'transparent'}
             onClick={() => onAction(a.key)}
           >
             <span style={{ fontSize: 16, width: 20, textAlign: 'center' }}>{a.icon}</span>

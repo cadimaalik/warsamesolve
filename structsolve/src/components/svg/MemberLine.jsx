@@ -26,7 +26,7 @@ export default function MemberLine({ member, startNode, endNode, isSelected, onS
         stroke={strokeColor}
         strokeWidth={isTruss ? 1.5 : 3}
         strokeLinecap="round"
-        strokeDasharray={isTruss ? '8,4' : 'none'}
+        strokeDasharray="none"
       />
 
       {/* Invisible fat hit area for clicking */}

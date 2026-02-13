@@ -91,10 +91,18 @@ export default function useStructure() {
 
   const removeMember = useCallback((memberId) => {
     pushHistory();
-    setStructure(prev => ({
-      ...prev,
-      members: prev.members.filter(m => m.id !== memberId),
-    }));
+    setStructure(prev => {
+      const member = prev.members.find(m => m.id === memberId);
+      const remainingMembers = prev.members.filter(m => m.id !== memberId);
+      if (!member) return { ...prev, members: remainingMembers };
+
+      // Find orphan nodes (endpoints with no remaining connections)
+      const orphanIds = [member.startNodeId, member.endNodeId].filter(nid => {
+        return !remainingMembers.some(m => m.startNodeId === nid || m.endNodeId === nid);
+      });
+      const remainingNodes = prev.nodes.filter(n => !orphanIds.includes(n.id));
+      return { ...prev, nodes: remainingNodes, members: remainingMembers };
+    });
   }, [structure]);
 
   const setNodeSupport = useCallback((nodeId, supportType) => {
@@ -126,10 +134,13 @@ export default function useStructure() {
     setStructure({ nodes: [], members: [], settings: structure.settings });
   }, [structure]);
 
-  const createInitialBeam = useCallback((length) => {
-    const nodeA = createNode('A', 200, 300, 'pin');
-    const nodeB = createNode('B', 200 + MEMBER_SPACING, 300, null);
-    const mem = createMember('A', 'B', length);
+  const createInitialBeam = useCallback(({ length, orientation = 'horizontal', type = 'frame', supportA = 'pin', supportB = null }) => {
+    const isVert = orientation === 'vertical';
+    const bx = isVert ? 200 : 200 + MEMBER_SPACING;
+    const by = isVert ? 300 + MEMBER_SPACING : 300;
+    const nodeA = createNode('A', 200, 300, supportA);
+    const nodeB = createNode('B', bx, by, supportB);
+    const mem = createMember('A', 'B', length, type);
     setStructure(prev => ({
       ...prev,
       nodes: [nodeA, nodeB],
