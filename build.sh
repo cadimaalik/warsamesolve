@@ -21,6 +21,7 @@ mkdir -p dist
 cp index.html dist/
 cp contact.html dist/
 cp contribution.html dist/
+cp logo.svg dist/
 cp -r hydro dist/
 cp _redirects dist/
 

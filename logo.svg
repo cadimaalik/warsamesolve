@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 52" fill="none">
+  <!-- Triangle (roller support body) -->
+  <polygon points="24,3 6,30 42,30" stroke="#4ade80" stroke-width="3" fill="none" stroke-linejoin="round"/>
+  <!-- Wheels -->
+  <circle cx="16" cy="37" r="4" stroke="#4ade80" stroke-width="2.5" fill="none"/>
+  <circle cx="32" cy="37" r="4" stroke="#4ade80" stroke-width="2.5" fill="none"/>
+  <!-- Ground line -->
+  <line x1="4" y1="46" x2="44" y2="46" stroke="#4ade80" stroke-width="3" stroke-linecap="round"/>
+</svg>
