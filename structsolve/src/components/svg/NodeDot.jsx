@@ -44,10 +44,10 @@ export default function NodeDot({ node, members, allNodes, isSelected, isConnect
           fill="#1a1f2b" stroke={STROKE} strokeWidth={1.5} />
       )}
 
-      {/* White dot at pin/roller supports — drawn in Canvas Layer 1.5 (behind members) when ALL hinged */}
+      {/* White dot at supports — drawn in Canvas Layer 1.5 (behind members) when ALL hinged */}
 
-      {/* Pin/roller with only SOME members hinged: offset circles for hinged members */}
-      {isPinOrRoller && hasAnyHinge && !allHinged && (
+      {/* Supported node with only SOME members hinged: offset circles for hinged members */}
+      {hasSupport && hasAnyHinge && !allHinged && (
         hingedMembers.map(m => {
           const otherId = m.startNodeId === node.id ? m.endNodeId : m.startNodeId;
           const other = allNodes ? allNodes.find(n => n.id === otherId) : null;

@@ -94,10 +94,9 @@ export default function Canvas({
           );
         })}
 
-        {/* Layer 1.5: White dots at pin/roller supports BEHIND members (only when ALL members are hinged) */}
+        {/* Layer 1.5: White dots at supports BEHIND members (only when ALL members are hinged) */}
         {nodes.map(n => {
-          const isPinOrRoller = n.support === 'pin' || n.support === 'roller-h' || n.support === 'roller-v';
-          if (!isPinOrRoller) return null;
+          if (!n.support) return null;
           const connected = members.filter(m => m.startNodeId === n.id || m.endNodeId === n.id);
           if (connected.length === 0) return null;
           const allHinged = connected.every(m => {
