@@ -6,8 +6,9 @@ const STROKE = '#374151';
 export default function NodeDot({ node, members, allNodes, isSelected, isConnectTarget }) {
   const connected = members.filter(m => m.startNodeId === node.id || m.endNodeId === node.id);
 
-  // Collect which member-ends have hinges at this node
+  // Collect which member-ends have hinges at this node (truss members are always hinged)
   const hingedMembers = connected.filter(m => {
+    if (m.type === 'truss') return true;
     if (m.startNodeId === node.id && m.startHinge) return true;
     if (m.endNodeId === node.id && m.endHinge) return true;
     return false;
@@ -43,7 +44,29 @@ export default function NodeDot({ node, members, allNodes, isSelected, isConnect
           fill="#1a1f2b" stroke={STROKE} strokeWidth={1.5} />
       )}
 
-      {/* White dot at pin/roller supports — drawn in Canvas Layer 1.5 (behind members) */}
+      {/* White dot at pin/roller supports — drawn in Canvas Layer 1.5 (behind members) when ALL hinged */}
+
+      {/* Pin/roller with only SOME members hinged: offset circles for hinged members */}
+      {isPinOrRoller && hasAnyHinge && !allHinged && (
+        hingedMembers.map(m => {
+          const otherId = m.startNodeId === node.id ? m.endNodeId : m.startNodeId;
+          const other = allNodes ? allNodes.find(n => n.id === otherId) : null;
+          let offsetX = 0, offsetY = 0;
+          if (other) {
+            const dx = other.x - node.x;
+            const dy = other.y - node.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist > 0.001) {
+              offsetX = (dx / dist) * 5;
+              offsetY = (dy / dist) * 5;
+            }
+          }
+          return (
+            <circle key={m.id} cx={node.x + offsetX} cy={node.y + offsetY} r={4}
+              fill="#ffffff" stroke={STROKE} strokeWidth={1.5} />
+          );
+        })
+      )}
 
       {/* Hinge indicators at unsupported nodes */}
       {!hasSupport && hasAnyHinge && allHinged && (
