@@ -5,13 +5,21 @@ const DEFORM_C = '#0d9488';
 const TRUSS_C = '#c2410c';
 const SELECT_C = 'rgba(74, 222, 128, 0.2)';
 
-export default function MemberLine({ member, startNode, endNode, isSelected, onSelect }) {
+export default function MemberLine({ member, startNode, endNode, isSelected, onSelect, globalAxialMode }) {
   const isTruss = member.type === 'truss';
-  const axiallyDeformable = isTruss || (member.axialStiffness === 'deformable');
 
-  let strokeColor = FRAME_C;
-  if (isTruss) strokeColor = TRUSS_C;
-  else if (axiallyDeformable) strokeColor = DEFORM_C;
+  // Determine color based on global axial mode
+  let strokeColor;
+  if (globalAxialMode === 'all-rigid') {
+    strokeColor = FRAME_C; // all black
+  } else if (globalAxialMode === 'all-deformable') {
+    strokeColor = DEFORM_C; // all green
+  } else {
+    // Mixed mode: per-member coloring
+    if (isTruss) strokeColor = TRUSS_C;
+    else if (member.axialStiffness === 'deformable') strokeColor = DEFORM_C;
+    else strokeColor = FRAME_C;
+  }
 
   return (
     <g>

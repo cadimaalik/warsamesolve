@@ -6,6 +6,7 @@ const MAX_ARROW = 40;
 const NUM_ARROWS = 9;
 const HEAD_L = 7;
 const HEAD_W = 3.5;
+const LABEL_GAP = 14;
 
 export default function DistributedLoadArrows({ member, startNode, endNode }) {
   const loads = member.distributedLoads;
@@ -33,6 +34,20 @@ export default function DistributedLoadArrows({ member, startNode, endNode }) {
     const arrows = [];
     const tailPoints = [];
 
+    // Determine arrow unit direction (constant for all arrows in this load)
+    const refI = startIntensity !== 0 ? startIntensity : endIntensity;
+    let unitDx, unitDy;
+    if (direction === 'global-y') {
+      unitDx = 0;
+      unitDy = refI > 0 ? -1 : 1;
+    } else if (direction === 'global-x') {
+      unitDx = refI > 0 ? 1 : -1;
+      unitDy = 0;
+    } else {
+      unitDx = Math.cos(perpAngle) * (refI > 0 ? 1 : -1);
+      unitDy = Math.sin(perpAngle) * (refI > 0 ? 1 : -1);
+    }
+
     for (let i = 0; i < count; i++) {
       const t = count === 1 ? 0.5 : i / (count - 1);
       const pos = startPos + t * loadLen;
@@ -45,34 +60,31 @@ export default function DistributedLoadArrows({ member, startNode, endNode }) {
       // Intensity at this point (linear interpolation)
       const intensity = startIntensity + t * (endIntensity - startIntensity);
       const normalizedLen = (Math.abs(intensity) / maxIntensity) * MAX_ARROW;
-      if (normalizedLen < 1) {
-        tailPoints.push({ x: px, y: py });
-        continue;
-      }
 
-      // Arrow direction based on load direction setting
+      // Tail point: always computed on the straight line (no offset gap)
+      const tailX = px - unitDx * normalizedLen;
+      const tailY = py - unitDy * normalizedLen;
+      tailPoints.push({ x: tailX, y: tailY });
+
+      if (normalizedLen < 1) continue;
+
+      // Arrow direction (same sign as intensity)
+      const sign = intensity > 0 ? 1 : -1;
       let arrowDx, arrowDy;
       if (direction === 'global-y') {
         arrowDx = 0;
-        arrowDy = intensity > 0 ? -1 : 1; // positive up (SVG y inverted)
+        arrowDy = sign * -1; // positive up in SVG
       } else if (direction === 'global-x') {
-        arrowDx = intensity > 0 ? 1 : -1;
+        arrowDx = sign;
         arrowDy = 0;
       } else {
-        // Perpendicular to member
-        arrowDx = Math.cos(perpAngle) * (intensity > 0 ? 1 : -1);
-        arrowDy = Math.sin(perpAngle) * (intensity > 0 ? 1 : -1);
+        arrowDx = Math.cos(perpAngle) * sign;
+        arrowDy = Math.sin(perpAngle) * sign;
       }
 
-      // Offset from member: arrows start away from member, point toward it
-      const offset = 8; // gap from member line
-      const tailX = px - arrowDx * (normalizedLen + offset);
-      const tailY = py - arrowDy * (normalizedLen + offset);
-      const headX = px - arrowDx * offset;
-      const headY = py - arrowDy * offset;
-
-      tailPoints.push({ x: tailX, y: tailY });
-
+      // Head at member surface, tail away from member
+      const headX = px;
+      const headY = py;
       const angle = Math.atan2(arrowDy, arrowDx) * 180 / Math.PI;
 
       arrows.push(
@@ -95,7 +107,7 @@ export default function DistributedLoadArrows({ member, startNode, endNode }) {
       tailLine = <path key={`${dl.id}-line`} d={pathD} fill="none" stroke={C} strokeWidth={1.5} />;
     }
 
-    // Intensity labels
+    // Label positioning
     const sRatio = startPos / totalLength;
     const eRatio = endPos / totalLength;
     const labelSx = startNode.x + dx * sRatio;
@@ -105,30 +117,19 @@ export default function DistributedLoadArrows({ member, startNode, endNode }) {
     const midLx = (labelSx + labelEx) / 2;
     const midLy = (labelSy + labelEy) / 2;
 
-    // Direction away from member for label offset (same as arrow direction)
-    const refIntensity = startIntensity !== 0 ? startIntensity : endIntensity;
-    let labelDirX, labelDirY;
-    if (direction === 'global-y') {
-      labelDirX = 0;
-      labelDirY = refIntensity >= 0 ? -1 : 1;
-    } else if (direction === 'global-x') {
-      labelDirX = refIntensity >= 0 ? 1 : -1;
-      labelDirY = 0;
-    } else {
-      labelDirX = Math.cos(perpAngle) * (refIntensity >= 0 ? 1 : -1);
-      labelDirY = Math.sin(perpAngle) * (refIntensity >= 0 ? 1 : -1);
-    }
-    // Place labels just outside the connecting line (tail line)
-    const labelOffset = MAX_ARROW + 18;
-
     const isUDL = startIntensity === endIntensity;
 
     function renderLabel(cx, cy, value) {
+      // Position label just outside the connecting line at this point
+      const tailDist = (Math.abs(value) / maxIntensity) * MAX_ARROW;
+      const offset = tailDist + LABEL_GAP;
+      const lx = cx - unitDx * offset;
+      const ly = cy - unitDy * offset;
       return (
         <g>
-          <rect x={cx + labelDirX * labelOffset - 30} y={cy + labelDirY * labelOffset - 8}
+          <rect x={lx - 30} y={ly - 8}
             width={60} height={16} rx={2} fill="white" fillOpacity={0.85} />
-          <text x={cx + labelDirX * labelOffset} y={cy + labelDirY * labelOffset + 4}
+          <text x={lx} y={ly + 4}
             textAnchor="middle" fontSize={10} fill={C}
             fontFamily="'JetBrains Mono', monospace" fontWeight={500}>
             {Math.abs(value)} kN/m
@@ -145,7 +146,7 @@ export default function DistributedLoadArrows({ member, startNode, endNode }) {
           /* UDL: single centered label */
           startIntensity !== 0 && renderLabel(midLx, midLy, startIntensity)
         ) : (
-          /* Triangular / Trapezoidal: labels at both ends */
+          /* Triangular / Trapezoidal: labels at non-zero ends */
           <>
             {startIntensity !== 0 && renderLabel(labelSx, labelSy, startIntensity)}
             {endIntensity !== 0 && renderLabel(labelEx, labelEy, endIntensity)}

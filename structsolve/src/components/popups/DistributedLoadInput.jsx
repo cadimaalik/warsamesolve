@@ -14,20 +14,29 @@ const toggleBtn = (active) => ({
 
 function getDefaultDirection(member) {
   const angleDeg = Math.atan2(Math.abs(member.realDy), Math.abs(member.realDx)) * 180 / Math.PI;
-  if (angleDeg >= 60) return 'global-x';       // near-vertical → horizontal loads
-  if (angleDeg >= 30) return 'perpendicular';   // angled → perpendicular loads
-  return 'global-y';                            // near-horizontal → vertical loads
+  if (angleDeg >= 60) return 'global-x';       // near-vertical
+  if (angleDeg >= 30) return 'perpendicular';   // angled
+  return 'global-y';                            // near-horizontal
 }
 
-export default function DistributedLoadInput({ member, startNodeId, endNodeId, memberLength, isInclined, onApply, onCancel }) {
-  const [direction, setDirection] = useState(() => getDefaultDirection(member));
-  const [shape, setShape] = useState('udl');
-  const [intensity, setIntensity] = useState('-10');
-  const [startIntensity, setStartIntensity] = useState('-10');
-  const [endIntensity, setEndIntensity] = useState('-10');
-  const [maxAt, setMaxAt] = useState('end');
-  const [startPos, setStartPos] = useState('0');
-  const [endPos, setEndPos] = useState(String(memberLength));
+export default function DistributedLoadInput({ member, startNodeId, endNodeId, memberLength, isInclined, onApply, onCancel, existingLoad, onDelete }) {
+  const isEdit = !!existingLoad;
+
+  const [direction, setDirection] = useState(isEdit ? existingLoad.direction : getDefaultDirection(member));
+  const [shape, setShape] = useState(isEdit ? existingLoad.shape : 'udl');
+  const [intensity, setIntensity] = useState(isEdit
+    ? String(existingLoad.startIntensity === existingLoad.endIntensity ? existingLoad.startIntensity : existingLoad.startIntensity)
+    : '-10');
+  const [startIntensity, setStartIntensity] = useState(isEdit ? String(existingLoad.startIntensity) : '-10');
+  const [endIntensity, setEndIntensity] = useState(isEdit ? String(existingLoad.endIntensity) : '-10');
+  const [maxAt, setMaxAt] = useState(() => {
+    if (isEdit && existingLoad.shape === 'triangular') {
+      return existingLoad.startIntensity !== 0 ? 'start' : 'end';
+    }
+    return 'end';
+  });
+  const [startPos, setStartPos] = useState(isEdit ? String(existingLoad.startPos) : '0');
+  const [endPos, setEndPos] = useState(isEdit ? String(existingLoad.endPos) : String(memberLength));
 
   function handleSubmit() {
     const sp = parseFloat(startPos) || 0;
@@ -62,10 +71,10 @@ export default function DistributedLoadInput({ member, startNodeId, endNodeId, m
   return (
     <div>
       <div style={{ fontSize: 11, color: COLORS.textDim, marginBottom: 10, fontWeight: 600 }}>
-        Distributed Load on {startNodeId}&rarr;{endNodeId}
+        {isEdit ? 'Edit' : 'Add'} Distributed Load on {startNodeId}&rarr;{endNodeId}
       </div>
 
-      {/* Direction (only show radios for inclined members) */}
+      {/* Direction (only show for inclined members) */}
       {isInclined && (
         <div style={{ marginBottom: 8 }}>
           <div style={labelStyle}>Load Direction</div>
@@ -156,11 +165,18 @@ export default function DistributedLoadInput({ member, startNodeId, endNodeId, m
           background: 'transparent', color: COLORS.textMuted, fontSize: 12, cursor: 'pointer',
           fontFamily: "'JetBrains Mono', monospace",
         }}>Cancel</button>
+        {isEdit && onDelete && (
+          <button onClick={onDelete} style={{
+            padding: '8px 12px', borderRadius: 6, border: '1px solid #7f1d1d',
+            background: 'rgba(220,38,38,0.1)', color: '#f87171', fontSize: 12, cursor: 'pointer',
+            fontFamily: "'JetBrains Mono', monospace",
+          }}>Delete</button>
+        )}
         <button onClick={handleSubmit} style={{
           flex: 1, padding: '8px', borderRadius: 6, border: 'none',
           background: COLORS.greenDark, color: '#fff', fontSize: 12, cursor: 'pointer',
           fontFamily: "'JetBrains Mono', monospace", fontWeight: 600,
-        }}>Apply</button>
+        }}>{isEdit ? 'Update' : 'Apply'}</button>
       </div>
     </div>
   );

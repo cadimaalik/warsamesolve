@@ -15,12 +15,16 @@ const deleteBtn = {
   color: '#f87171',
 };
 
-export default function MemberActionBar({ memberLabel, onAction }) {
+export default function MemberActionBar({ memberLabel, isTruss, onAction }) {
   const actions = [
-    { key: 'properties', icon: '\u{1F4D0}', label: 'Member Properties' },
-    { key: 'point-load', icon: '\u{1F4CF}', label: 'Point Load' },
-    { key: 'distributed-load', icon: '\u{1F4CA}', label: 'Distributed Load' },
+    { key: 'properties', label: 'Properties' },
   ];
+
+  // Truss members can only have loads at nodes, not on the member
+  if (!isTruss) {
+    actions.push({ key: 'point-load', label: 'Point Load' });
+    actions.push({ key: 'distributed-load', label: 'Distributed Load' });
+  }
 
   return (
     <div>
@@ -34,7 +38,6 @@ export default function MemberActionBar({ memberLabel, onAction }) {
             onMouseOut={e => e.currentTarget.style.background = 'transparent'}
             onClick={() => onAction(a.key)}
           >
-            <span style={{ fontSize: 14, width: 20, textAlign: 'center' }}>{a.icon}</span>
             {a.label}
           </button>
         ))}
@@ -43,7 +46,6 @@ export default function MemberActionBar({ memberLabel, onAction }) {
           onMouseOut={e => e.currentTarget.style.background = 'transparent'}
           onClick={() => onAction('delete')}
         >
-          <span style={{ fontSize: 14, width: 20, textAlign: 'center' }}>{'\u{1F5D1}'}</span>
           Delete Member
         </button>
       </div>

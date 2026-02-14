@@ -19,7 +19,10 @@ const readOnlyField = {
   fontFamily: "'JetBrains Mono', monospace",
 };
 
-export default function MemberDetail({ member, nodes, onUpdate, onDelete, onClose, globalAxialMode }) {
+const dirLabels = { 'global-y': 'Global Y', 'global-x': 'Global X', 'perpendicular': 'Perpendicular' };
+const shapeLabels = { 'udl': 'UDL', 'triangular': 'Triangular', 'trapezoidal': 'Trapezoidal' };
+
+export default function MemberDetail({ member, nodes, onUpdate, onDelete, onClose, globalAxialMode, onRemoveDL, onUpdateDL }) {
   const [eiFactor, setEiFactor] = useState(String(member.EI_factor));
   const [eaFactor, setEaFactor] = useState(String(member.EA_factor || 1));
   const [eaAbsolute, setEaAbsolute] = useState(String(member.EA_absolute || 200000));
@@ -39,6 +42,8 @@ export default function MemberDetail({ member, nodes, onUpdate, onDelete, onClos
   const eaMode = member.EA_mode || 'relative';
   const isDeformable = isTruss || axialStiffness === 'deformable';
   const globalOverride = globalAxialMode && globalAxialMode !== 'mixed';
+
+  const dls = member.distributedLoads || [];
 
   return (
     <div style={{
@@ -162,19 +167,13 @@ export default function MemberDetail({ member, nodes, onUpdate, onDelete, onClos
         </div>
       )}
 
-      {/* Distributed loads summary */}
-      {(member.distributedLoads || []).length > 0 && (
+      {/* Distributed loads — editable/deletable */}
+      {dls.length > 0 && (
         <div style={{ marginBottom: 8 }}>
-          <div style={labelStyle}>Distributed Loads</div>
-          {member.distributedLoads.map(dl => (
-            <div key={dl.id} style={{
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              fontSize: 10, padding: '3px 6px', background: COLORS.bgInput, borderRadius: 3, marginBottom: 2,
-            }}>
-              <span style={{ color: COLORS.textMuted }}>
-                {dl.shape} &middot; {dl.startIntensity}/{dl.endIntensity} kN/m
-              </span>
-            </div>
+          <div style={labelStyle}>Distributed Load</div>
+          {dls.map(dl => (
+            <DLEditor key={dl.id} dl={dl} memberId={member.id}
+              onUpdate={onUpdateDL} onRemove={onRemoveDL} />
           ))}
         </div>
       )}
@@ -185,6 +184,48 @@ export default function MemberDetail({ member, nodes, onUpdate, onDelete, onClos
         background: 'rgba(220,38,38,0.1)', color: '#f87171', fontSize: 11,
         cursor: 'pointer', fontFamily: "'JetBrains Mono', monospace", fontWeight: 600,
       }}>Delete Member</button>
+    </div>
+  );
+}
+
+function DLEditor({ dl, memberId, onUpdate, onRemove }) {
+  const [sI, setSI] = useState(String(dl.startIntensity));
+  const [eI, setEI] = useState(String(dl.endIntensity));
+
+  useEffect(() => {
+    setSI(String(dl.startIntensity));
+    setEI(String(dl.endIntensity));
+  }, [dl.id, dl.startIntensity, dl.endIntensity]);
+
+  function commitIntensity(field, val) {
+    const pv = parseFloat(val);
+    if (isNaN(pv)) return;
+    if (onUpdate) onUpdate(memberId, dl.id, { [field]: pv });
+  }
+
+  return (
+    <div style={{
+      padding: '6px 8px', background: COLORS.bgInput, borderRadius: 4, marginBottom: 4,
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+        <span style={{ fontSize: 10, color: COLORS.textMuted, fontWeight: 600 }}>
+          {shapeLabels[dl.shape] || dl.shape} &middot; {dirLabels[dl.direction] || dl.direction}
+        </span>
+        <button onClick={() => onRemove && onRemove(memberId, dl.id)} style={{
+          background: 'none', border: 'none', color: '#f87171', fontSize: 11,
+          cursor: 'pointer', padding: '0 4px', fontFamily: "'JetBrains Mono', monospace",
+        }}>Delete</button>
+      </div>
+      <div style={{ display: 'flex', gap: 6 }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 9, color: COLORS.textDim }}>Start (kN/m)</div>
+          <NumberInput value={sI} onChange={v => { setSI(v); commitIntensity('startIntensity', v); }} allowNegative />
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 9, color: COLORS.textDim }}>End (kN/m)</div>
+          <NumberInput value={eI} onChange={v => { setEI(v); commitIntensity('endIntensity', v); }} allowNegative />
+        </div>
+      </div>
     </div>
   );
 }

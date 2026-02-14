@@ -24,7 +24,7 @@ export default function App() {
   const {
     structure, undo, addMember, connectNodes, removeNode, removeMember,
     setNodeSupport, setNodeLoads, updateMember, clearAll, createInitialBeam,
-    addDistributedLoad, removeDistributedLoad, splitMemberAtPoint, setGlobalAxialMode,
+    addDistributedLoad, updateDistributedLoad, removeDistributedLoad, splitMemberAtPoint, setGlobalAxialMode,
     canUndo,
   } = useStructure();
   const {
@@ -90,7 +90,6 @@ export default function App() {
   // --- Member Action Bar handler ---
   const handleMemberAction = useCallback((action) => {
     if (action === 'properties') {
-      // Keep member selected, close popup — side panel shows detail
       closePopup();
     } else if (action === 'point-load') {
       openPopup('point-load');
@@ -119,6 +118,17 @@ export default function App() {
       reset();
     }
   }, [ui.activeMemberId, addDistributedLoad, reset]);
+
+  // --- Delete existing DL from popup ---
+  const handleDistLoadDelete = useCallback(() => {
+    if (ui.activeMemberId) {
+      const m = members.find(mem => mem.id === ui.activeMemberId);
+      if (m && m.distributedLoads && m.distributedLoads.length > 0) {
+        removeDistributedLoad(ui.activeMemberId, m.distributedLoads[0].id);
+      }
+      reset();
+    }
+  }, [ui.activeMemberId, members, removeDistributedLoad, reset]);
 
   // --- Keyboard ---
   useKeyboard({
@@ -207,9 +217,14 @@ export default function App() {
       const midY = (sn.y + en.y) / 2;
       const memberLen = getMemberLength(activeMember);
       const memberLabel = `${sn.id}\u2192${en.id}`;
+      const isTruss = activeMember.type === 'truss';
 
       // Check if member is inclined (not purely horizontal or vertical)
       const isInclined = Math.abs(activeMember.realDx) > 0.01 && Math.abs(activeMember.realDy) > 0.01;
+
+      // Existing DL for edit mode
+      const existingDL = (activeMember.distributedLoads && activeMember.distributedLoads.length > 0)
+        ? activeMember.distributedLoads[0] : null;
 
       let content = null;
       switch (ui.activePopup) {
@@ -217,6 +232,7 @@ export default function App() {
           content = (
             <MemberActionBar
               memberLabel={memberLabel}
+              isTruss={isTruss}
               onAction={handleMemberAction}
             />
           );
@@ -243,6 +259,8 @@ export default function App() {
               isInclined={isInclined}
               onApply={handleDistLoadApply}
               onCancel={() => openPopup('member-actions')}
+              existingLoad={existingDL}
+              onDelete={existingDL ? handleDistLoadDelete : undefined}
             />
           );
           break;
@@ -288,6 +306,8 @@ export default function App() {
           onDeleteNode={handleDeleteNode} onDeleteMember={handleDeleteMember}
           onUpdateMember={updateMember}
           globalAxialMode={settings.axialMode}
+          onRemoveDL={removeDistributedLoad}
+          onUpdateDL={updateDistributedLoad}
         />
 
         <div style={{ flex: 1, position: 'relative', overflow: 'hidden', background: COLORS.canvasBg }}>
@@ -298,6 +318,7 @@ export default function App() {
             onCanvasClick={reset} onConnectTarget={handleConnectTarget}
             onZoomIn={zoomIn} onZoomOut={zoomOut}
             onFit={() => { if (nodes.length > 0) fitToNodes(nodes); }}
+            globalAxialMode={settings.axialMode}
           />
 
           {ui.showStartOverlay && nodes.length === 0 && (

@@ -26,23 +26,42 @@ function NodeRow({ node, isActive, onSelect, onDelete }) {
   );
 }
 
-function MemberRow({ member, isActive, onSelect, onDelete }) {
+function MemberRow({ member, isActive, onSelect, onDelete, globalAxialMode }) {
   const isTruss = member.type === 'truss';
+
+  // Determine effective rigidity
+  let rigidityLabel, rigidityColor;
+  if (globalAxialMode === 'all-rigid') {
+    rigidityLabel = 'Rigid';
+    rigidityColor = COLORS.textMuted;
+  } else if (globalAxialMode === 'all-deformable') {
+    rigidityLabel = 'Deform';
+    rigidityColor = '#0d9488';
+  } else {
+    const isDeform = isTruss || member.axialStiffness === 'deformable';
+    rigidityLabel = isDeform ? 'Deform' : 'Rigid';
+    rigidityColor = isDeform ? '#0d9488' : COLORS.textMuted;
+  }
+
   return (
     <div onClick={() => onSelect(member.id)} style={{
-      display: 'flex', alignItems: 'center', gap: 6, padding: '5px 8px',
+      display: 'flex', alignItems: 'center', gap: 4, padding: '5px 8px',
       borderRadius: 4, cursor: 'pointer', borderLeft: isActive ? `3px solid ${COLORS.green}` : '3px solid transparent',
       background: isActive ? COLORS.greenGlow : 'transparent', transition: 'all 0.12s',
     }}>
       <span style={{ fontSize: 11, color: COLORS.textPrimary, fontWeight: 600, minWidth: 42 }}>
         {member.startNodeId}&rarr;{member.endNodeId}
       </span>
-      <span style={{ fontSize: 11, color: COLORS.textMuted, minWidth: 30 }}>{getMemberLength(member)}m</span>
+      <span style={{ fontSize: 10, color: COLORS.textMuted, minWidth: 28 }}>{getMemberLength(member)}m</span>
       <span style={{
-        fontSize: 9, padding: '1px 5px', borderRadius: 3, fontWeight: 600,
+        fontSize: 8, padding: '1px 4px', borderRadius: 3, fontWeight: 600,
         background: isTruss ? 'rgba(194,65,12,0.15)' : COLORS.bgInput,
         color: isTruss ? '#fb923c' : COLORS.textMuted,
       }}>{isTruss ? 'Truss' : 'Frame'}</span>
+      <span style={{
+        fontSize: 8, padding: '1px 4px', borderRadius: 3, fontWeight: 600,
+        background: COLORS.bgInput, color: rigidityColor,
+      }}>{rigidityLabel}</span>
       <span style={{ flex: 1 }} />
       <button onClick={e => { e.stopPropagation(); onDelete(member.id); }} style={{
         background: 'none', border: 'none', color: COLORS.textDim, fontSize: 13, cursor: 'pointer', padding: '0 2px',
@@ -54,7 +73,7 @@ function MemberRow({ member, isActive, onSelect, onDelete }) {
 export default function SidePanel({
   nodes, members, activeNodeId, activeMemberId,
   onSelectNode, onSelectMember, onDeleteNode, onDeleteMember, onUpdateMember,
-  globalAxialMode,
+  globalAxialMode, onRemoveDL, onUpdateDL,
 }) {
   const activeMember = activeMemberId ? members.find(m => m.id === activeMemberId) : null;
   const info = nodes.length > 0 && members.length > 0 ? classify(nodes, members) : null;
@@ -84,6 +103,8 @@ export default function SidePanel({
           onUpdate={onUpdateMember} onDelete={onDeleteMember}
           onClose={() => onSelectMember(null)}
           globalAxialMode={globalAxialMode}
+          onRemoveDL={onRemoveDL}
+          onUpdateDL={onUpdateDL}
         />
       )}
 
@@ -102,7 +123,8 @@ export default function SidePanel({
         <div style={sectionTitle}>MEMBERS</div>
         {members.map(m => (
           <MemberRow key={m.id} member={m} isActive={activeMemberId === m.id}
-            onSelect={onSelectMember} onDelete={onDeleteMember} />
+            onSelect={onSelectMember} onDelete={onDeleteMember}
+            globalAxialMode={globalAxialMode} />
         ))}
         {members.length === 0 && <div style={{ fontSize: 11, color: COLORS.textDim }}>No members yet</div>}
       </div>

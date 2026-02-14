@@ -197,11 +197,28 @@ export default function useStructure() {
       ...prev,
       members: prev.members.map(m => {
         if (m.id !== memberId) return m;
+        // Max 1 DL per member — replace any existing
         const dl = {
           id: 'dl_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
           ...loadData,
         };
-        return { ...m, distributedLoads: [...(m.distributedLoads || []), dl] };
+        return { ...m, distributedLoads: [dl] };
+      }),
+    }));
+  }, [structure]);
+
+  const updateDistributedLoad = useCallback((memberId, loadId, updates) => {
+    pushHistory();
+    setStructure(prev => ({
+      ...prev,
+      members: prev.members.map(m => {
+        if (m.id !== memberId) return m;
+        return {
+          ...m,
+          distributedLoads: (m.distributedLoads || []).map(dl =>
+            dl.id === loadId ? { ...dl, ...updates } : dl
+          ),
+        };
       }),
     }));
   }, [structure]);
@@ -316,7 +333,7 @@ export default function useStructure() {
   return {
     structure, undo, addMember, connectNodes, removeNode, removeMember,
     setNodeSupport, setNodeLoads, updateMember, clearAll, createInitialBeam,
-    addDistributedLoad, removeDistributedLoad, splitMemberAtPoint, setGlobalAxialMode,
+    addDistributedLoad, updateDistributedLoad, removeDistributedLoad, splitMemberAtPoint, setGlobalAxialMode,
     canUndo: historyRef.current.length > 0,
   };
 }
