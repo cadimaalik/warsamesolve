@@ -46,25 +46,21 @@ export function classify(nodes, members) {
     const hasFrameMember = connected.some(m => m.type !== 'truss');
     if (!hasFrameMember) return; // truss-only joint — no hinge conditions
 
-    // Count hinged member-ends at this frame joint
+    // Count hinged member-ends at this frame joint (frame members only).
+    // Truss member pins are NOT counted here because using mt (instead of
+    // 3·mt) in the DOF formula already accounts for their 2 moment releases.
+    const frameConnected = connected.filter(m => m.type !== 'truss');
     let hingedCount = 0;
-    connected.forEach(m => {
-      if (m.type === 'truss') {
-        // Truss members are always hinged at their ends
-        hingedCount++;
-      } else {
-        // Frame member — check if this end is hinged
-        if (m.startNodeId === n.id && m.startHinge) hingedCount++;
-        if (m.endNodeId === n.id && m.endHinge) hingedCount++;
-      }
+    frameConnected.forEach(m => {
+      if (m.startNodeId === n.id && m.startHinge) hingedCount++;
+      if (m.endNodeId === n.id && m.endHinge) hingedCount++;
     });
 
-    const totalMembers = connected.length;
-    if (hingedCount === totalMembers && totalMembers > 1) {
-      // All member-ends hinged at this joint
-      c += totalMembers - 1;
+    const totalFrameMembers = frameConnected.length;
+    if (hingedCount === totalFrameMembers && totalFrameMembers > 1) {
+      // All frame member-ends hinged at this joint
+      c += totalFrameMembers - 1;
     } else {
-      // Only some member-ends hinged
       c += hingedCount;
     }
   });
