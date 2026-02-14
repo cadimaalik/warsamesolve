@@ -24,11 +24,12 @@ export default function ConnectFlow({ fromId, toId, autoLength, onConfirm, onCan
   const [endConn, setEndConn] = useState('rigid');
 
   function handleSubmit() {
+    const isTruss = type === 'truss';
     onConfirm({
       type,
       eiFactor: parseFloat(eiFactor) || 1,
-      startHinge: startConn === 'hinge',
-      endHinge: endConn === 'hinge',
+      startHinge: isTruss ? true : startConn === 'hinge',
+      endHinge: isTruss ? true : endConn === 'hinge',
     });
   }
 
@@ -69,23 +70,26 @@ export default function ConnectFlow({ fromId, toId, autoLength, onConfirm, onCan
         </div>
       )}
 
-      {/* Connection at start node */}
-      <div style={{ marginBottom: 8 }}>
-        <div style={labelStyle}>Connection at {fromId}</div>
-        <div style={{ display: 'flex', gap: 4 }}>
-          <button style={toggleBtn(startConn === 'rigid')} onClick={() => setStartConn('rigid')}>Rigid</button>
-          <button style={toggleBtn(startConn === 'hinge')} onClick={() => setStartConn('hinge')}>Hinge</button>
-        </div>
-      </div>
+      {/* Connection toggles (frame only — truss is always hinged) */}
+      {type === 'frame' && (
+        <>
+          <div style={{ marginBottom: 8 }}>
+            <div style={labelStyle}>Connection at {fromId}</div>
+            <div style={{ display: 'flex', gap: 4 }}>
+              <button style={toggleBtn(startConn === 'rigid')} onClick={() => setStartConn('rigid')}>Rigid</button>
+              <button style={toggleBtn(startConn === 'hinge')} onClick={() => setStartConn('hinge')}>Hinge</button>
+            </div>
+          </div>
 
-      {/* Connection at end node */}
-      <div style={{ marginBottom: 10 }}>
-        <div style={labelStyle}>Connection at {toId}</div>
-        <div style={{ display: 'flex', gap: 4 }}>
-          <button style={toggleBtn(endConn === 'rigid')} onClick={() => setEndConn('rigid')}>Rigid</button>
-          <button style={toggleBtn(endConn === 'hinge')} onClick={() => setEndConn('hinge')}>Hinge</button>
-        </div>
-      </div>
+          <div style={{ marginBottom: 10 }}>
+            <div style={labelStyle}>Connection at {toId}</div>
+            <div style={{ display: 'flex', gap: 4 }}>
+              <button style={toggleBtn(endConn === 'rigid')} onClick={() => setEndConn('rigid')}>Rigid</button>
+              <button style={toggleBtn(endConn === 'hinge')} onClick={() => setEndConn('hinge')}>Hinge</button>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Actions */}
       <div style={{ display: 'flex', gap: 6 }}>
