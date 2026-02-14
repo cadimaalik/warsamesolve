@@ -33,18 +33,26 @@ function AngleLabel({ startNode, endNode }) {
   const displayAngle = angleDeg <= 90 ? angleDeg : 180 - angleDeg;
   const label = `${displayAngle.toFixed(1).replace(/\.0$/, '')}\u00B0`;
 
-  // Position: on the opposite side of the dimension line (which uses perpendicular offset to the left)
-  const memberAngle = Math.atan2(dy, dx);
-  // Place below the dimension line (on the right side of the member direction)
-  const offset = 35;
-  const nx = Math.sin(memberAngle) * offset;
-  const ny = -Math.cos(memberAngle) * offset;
+  // Pick the node where the angle with horizontal is shown (the lower node, or leftmost)
+  const anchorNode = startNode.y >= endNode.y ? startNode : endNode;
 
-  const mx = (startNode.x + endNode.x) / 2 + nx;
-  const my = (startNode.y + endNode.y) / 2 + ny;
+  // Direction from anchor toward the other node
+  const otherNode = anchorNode === startNode ? endNode : startNode;
+  const mdx = otherNode.x - anchorNode.x;
+  const mdy = otherNode.y - anchorNode.y;
+  const memberAngle = Math.atan2(mdy, mdx);
+
+  // Horizontal direction: toward the other node's x side
+  const horizAngle = mdx >= 0 ? 0 : Math.PI;
+
+  // Bisector between horizontal and member direction — this is where the label goes
+  const bisector = (memberAngle + horizAngle) / 2;
+  const labelDist = 22;
+  const lx = anchorNode.x + Math.cos(bisector) * labelDist;
+  const ly = anchorNode.y + Math.sin(bisector) * labelDist;
 
   return (
-    <g transform={`translate(${mx},${my})`}>
+    <g transform={`translate(${lx},${ly})`}>
       <rect x={-18} y={-9} width={36} height={14} rx={2}
         fill="white" fillOpacity={0.9} />
       <text x={0} y={3} textAnchor="middle" fontSize={10}
@@ -134,17 +142,17 @@ export default function Canvas({
           );
         })}
 
-        {/* Layer 1.5: White dots at pin/roller supports BEHIND members (when hinged) */}
+        {/* Layer 1.5: White dots at pin/roller supports BEHIND members (only when ALL members are hinged) */}
         {nodes.map(n => {
           const isPinOrRoller = n.support === 'pin' || n.support === 'roller-h' || n.support === 'roller-v';
           if (!isPinOrRoller) return null;
           const connected = members.filter(m => m.startNodeId === n.id || m.endNodeId === n.id);
-          const hasHinge = connected.some(m => {
-            if (m.startNodeId === n.id && m.startHinge) return true;
-            if (m.endNodeId === n.id && m.endHinge) return true;
-            return false;
+          if (connected.length === 0) return null;
+          const allHinged = connected.every(m => {
+            if (m.startNodeId === n.id) return m.startHinge || m.type === 'truss';
+            return m.endHinge || m.type === 'truss';
           });
-          if (!hasHinge) return null; // rigid: no dot at all
+          if (!allHinged) return null;
           return (
             <circle key={'supdot-' + n.id} cx={n.x} cy={n.y} r={5}
               fill="#ffffff" stroke="#374151" strokeWidth={1.5} />

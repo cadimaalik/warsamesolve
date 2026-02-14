@@ -24,14 +24,16 @@ const shapeLabels = { 'udl': 'UDL', 'triangular': 'Triangular', 'trapezoidal': '
 
 export default function MemberDetail({ member, nodes, onUpdate, onDelete, onClose, globalAxialMode, onRemoveDL, onUpdateDL }) {
   const [eiFactor, setEiFactor] = useState(String(member.EI_factor));
+  const [eiAbsolute, setEiAbsolute] = useState(String(member.EI_absolute || 10000));
   const [eaFactor, setEaFactor] = useState(String(member.EA_factor || 1));
   const [eaAbsolute, setEaAbsolute] = useState(String(member.EA_absolute || 200000));
 
   useEffect(() => {
     setEiFactor(String(member.EI_factor));
+    setEiAbsolute(String(member.EI_absolute || 10000));
     setEaFactor(String(member.EA_factor || 1));
     setEaAbsolute(String(member.EA_absolute || 200000));
-  }, [member.id, member.EI_factor, member.EA_factor, member.EA_absolute]);
+  }, [member.id, member.EI_factor, member.EI_absolute, member.EA_factor, member.EA_absolute]);
 
   const startNode = nodes.find(n => n.id === member.startNodeId);
   const endNode = nodes.find(n => n.id === member.endNodeId);
@@ -40,6 +42,7 @@ export default function MemberDetail({ member, nodes, onUpdate, onDelete, onClos
 
   const axialStiffness = member.axialStiffness || 'rigid';
   const eaMode = member.EA_mode || 'relative';
+  const eiMode = member.EI_mode || 'relative';
   const isDeformable = isTruss || axialStiffness === 'deformable';
   const globalOverride = globalAxialMode && globalAxialMode !== 'mixed';
 
@@ -135,6 +138,9 @@ export default function MemberDetail({ member, nodes, onUpdate, onDelete, onClos
             {eaMode === 'relative' ? (
               <div>
                 <div style={labelStyle}>EA Multiplier</div>
+                <div style={{ fontSize: 9, color: COLORS.textDim, marginBottom: 3, fontStyle: 'italic' }}>
+                  EA = multiplier &times; reference EA
+                </div>
                 <NumberInput value={eaFactor} onChange={v => {
                   setEaFactor(v);
                   const pv = parseFloat(v);
@@ -155,15 +161,37 @@ export default function MemberDetail({ member, nodes, onUpdate, onDelete, onClos
         )}
       </div>
 
-      {/* EI Factor (frame only) */}
+      {/* EI (frame only) */}
       {!isTruss && (
         <div style={{ marginBottom: 8 }}>
-          <div style={labelStyle}>EI Factor</div>
-          <NumberInput value={eiFactor} onChange={v => {
-            setEiFactor(v);
-            const pv = parseFloat(v);
-            if (pv && pv > 0 && pv !== member.EI_factor) onUpdate(member.id, { EI_factor: pv });
-          }} min="0.1" />
+          <div style={{ display: 'flex', gap: 4, marginBottom: 6 }}>
+            <button style={toggleBtn(eiMode === 'relative')}
+              onClick={() => onUpdate(member.id, { EI_mode: 'relative' })}>Relative</button>
+            <button style={toggleBtn(eiMode === 'absolute')}
+              onClick={() => onUpdate(member.id, { EI_mode: 'absolute' })}>Absolute</button>
+          </div>
+          {eiMode === 'relative' ? (
+            <div>
+              <div style={labelStyle}>EI Multiplier</div>
+              <div style={{ fontSize: 9, color: COLORS.textDim, marginBottom: 3, fontStyle: 'italic' }}>
+                EI = multiplier &times; reference EI
+              </div>
+              <NumberInput value={eiFactor} onChange={v => {
+                setEiFactor(v);
+                const pv = parseFloat(v);
+                if (pv && pv > 0 && pv !== member.EI_factor) onUpdate(member.id, { EI_factor: pv });
+              }} min="0.1" />
+            </div>
+          ) : (
+            <div>
+              <div style={labelStyle}>EI (kN&middot;m&sup2;)</div>
+              <NumberInput value={eiAbsolute} onChange={v => {
+                setEiAbsolute(v);
+                const pv = parseFloat(v);
+                if (pv && pv > 0) onUpdate(member.id, { EI_absolute: pv });
+              }} min="1" />
+            </div>
+          )}
         </div>
       )}
 
