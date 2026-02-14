@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { COLORS } from '../constants/brand.js';
 import { SUPPORT_TYPES } from '../constants/supports.js';
 import { classify } from '../utils/analysis.js';
@@ -75,8 +75,15 @@ export default function SidePanel({
   onSelectNode, onSelectMember, onDeleteNode, onDeleteMember, onUpdateMember,
   globalAxialMode, onRemoveDL, onUpdateDL,
 }) {
+  const scrollRef = useRef(null);
   const activeMember = activeMemberId ? members.find(m => m.id === activeMemberId) : null;
   const info = nodes.length > 0 && members.length > 0 ? classify(nodes, members) : null;
+
+  useEffect(() => {
+    if (activeMemberId && scrollRef.current) {
+      scrollRef.current.scrollTop = 0;
+    }
+  }, [activeMemberId]);
 
   const dofColor = info
     ? info.status === 'determinate' ? COLORS.green
@@ -91,7 +98,7 @@ export default function SidePanel({
     : '\u2014';
 
   return (
-    <div style={{
+    <div ref={scrollRef} style={{
       width: 280, background: COLORS.bgPanel, borderRight: `1px solid ${COLORS.border}`,
       padding: 12, fontSize: 12, color: COLORS.textMuted, overflowY: 'auto',
       fontFamily: "'JetBrains Mono', monospace", flexShrink: 0,

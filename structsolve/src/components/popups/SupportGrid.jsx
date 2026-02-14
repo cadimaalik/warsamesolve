@@ -4,11 +4,11 @@ import { COLORS } from '../../constants/brand.js';
 const ALL_SUPPORTS = [
   { key: null,       icon: '\u2715', label: 'None' },
   { key: 'pin',      icon: '\u25B3', label: 'Pin' },
-  { key: 'roller-h', icon: '\u25CB', sub: 'H', label: 'Horizontal Roller' },
-  { key: 'roller-v', icon: '\u25CB', sub: 'V', label: 'Vertical Roller' },
+  { key: 'roller-h', icon: '\u25CB', sub: 'H', label: 'Roller (moves horizontally)' },
+  { key: 'roller-v', icon: '\u25CB', sub: 'V', label: 'Roller (moves vertically)' },
   { key: 'fixed',    icon: '\u2593', label: 'Fixed' },
-  { key: 'guide-h',  icon: '\u2550', sub: 'H', label: 'Horizontal Guide' },
-  { key: 'guide-v',  icon: '\u2550', sub: 'V', label: 'Vertical Guide' },
+  { key: 'guide-h',  icon: '\u2550', sub: 'H', label: 'Guide (moves horizontally)' },
+  { key: 'guide-v',  icon: '\u2550', sub: 'V', label: 'Guide (moves vertically)' },
 ];
 
 // Truss members cannot use supports that resist moment
