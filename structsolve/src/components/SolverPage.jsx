@@ -13,7 +13,7 @@ import DistributedLoadArrows from './svg/DistributedLoadArrows.jsx';
 
 const noop = () => {};
 
-export default function SolverPage({ nodes, members, methodName, onBack, onEdit }) {
+export default function SolverPage({ nodes, members, methodName, solverResults, onBack, onEdit }) {
   const svgRef = useRef(null);
   const { viewBox, fitToNodes } = usePanZoom();
 
@@ -143,40 +143,142 @@ export default function SolverPage({ nodes, members, methodName, onBack, onEdit 
         </button>
       </div>
 
-      {/* Solution placeholder */}
+      {/* Solution results preview */}
       <div style={{
-        margin: '0 32px 32px', padding: '40px 24px',
+        margin: '0 32px 32px', padding: '24px',
         background: '#111827', borderRadius: 12,
-        textAlign: 'center', border: '1px solid #1f2937',
+        border: '1px solid #1f2937',
       }}>
         <h2 style={{
-          fontSize: 16, fontWeight: 700, color: '#e5e5e5', margin: '0 0 8px 0',
+          fontSize: 16, fontWeight: 700, color: '#4ade80', margin: '0 0 24px 0',
+          fontFamily: FONTS.mono,
         }}>
           SOLUTION &mdash; {methodName}
         </h2>
 
-        <div style={{
-          fontSize: 32, margin: '24px 0 16px',
-        }}>
-          &#128679;
-        </div>
+        {solverResults ? (
+          <div>
+            {/* Reactions table */}
+            <h3 style={{
+              fontSize: 14, fontWeight: 600, color: '#e5e5e5', margin: '0 0 12px 0',
+              fontFamily: FONTS.mono,
+            }}>
+              Support Reactions
+            </h3>
+            <table style={{
+              width: '100%', borderCollapse: 'collapse', marginBottom: 32,
+              fontFamily: FONTS.mono, fontSize: 13,
+            }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid #374151' }}>
+                  <th style={{ textAlign: 'left', padding: '8px 12px', color: '#9ca3af' }}>Reaction</th>
+                  <th style={{ textAlign: 'right', padding: '8px 12px', color: '#9ca3af' }}>Value</th>
+                  <th style={{ textAlign: 'left', padding: '8px 12px', color: '#9ca3af' }}>Unit</th>
+                </tr>
+              </thead>
+              <tbody>
+                {solverResults.reactions.map((r, i) => (
+                  <tr key={i} style={{ borderBottom: '1px solid #1f2937' }}>
+                    <td style={{ padding: '8px 12px', color: '#e5e5e5' }}>
+                      {r.type === 'M' ? `M_${r.label}` : `R_${r.label}${r.type === 'Rx' ? 'x' : 'y'}`}
+                    </td>
+                    <td style={{ textAlign: 'right', padding: '8px 12px', color: '#4ade80', fontWeight: 600 }}>
+                      {r.value.toFixed(4)}
+                    </td>
+                    <td style={{ padding: '8px 12px', color: '#9ca3af' }}>
+                      {r.type === 'M' ? 'kN·m' : 'kN'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
 
-        <div style={{
-          fontSize: 14, color: '#fbbf24', fontWeight: 600, marginBottom: 12,
-        }}>
-          Solver Coming in Prompt #16
-        </div>
+            {/* Truss forces table */}
+            {solverResults.trussForces.length > 0 && (
+              <>
+                <h3 style={{
+                  fontSize: 14, fontWeight: 600, color: '#e5e5e5', margin: '0 0 12px 0',
+                  fontFamily: FONTS.mono,
+                }}>
+                  Truss Member Forces
+                </h3>
+                <table style={{
+                  width: '100%', borderCollapse: 'collapse', marginBottom: 32,
+                  fontFamily: FONTS.mono, fontSize: 13,
+                }}>
+                  <thead>
+                    <tr style={{ borderBottom: '2px solid #374151' }}>
+                      <th style={{ textAlign: 'left', padding: '8px 12px', color: '#9ca3af' }}>Member</th>
+                      <th style={{ textAlign: 'right', padding: '8px 12px', color: '#9ca3af' }}>Force (kN)</th>
+                      <th style={{ textAlign: 'left', padding: '8px 12px', color: '#9ca3af' }}>Type</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {solverResults.trussForces.map((tf, i) => (
+                      <tr key={i} style={{ borderBottom: '1px solid #1f2937' }}>
+                        <td style={{ padding: '8px 12px', color: '#e5e5e5' }}>
+                          {tf.startLabel}→{tf.endLabel}
+                        </td>
+                        <td style={{ textAlign: 'right', padding: '8px 12px', color: '#4ade80', fontWeight: 600 }}>
+                          {Math.abs(tf.force).toFixed(4)}
+                        </td>
+                        <td style={{ padding: '8px 12px', color: tf.classification.includes('T') ? '#fbbf24' : '#ef4444' }}>
+                          {tf.classification}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
+            )}
 
-        <div style={{
-          fontSize: 12, color: '#94a3b8', lineHeight: 1.8, maxWidth: 400,
-          margin: '0 auto', textAlign: 'left',
-        }}>
-          This section will contain:<br />
-          &bull; Step-by-step equilibrium equations (LaTeX)<br />
-          &bull; Free body diagrams for determining reactions<br />
-          &bull; All support reaction forces<br />
-          &bull; Truss member internal forces (Tension/Compression)
-        </div>
+            {/* Verification */}
+            <h3 style={{
+              fontSize: 14, fontWeight: 600, color: '#e5e5e5', margin: '0 0 12px 0',
+              fontFamily: FONTS.mono,
+            }}>
+              Equation Verification
+            </h3>
+            <div style={{ fontFamily: FONTS.mono, fontSize: 12 }}>
+              {solverResults.verification.map((v, i) => (
+                <div key={i} style={{
+                  padding: '6px 12px',
+                  color: v.pass ? '#4ade80' : '#ef4444',
+                  borderBottom: '1px solid #1f2937',
+                }}>
+                  {v.equation}: residual = {v.residual.toFixed(6)} {v.pass ? '✅' : '❌'}
+                </div>
+              ))}
+            </div>
+
+            {/* Note about LaTeX */}
+            <div style={{
+              marginTop: 32, padding: 16, background: '#0a0a0a',
+              borderRadius: 8, border: '1px solid #1f2937',
+              fontFamily: FONTS.mono, fontSize: 12, color: '#94a3b8',
+            }}>
+              ℹ️ Full step-by-step solution with LaTeX equations and diagrams coming in Prompt #16B
+            </div>
+          </div>
+        ) : (
+          <div style={{ textAlign: 'center', padding: '40px 0' }}>
+            <div style={{
+              fontSize: 32, margin: '24px 0 16px',
+            }}>
+              &#128679;
+            </div>
+            <div style={{
+              fontSize: 14, color: '#fbbf24', fontWeight: 600, marginBottom: 12,
+            }}>
+              No solver results available
+            </div>
+            <div style={{
+              fontSize: 12, color: '#94a3b8',
+            }}>
+              Click "Launch Calculator →" on the analysis page to run the solver
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

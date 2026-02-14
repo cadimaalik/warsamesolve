@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { COLORS, FONTS } from '../constants/brand.js';
 import { classify } from '../utils/analysis.js';
 import { getMemberLength } from '../utils/geometry.js';
@@ -12,6 +12,7 @@ import LoadArrows from './svg/LoadArrows.jsx';
 import MomentArc from './svg/MomentArc.jsx';
 import DistributedLoadArrows from './svg/DistributedLoadArrows.jsx';
 import ClassificationPanel from './ClassificationPanel.jsx';
+import { solveReactions } from '../solver/index.js';
 
 const noop = () => {};
 
@@ -20,16 +21,38 @@ const emptyUI = {
   connectMode: false, connectFromId: null,
 };
 
-export default function AnalysisPage({ nodes, members, onEdit, onLaunchMethod }) {
+export default function AnalysisPage({ nodes, members, structure, onEdit, onLaunchMethod }) {
   const svgRef = useRef(null);
   const { viewBox, fitToNodes } = usePanZoom();
+  const [solverError, setSolverError] = useState(null);
 
   useEffect(() => {
     if (nodes.length > 0) fitToNodes(nodes);
   }, []);
 
+  // Clear solver error after 4 seconds
+  useEffect(() => {
+    if (solverError) {
+      const t = setTimeout(() => setSolverError(null), 4000);
+      return () => clearTimeout(t);
+    }
+  }, [solverError]);
+
   const info = classify(nodes, members);
   const isDeterminate = info.status === 'determinate';
+
+  const handleLaunch = (methodName) => {
+    // Run the solver
+    const results = solveReactions(structure);
+
+    if (results.success) {
+      console.log('=== SOLVER RESULTS ===', results);
+      onLaunchMethod(methodName, results);
+    } else {
+      setSolverError(results.error);
+      console.error('Solver failed:', results.error);
+    }
+  };
 
   const methods = [
     {
@@ -82,6 +105,17 @@ export default function AnalysisPage({ nodes, members, onEdit, onLaunchMethod })
       flex: 1, overflowY: 'auto', background: '#0a0a0a',
       fontFamily: FONTS.mono,
     }}>
+      {/* Solver error toast */}
+      {solverError && (
+        <div style={{
+          background: '#7f1d1d', color: '#fca5a5', padding: '8px 16px',
+          fontSize: 12, fontFamily: FONTS.mono, fontWeight: 600,
+          textAlign: 'center',
+        }}>
+          Solver Error: {solverError}
+        </div>
+      )}
+
       {/* TOP SECTION: Canvas + Classification */}
       <div style={{
         display: 'flex', gap: 24, padding: '24px 32px',
@@ -218,7 +252,7 @@ export default function AnalysisPage({ nodes, members, onEdit, onLaunchMethod })
               active={m.active}
               comingSoon={m.comingSoon}
               disabledReason={m.disabledReason}
-              onLaunch={() => onLaunchMethod && onLaunchMethod(m.title)}
+              onLaunch={() => handleLaunch(m.title)}
             />
           ))}
         </div>

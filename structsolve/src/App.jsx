@@ -37,6 +37,7 @@ export default function App() {
   // View switching: 'builder' | 'analyze' | 'solver'
   const [currentView, setCurrentView] = useState('builder');
   const [solverMethod, setSolverMethod] = useState('');
+  const [solverResults, setSolverResults] = useState(null);
   const [validationError, setValidationError] = useState(null);
 
   const svgRef = useRef(null);
@@ -91,8 +92,9 @@ export default function App() {
     setCurrentView('builder');
   }, []);
 
-  const handleLaunchMethod = useCallback((methodName) => {
+  const handleLaunchMethod = useCallback((methodName, results) => {
     setSolverMethod(methodName);
+    setSolverResults(results);
     setCurrentView('solver');
   }, []);
 
@@ -406,6 +408,7 @@ export default function App() {
       {currentView === 'analyze' && (
         <AnalysisPage
           nodes={nodes} members={members}
+          structure={structure}
           onEdit={handleBackToBuilder}
           onLaunchMethod={handleLaunchMethod}
         />
@@ -415,6 +418,7 @@ export default function App() {
         <SolverPage
           nodes={nodes} members={members}
           methodName={solverMethod}
+          solverResults={solverResults}
           onBack={handleBackToMethods}
           onEdit={handleBackToBuilder}
         />
