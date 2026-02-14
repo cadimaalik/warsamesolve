@@ -1,13 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { COLORS } from '../constants/brand.js';
 import { getMemberLength } from '../utils/geometry.js';
-
-const inputStyle = {
-  width: '100%', padding: '5px 8px', borderRadius: 4,
-  border: `1px solid ${COLORS.borderLight}`, background: COLORS.bgInput,
-  color: COLORS.textPrimary, fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
-  outline: 'none', boxSizing: 'border-box',
-};
+import NumberInput from './NumberInput.jsx';
 
 const labelStyle = { fontSize: 10, color: COLORS.textDim, marginBottom: 2, fontWeight: 600 };
 
@@ -84,9 +78,11 @@ export default function MemberDetail({ member, nodes, onUpdate, onDelete, onClos
       {!isTruss && (
         <div style={{ marginBottom: 8 }}>
           <div style={labelStyle}>EI Factor</div>
-          <input type="number" value={eiFactor} onChange={e => setEiFactor(e.target.value)}
-            onBlur={commitEI} onKeyDown={e => handleKey(e, commitEI)}
-            style={inputStyle} min="0.1" step="1" />
+          <NumberInput value={eiFactor} onChange={v => {
+            setEiFactor(v);
+            const pv = parseFloat(v);
+            if (pv && pv > 0 && pv !== member.EI_factor) onUpdate(member.id, { EI_factor: pv });
+          }} min="0.1" />
         </div>
       )}
 

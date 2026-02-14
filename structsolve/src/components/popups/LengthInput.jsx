@@ -1,13 +1,7 @@
 import React, { useState } from 'react';
 import { COLORS } from '../../constants/brand.js';
 import SupportGrid from './SupportGrid.jsx';
-
-const inputStyle = {
-  width: '100%', padding: '6px 8px', borderRadius: 4,
-  border: `1px solid ${COLORS.borderLight}`, background: COLORS.bgInput,
-  color: COLORS.textPrimary, fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
-  outline: 'none', boxSizing: 'border-box',
-};
+import NumberInput from '../NumberInput.jsx';
 
 const toggleBtn = (active) => ({
   flex: 1, padding: '6px 0', borderRadius: 4, border: `1px solid ${COLORS.borderLight}`,
@@ -88,21 +82,18 @@ export default function LengthInput({ direction, onConfirm, onCancel }) {
       {!isDiag ? (
         <div style={{ marginBottom: 8 }}>
           <div style={labelStyle}>Length (m)</div>
-          <input type="number" value={length} onChange={e => setLength(e.target.value)}
-            style={inputStyle} min="0.1" step="1" autoFocus />
+          <NumberInput value={length} onChange={setLength} min="0.1" autoFocus />
         </div>
       ) : !angleMode ? (
         <>
           <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
             <div style={{ flex: 1 }}>
               <div style={labelStyle}>Horizontal (m)</div>
-              <input type="number" value={dx} onChange={e => setDx(e.target.value)}
-                style={inputStyle} min="0" step="1" autoFocus />
+              <NumberInput value={dx} onChange={setDx} min="0" autoFocus />
             </div>
             <div style={{ flex: 1 }}>
               <div style={labelStyle}>Vertical (m)</div>
-              <input type="number" value={dy} onChange={e => setDy(e.target.value)}
-                style={inputStyle} min="0" step="1" />
+              <NumberInput value={dy} onChange={setDy} min="0" />
             </div>
           </div>
           <div style={{ fontSize: 11, color: COLORS.green, marginBottom: 6, fontWeight: 600 }}>
@@ -119,13 +110,11 @@ export default function LengthInput({ direction, onConfirm, onCancel }) {
           <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
             <div style={{ flex: 1 }}>
               <div style={labelStyle}>Length (m)</div>
-              <input type="number" value={length} onChange={e => setLength(e.target.value)}
-                style={inputStyle} min="0.1" step="1" autoFocus />
+              <NumberInput value={length} onChange={setLength} min="0.1" autoFocus />
             </div>
             <div style={{ flex: 1 }}>
               <div style={labelStyle}>Angle (&deg;)</div>
-              <input type="number" value={angle} onChange={e => setAngle(e.target.value)}
-                style={inputStyle} min="0" max="90" step="1" />
+              <NumberInput value={angle} onChange={setAngle} min="0" />
             </div>
           </div>
           <div style={{ fontSize: 10, color: COLORS.textDim, marginBottom: 6 }}>
@@ -152,8 +141,7 @@ export default function LengthInput({ direction, onConfirm, onCancel }) {
       {type === 'frame' && (
         <div style={{ marginBottom: 8 }}>
           <div style={labelStyle}>EI Factor</div>
-          <input type="number" value={eiFactor} onChange={e => setEiFactor(e.target.value)}
-            style={inputStyle} min="0.1" step="1" />
+          <NumberInput value={eiFactor} onChange={setEiFactor} min="0.1" />
         </div>
       )}
 

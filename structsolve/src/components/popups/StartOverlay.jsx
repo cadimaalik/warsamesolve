@@ -1,13 +1,7 @@
 import React, { useState } from 'react';
 import { COLORS } from '../../constants/brand.js';
 import SupportGrid from './SupportGrid.jsx';
-
-const inputStyle = {
-  width: '100%', padding: '6px 8px', borderRadius: 4,
-  border: `1px solid ${COLORS.borderLight}`, background: COLORS.bgInput,
-  color: COLORS.textPrimary, fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
-  outline: 'none', boxSizing: 'border-box',
-};
+import NumberInput from '../NumberInput.jsx';
 
 const toggleBtn = (active) => ({
   flex: 1, padding: '6px 0', borderRadius: 4, border: `1px solid ${COLORS.borderLight}`,
@@ -66,8 +60,7 @@ export default function StartOverlay({ onCreate }) {
 
         <div style={{ marginBottom: 10 }}>
           <div style={labelStyle}>Length (m)</div>
-          <input type="number" value={length} onChange={e => setLength(e.target.value)}
-            style={inputStyle} min="0.1" step="1" autoFocus />
+          <NumberInput value={length} onChange={setLength} min="0.1" autoFocus />
         </div>
 
         <div style={{ marginBottom: 10 }}>
