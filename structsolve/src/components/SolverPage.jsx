@@ -1,6 +1,17 @@
 import React, { useRef, useEffect } from 'react';
 import { COLORS, FONTS } from '../constants/brand.js';
+import { getMemberLength } from '../utils/geometry.js';
 import usePanZoom from '../hooks/usePanZoom.js';
+import SupportSymbol from './svg/SupportSymbol.jsx';
+import NodeDot from './svg/NodeDot.jsx';
+import NodeLabel from './svg/NodeLabel.jsx';
+import MemberLine from './svg/MemberLine.jsx';
+import DimensionLine from './svg/DimensionLine.jsx';
+import LoadArrows from './svg/LoadArrows.jsx';
+import MomentArc from './svg/MomentArc.jsx';
+import DistributedLoadArrows from './svg/DistributedLoadArrows.jsx';
+
+const noop = () => {};
 
 export default function SolverPage({ nodes, members, methodName, onBack, onEdit }) {
   const svgRef = useRef(null);
@@ -33,7 +44,7 @@ export default function SolverPage({ nodes, members, methodName, onBack, onEdit 
         </span>
       </div>
 
-      {/* Canvas */}
+      {/* Canvas — exact same rendering as builder */}
       <div style={{
         margin: '24px 32px', position: 'relative',
         background: COLORS.canvasBg, borderRadius: 12, overflow: 'hidden',
@@ -57,22 +68,68 @@ export default function SolverPage({ nodes, members, methodName, onBack, onEdit 
             width={viewBox.w * 3} height={viewBox.h * 3}
             fill="url(#grid-solver)" />
 
+          {/* Layer 1: Dimension lines */}
           {members.map(m => {
             const sn = nodes.find(n => n.id === m.startNodeId);
             const en = nodes.find(n => n.id === m.endNodeId);
             if (!sn || !en) return null;
-            const isTruss = m.type === 'truss';
-            return (
-              <line key={m.id} x1={sn.x} y1={sn.y} x2={en.x} y2={en.y}
-                stroke={isTruss ? COLORS.memberTruss : COLORS.memberFrame}
-                strokeWidth={isTruss ? 2.5 : 3.5}
-                strokeDasharray={isTruss ? '6 4' : 'none'}
-              />
-            );
+            return <DimensionLine key={'dim-' + m.id} startNode={sn} endNode={en} length={getMemberLength(m)} />;
           })}
+
+          {/* Layer 1.5: White dots at pin/roller when all hinged */}
+          {nodes.map(n => {
+            const isPinOrRoller = n.support === 'pin' || n.support === 'roller-h' || n.support === 'roller-v';
+            if (!isPinOrRoller) return null;
+            const connected = members.filter(m => m.startNodeId === n.id || m.endNodeId === n.id);
+            if (connected.length === 0) return null;
+            const allHinged = connected.every(m => {
+              if (m.startNodeId === n.id) return m.startHinge || m.type === 'truss';
+              return m.endHinge || m.type === 'truss';
+            });
+            if (!allHinged) return null;
+            return <circle key={'supdot-' + n.id} cx={n.x} cy={n.y} r={5} fill="#ffffff" stroke="#374151" strokeWidth={1.5} />;
+          })}
+
+          {/* Layer 2: Member lines */}
+          {members.map(m => {
+            const sn = nodes.find(n => n.id === m.startNodeId);
+            const en = nodes.find(n => n.id === m.endNodeId);
+            if (!sn || !en) return null;
+            return <MemberLine key={'mem-' + m.id} member={m} startNode={sn} endNode={en} isSelected={false} onSelect={noop} globalAxialMode={null} />;
+          })}
+
+          {/* Layer 2b: Distributed load arrows */}
+          {members.map(m => {
+            if (!m.distributedLoads || m.distributedLoads.length === 0) return null;
+            const sn = nodes.find(n => n.id === m.startNodeId);
+            const en = nodes.find(n => n.id === m.endNodeId);
+            if (!sn || !en) return null;
+            return <DistributedLoadArrows key={'dl-' + m.id} member={m} startNode={sn} endNode={en} />;
+          })}
+
+          {/* Layer 3: Support symbols */}
           {nodes.map(n => (
-            <circle key={n.id} cx={n.x} cy={n.y} r={4}
-              fill={COLORS.nodeFill} stroke={COLORS.nodeStroke} strokeWidth={1.5} />
+            <SupportSymbol key={'sup-' + n.id} node={n} allNodes={nodes} members={members} />
+          ))}
+
+          {/* Layer 4: Load arrows + moment arcs */}
+          {nodes.map(n => (
+            <React.Fragment key={'load-' + n.id}>
+              <LoadArrows node={n} members={members} allNodes={nodes} />
+              {n.loads.moment !== 0 && (
+                <MomentArc x={n.x} y={n.y} moment={n.loads.moment} node={n} members={members} allNodes={nodes} />
+              )}
+            </React.Fragment>
+          ))}
+
+          {/* Layer 5: Node dots */}
+          {nodes.map(n => (
+            <NodeDot key={'node-' + n.id} node={n} members={members} allNodes={nodes} isSelected={false} isConnectTarget={false} />
+          ))}
+
+          {/* Layer 6: Node labels */}
+          {nodes.map(n => (
+            <NodeLabel key={'lbl-' + n.id} node={n} allNodes={nodes} members={members} />
           ))}
         </svg>
 
