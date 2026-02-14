@@ -54,6 +54,7 @@ function MemberRow({ member, isActive, onSelect, onDelete }) {
 export default function SidePanel({
   nodes, members, activeNodeId, activeMemberId,
   onSelectNode, onSelectMember, onDeleteNode, onDeleteMember, onUpdateMember,
+  globalAxialMode,
 }) {
   const activeMember = activeMemberId ? members.find(m => m.id === activeMemberId) : null;
   const info = nodes.length > 0 && members.length > 0 ? classify(nodes, members) : null;
@@ -82,6 +83,7 @@ export default function SidePanel({
           member={activeMember} nodes={nodes}
           onUpdate={onUpdateMember} onDelete={onDeleteMember}
           onClose={() => onSelectMember(null)}
+          globalAxialMode={globalAxialMode}
         />
       )}
 

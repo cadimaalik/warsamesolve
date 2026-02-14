@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import { nextNodeLabel, findOverlappingNode, computeRealCoordinates } from '../utils/geometry.js';
+import { nextNodeLabel, findOverlappingNode, computeRealCoordinates, getMemberLength } from '../utils/geometry.js';
 import { DIRECTIONS, MEMBER_SPACING, PIXELS_PER_METER } from '../constants/directions.js';
 
 function createNode(id, x, y, support = null) {
@@ -13,13 +13,18 @@ function createMember(startNodeId, endNodeId, type = 'frame', eiFactor = 1) {
     type, EI_factor: eiFactor,
     startHinge: false, endHinge: false,
     realDx: 0, realDy: 0,
+    axialStiffness: type === 'truss' ? 'deformable' : 'rigid',
+    EA_factor: 1,
+    EA_absolute: null,
+    EA_mode: 'relative',
+    distributedLoads: [],
   };
 }
 
 export default function useStructure() {
   const [structure, setStructure] = useState({
     nodes: [], members: [],
-    settings: { units: 'kN-m', stiffnessMode: 'relative', baseEI: null },
+    settings: { units: 'kN-m', stiffnessMode: 'relative', baseEI: null, axialMode: 'mixed' },
   });
   const historyRef = useRef([]);
 
@@ -40,7 +45,6 @@ export default function useStructure() {
       if (!fromNode) return prev;
 
       const dir = DIRECTIONS[direction];
-      // Calculate pixel offset from REAL displacement (to-scale rendering)
       const rdx = realDx || 0;
       const rdy = realDy || 0;
       const pixelDx = rdx * PIXELS_PER_METER;
@@ -49,10 +53,8 @@ export default function useStructure() {
       const newX = fromNode.x + pixelDx;
       const newY = fromNode.y + pixelDy;
 
-      // Check overlap with existing node
       const overlap = findOverlappingNode(newX, newY, prev.nodes);
       if (overlap) {
-        // Verify the real-world displacement to overlapping node matches user intent
         const coords = computeRealCoordinates(prev.nodes, prev.members);
         const intendedRdx = realDx || 0;
         const intendedRdy = realDy || 0;
@@ -62,7 +64,6 @@ export default function useStructure() {
         if (coords[fromNodeId] && coords[overlap.id]) {
           rdx = coords[overlap.id].x - coords[fromNodeId].x;
           rdy = coords[overlap.id].y - coords[fromNodeId].y;
-          // Only connect to existing node if real-world displacement roughly matches
           const tol = 0.5;
           useOverlap = Math.abs(rdx - intendedRdx) < tol && Math.abs(rdy - intendedRdy) < tol;
         }
@@ -77,17 +78,14 @@ export default function useStructure() {
       }
 
       const newId = nextNodeLabel(prev.nodes.map(n => n.id));
-      // Nudge pixel position if it collides with an existing node
       let finalX = newX, finalY = newY;
       if (findOverlappingNode(finalX, finalY, prev.nodes)) {
-        // Nudge by 1 meter in the direction of the member
         const nudgeX = rdx !== 0 ? (rdx > 0 ? 1 : -1) * PIXELS_PER_METER : 0;
         const nudgeY = rdy !== 0 ? (rdy > 0 ? 1 : -1) * PIXELS_PER_METER : 0;
         finalX += nudgeX;
         finalY += nudgeY;
       }
       const newNode = createNode(newId, finalX, finalY, newNodeSupport || null);
-      // Store real-world displacement — length is computed on-the-fly
       const newMem = createMember(fromNodeId, newId, type, eiFactor);
       newMem.startHinge = startHinge;
       newMem.realDx = rdx;
@@ -105,7 +103,6 @@ export default function useStructure() {
         (m.startNodeId === toId && m.endNodeId === fromId)
       );
       if (dup) return prev;
-      // Compute realDx/realDy directly from pixel positions (to-scale)
       const fromNode = prev.nodes.find(n => n.id === fromId);
       const toNode = prev.nodes.find(n => n.id === toId);
       if (!fromNode || !toNode) return prev;
@@ -140,7 +137,6 @@ export default function useStructure() {
       const remainingMembers = prev.members.filter(m => m.id !== memberId);
       if (!member) return { ...prev, members: remainingMembers };
 
-      // Find orphan nodes (endpoints with no remaining connections)
       const orphanIds = [member.startNodeId, member.endNodeId].filter(nid => {
         return !remainingMembers.some(m => m.startNodeId === nid || m.endNodeId === nid);
       });
@@ -180,7 +176,6 @@ export default function useStructure() {
 
   const createInitialBeam = useCallback(({ length, orientation = 'horizontal', type = 'frame', supportA = 'pin', supportB = null }) => {
     const isVert = orientation === 'vertical';
-    // To-scale positioning: length in meters × PIXELS_PER_METER
     const pixelLength = length * PIXELS_PER_METER;
     const bx = isVert ? 200 : 200 + pixelLength;
     const by = isVert ? 300 + pixelLength : 300;
@@ -196,9 +191,100 @@ export default function useStructure() {
     }));
   }, []);
 
+  const addDistributedLoad = useCallback((memberId, loadData) => {
+    pushHistory();
+    setStructure(prev => ({
+      ...prev,
+      members: prev.members.map(m => {
+        if (m.id !== memberId) return m;
+        const dl = {
+          id: 'dl_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+          ...loadData,
+        };
+        return { ...m, distributedLoads: [...(m.distributedLoads || []), dl] };
+      }),
+    }));
+  }, [structure]);
+
+  const removeDistributedLoad = useCallback((memberId, loadId) => {
+    pushHistory();
+    setStructure(prev => ({
+      ...prev,
+      members: prev.members.map(m => {
+        if (m.id !== memberId) return m;
+        return { ...m, distributedLoads: (m.distributedLoads || []).filter(dl => dl.id !== loadId) };
+      }),
+    }));
+  }, [structure]);
+
+  const splitMemberAtPoint = useCallback((memberId, distance, loads) => {
+    pushHistory();
+    setStructure(prev => {
+      const member = prev.members.find(m => m.id === memberId);
+      if (!member) return prev;
+
+      const startNode = prev.nodes.find(n => n.id === member.startNodeId);
+      const endNode = prev.nodes.find(n => n.id === member.endNodeId);
+      if (!startNode || !endNode) return prev;
+
+      const totalLength = getMemberLength(member);
+      if (distance <= 0 || distance >= totalLength || totalLength === 0) return prev;
+
+      const ratio = distance / totalLength;
+      const newX = startNode.x + (endNode.x - startNode.x) * ratio;
+      const newY = startNode.y + (endNode.y - startNode.y) * ratio;
+      const newId = nextNodeLabel(prev.nodes.map(n => n.id));
+      const newNode = createNode(newId, newX, newY, null);
+      if (loads) {
+        newNode.loads = { fx: loads.fx || 0, fy: loads.fy || 0, moment: loads.moment || 0 };
+      }
+
+      const rdx1 = member.realDx * ratio;
+      const rdy1 = member.realDy * ratio;
+      const rdx2 = member.realDx * (1 - ratio);
+      const rdy2 = member.realDy * (1 - ratio);
+
+      const mem1 = createMember(member.startNodeId, newId, member.type, member.EI_factor);
+      mem1.startHinge = member.startHinge;
+      mem1.endHinge = false;
+      mem1.realDx = Math.round(rdx1 * 100) / 100;
+      mem1.realDy = Math.round(rdy1 * 100) / 100;
+      mem1.axialStiffness = member.axialStiffness || 'rigid';
+      mem1.EA_factor = member.EA_factor || 1;
+      mem1.EA_absolute = member.EA_absolute || null;
+      mem1.EA_mode = member.EA_mode || 'relative';
+
+      const mem2 = createMember(newId, member.endNodeId, member.type, member.EI_factor);
+      mem2.startHinge = false;
+      mem2.endHinge = member.endHinge;
+      mem2.realDx = Math.round(rdx2 * 100) / 100;
+      mem2.realDy = Math.round(rdy2 * 100) / 100;
+      mem2.axialStiffness = member.axialStiffness || 'rigid';
+      mem2.EA_factor = member.EA_factor || 1;
+      mem2.EA_absolute = member.EA_absolute || null;
+      mem2.EA_mode = member.EA_mode || 'relative';
+
+      const remainingMembers = prev.members.filter(m => m.id !== memberId);
+      return {
+        ...prev,
+        nodes: [...prev.nodes, newNode],
+        members: [...remainingMembers, mem1, mem2],
+      };
+    });
+  }, [structure]);
+
+  const setGlobalAxialMode = useCallback((mode) => {
+    pushHistory();
+    setStructure(prev => ({
+      ...prev,
+      settings: { ...prev.settings, axialMode: mode },
+    }));
+  }, [structure]);
+
   return {
     structure, undo, addMember, connectNodes, removeNode, removeMember,
     setNodeSupport, setNodeLoads, updateMember, clearAll, createInitialBeam,
+    addDistributedLoad, removeDistributedLoad, splitMemberAtPoint, setGlobalAxialMode,
     canUndo: historyRef.current.length > 0,
   };
 }

@@ -5,7 +5,8 @@ export default function useUI() {
     activeNodeId: null,
     activeMemberId: null,
     activePopup: null,
-    // 'actions'|'compass'|'length'|'support'|'load'|'connect'|'settings'|null
+    // node: 'actions'|'compass'|'length'|'support'|'load'|'connect'|'settings'
+    // member: 'member-actions'|'point-load'|'distributed-load'
     pendingDirection: null,
     connectMode: false,
     connectFromId: null,
@@ -17,7 +18,7 @@ export default function useUI() {
   }, []);
 
   const selectMember = useCallback((memberId) => {
-    setUI(u => ({ ...u, activeMemberId: memberId, activeNodeId: null, activePopup: null }));
+    setUI(u => ({ ...u, activeMemberId: memberId, activeNodeId: null, activePopup: 'member-actions' }));
   }, []);
 
   const openPopup = useCallback((name) => {

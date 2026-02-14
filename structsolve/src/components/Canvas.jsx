@@ -7,6 +7,7 @@ import MemberLine from './svg/MemberLine.jsx';
 import DimensionLine from './svg/DimensionLine.jsx';
 import LoadArrows from './svg/LoadArrows.jsx';
 import MomentArc from './svg/MomentArc.jsx';
+import DistributedLoadArrows from './svg/DistributedLoadArrows.jsx';
 import { getMemberLength } from '../utils/geometry.js';
 
 const zoomBtnStyle = {
@@ -103,6 +104,15 @@ export default function Canvas({
               onSelect={onSelectMember}
             />
           );
+        })}
+
+        {/* Layer 2b: Distributed load arrows */}
+        {members.map(m => {
+          if (!m.distributedLoads || m.distributedLoads.length === 0) return null;
+          const sn = nodes.find(n => n.id === m.startNodeId);
+          const en = nodes.find(n => n.id === m.endNodeId);
+          if (!sn || !en) return null;
+          return <DistributedLoadArrows key={'dl-' + m.id} member={m} startNode={sn} endNode={en} />;
         })}
 
         {/* Layer 3: Support symbols */}

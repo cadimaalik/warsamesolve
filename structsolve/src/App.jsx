@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { COLORS, FONTS } from './constants/brand.js';
-import { realDistance } from './utils/geometry.js';
+import { realDistance, getMemberLength } from './utils/geometry.js';
 import useStructure from './state/useStructure.js';
 import useUI from './state/useUI.js';
 import usePanZoom from './hooks/usePanZoom.js';
@@ -16,11 +16,16 @@ import SupportPicker from './components/popups/SupportPicker.jsx';
 import LoadInput from './components/popups/LoadInput.jsx';
 import ConnectFlow from './components/popups/ConnectFlow.jsx';
 import StartOverlay from './components/popups/StartOverlay.jsx';
+import MemberActionBar from './components/popups/MemberActionBar.jsx';
+import PointLoadInput from './components/popups/PointLoadInput.jsx';
+import DistributedLoadInput from './components/popups/DistributedLoadInput.jsx';
 
 export default function App() {
   const {
     structure, undo, addMember, connectNodes, removeNode, removeMember,
-    setNodeSupport, setNodeLoads, updateMember, clearAll, createInitialBeam, canUndo,
+    setNodeSupport, setNodeLoads, updateMember, clearAll, createInitialBeam,
+    addDistributedLoad, removeDistributedLoad, splitMemberAtPoint, setGlobalAxialMode,
+    canUndo,
   } = useStructure();
   const {
     ui, selectNode, selectMember, openPopup, closePopup,
@@ -29,7 +34,7 @@ export default function App() {
 
   const svgRef = useRef(null);
   const { viewBox, panning, svgProps, fitToNodes, zoomIn, zoomOut } = usePanZoom();
-  const { nodes, members } = structure;
+  const { nodes, members, settings } = structure;
 
   // Connect flow state
   const [connectTarget, setConnectTarget] = useState(null);
@@ -82,6 +87,39 @@ export default function App() {
 
   const handleClear = useCallback(() => { clearAll(); reset(); showStartOverlay(); }, [clearAll, reset, showStartOverlay]);
 
+  // --- Member Action Bar handler ---
+  const handleMemberAction = useCallback((action) => {
+    if (action === 'properties') {
+      // Keep member selected, close popup — side panel shows detail
+      closePopup();
+    } else if (action === 'point-load') {
+      openPopup('point-load');
+    } else if (action === 'distributed-load') {
+      openPopup('distributed-load');
+    } else if (action === 'delete') {
+      if (ui.activeMemberId) {
+        removeMember(ui.activeMemberId);
+        reset();
+      }
+    }
+  }, [ui.activeMemberId, openPopup, closePopup, removeMember, reset]);
+
+  // --- Point Load handler ---
+  const handlePointLoadApply = useCallback((distance, loads) => {
+    if (ui.activeMemberId) {
+      splitMemberAtPoint(ui.activeMemberId, distance, loads);
+      reset();
+    }
+  }, [ui.activeMemberId, splitMemberAtPoint, reset]);
+
+  // --- Distributed Load handler ---
+  const handleDistLoadApply = useCallback((loadData) => {
+    if (ui.activeMemberId) {
+      addDistributedLoad(ui.activeMemberId, loadData);
+      reset();
+    }
+  }, [ui.activeMemberId, addDistributedLoad, reset]);
+
   // --- Keyboard ---
   useKeyboard({
     onUndo: undo,
@@ -99,62 +137,127 @@ export default function App() {
   // --- Active node for popups ---
   const activeNode = ui.activeNodeId ? nodes.find(n => n.id === ui.activeNodeId) : null;
   const connectFromNode = ui.connectFromId ? nodes.find(n => n.id === ui.connectFromId) : null;
+  const activeMember = ui.activeMemberId ? members.find(m => m.id === ui.activeMemberId) : null;
 
   // --- Popup content ---
   function renderPopup() {
-    if (!activeNode || !ui.activePopup) return null;
-    let content = null;
+    if (!ui.activePopup) return null;
 
-    switch (ui.activePopup) {
-      case 'actions':
-        content = <ActionBar nodeId={activeNode.id} onAction={handleActionBar} />;
-        break;
-      case 'compass':
-        content = (
-          <CompassPicker
-            nodeId={activeNode.id} existingNodes={nodes}
-            onSelectDirection={setDirection}
-            onConnect={() => startConnect(activeNode.id)}
-            onClose={closePopup}
-          />
-        );
-        break;
-      case 'length':
-        content = (
-          <LengthInput
-            direction={ui.pendingDirection}
-            onConfirm={handleAddMember}
-            onCancel={() => openPopup('compass')}
-          />
-        );
-        break;
-      case 'support':
-        content = (
-          <SupportPicker
-            nodeId={activeNode.id} currentSupport={activeNode.support}
-            onSelect={(type) => setNodeSupport(activeNode.id, type)}
-            onClose={closePopup}
-          />
-        );
-        break;
-      case 'load':
-        content = (
-          <LoadInput
-            nodeId={activeNode.id} currentLoads={activeNode.loads}
-            onApply={(loads) => setNodeLoads(activeNode.id, loads)}
-            onClose={closePopup}
-          />
-        );
-        break;
-      default:
-        return null;
+    // Node popups
+    if (activeNode) {
+      let content = null;
+      switch (ui.activePopup) {
+        case 'actions':
+          content = <ActionBar nodeId={activeNode.id} onAction={handleActionBar} />;
+          break;
+        case 'compass':
+          content = (
+            <CompassPicker
+              nodeId={activeNode.id} existingNodes={nodes}
+              onSelectDirection={setDirection}
+              onConnect={() => startConnect(activeNode.id)}
+              onClose={closePopup}
+            />
+          );
+          break;
+        case 'length':
+          content = (
+            <LengthInput
+              direction={ui.pendingDirection}
+              onConfirm={handleAddMember}
+              onCancel={() => openPopup('compass')}
+            />
+          );
+          break;
+        case 'support':
+          content = (
+            <SupportPicker
+              nodeId={activeNode.id} currentSupport={activeNode.support}
+              onSelect={(type) => setNodeSupport(activeNode.id, type)}
+              onClose={closePopup}
+            />
+          );
+          break;
+        case 'load':
+          content = (
+            <LoadInput
+              nodeId={activeNode.id} currentLoads={activeNode.loads}
+              onApply={(loads) => setNodeLoads(activeNode.id, loads)}
+              onClose={closePopup}
+            />
+          );
+          break;
+        default:
+          return null;
+      }
+      return (
+        <PopupAt svgRef={svgRef} nodeX={activeNode.x} nodeY={activeNode.y} viewBox={viewBox}>
+          {content}
+        </PopupAt>
+      );
     }
 
-    return (
-      <PopupAt svgRef={svgRef} nodeX={activeNode.x} nodeY={activeNode.y} viewBox={viewBox}>
-        {content}
-      </PopupAt>
-    );
+    // Member popups
+    if (activeMember) {
+      const sn = nodes.find(n => n.id === activeMember.startNodeId);
+      const en = nodes.find(n => n.id === activeMember.endNodeId);
+      if (!sn || !en) return null;
+
+      const midX = (sn.x + en.x) / 2;
+      const midY = (sn.y + en.y) / 2;
+      const memberLen = getMemberLength(activeMember);
+      const memberLabel = `${sn.id}\u2192${en.id}`;
+
+      // Check if member is inclined (not purely horizontal or vertical)
+      const isInclined = Math.abs(activeMember.realDx) > 0.01 && Math.abs(activeMember.realDy) > 0.01;
+
+      let content = null;
+      switch (ui.activePopup) {
+        case 'member-actions':
+          content = (
+            <MemberActionBar
+              memberLabel={memberLabel}
+              onAction={handleMemberAction}
+            />
+          );
+          break;
+        case 'point-load':
+          content = (
+            <PointLoadInput
+              member={activeMember}
+              startNodeId={sn.id}
+              endNodeId={en.id}
+              memberLength={memberLen}
+              onApply={handlePointLoadApply}
+              onCancel={() => openPopup('member-actions')}
+            />
+          );
+          break;
+        case 'distributed-load':
+          content = (
+            <DistributedLoadInput
+              member={activeMember}
+              startNodeId={sn.id}
+              endNodeId={en.id}
+              memberLength={memberLen}
+              isInclined={isInclined}
+              onApply={handleDistLoadApply}
+              onCancel={() => openPopup('member-actions')}
+            />
+          );
+          break;
+        default:
+          return null;
+      }
+
+      return (
+        <PopupAt svgRef={svgRef} nodeX={midX} nodeY={midY} viewBox={viewBox}>
+          {content}
+        </PopupAt>
+      );
+    }
+
+    return null;
   }
 
   // --- Connect flow popup ---
@@ -172,7 +275,10 @@ export default function App() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', fontFamily: FONTS.mono }}>
-      <Header onClear={handleClear} onUndo={undo} canUndo={canUndo} nodeCount={nodes.length} />
+      <Header
+        onClear={handleClear} onUndo={undo} canUndo={canUndo} nodeCount={nodes.length}
+        axialMode={settings.axialMode} onAxialModeChange={setGlobalAxialMode}
+      />
 
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden', background: COLORS.canvasBg }}>
         <SidePanel
@@ -181,6 +287,7 @@ export default function App() {
           onSelectNode={selectNode} onSelectMember={selectMember}
           onDeleteNode={handleDeleteNode} onDeleteMember={handleDeleteMember}
           onUpdateMember={updateMember}
+          globalAxialMode={settings.axialMode}
         />
 
         <div style={{ flex: 1, position: 'relative', overflow: 'hidden', background: COLORS.canvasBg }}>

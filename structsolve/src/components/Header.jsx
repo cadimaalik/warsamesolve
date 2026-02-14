@@ -22,7 +22,13 @@ const primaryDisabled = {
   ...primaryBtn, opacity: 0.4, cursor: 'default', pointerEvents: 'none',
 };
 
-export default function Header({ onClear, onUndo, canUndo, nodeCount }) {
+const selectStyle = {
+  padding: '6px 8px', borderRadius: 6, border: `1px solid ${COLORS.borderLight}`,
+  background: COLORS.bgCard, color: COLORS.textPrimary, fontSize: 11,
+  fontFamily: FONTS.mono, cursor: 'pointer', outline: 'none',
+};
+
+export default function Header({ onClear, onUndo, canUndo, nodeCount, axialMode, onAxialModeChange }) {
   function handleClear() {
     if (window.confirm('Clear the entire structure? This cannot be undone.')) {
       onClear();
@@ -49,6 +55,13 @@ export default function Header({ onClear, onUndo, canUndo, nodeCount }) {
 
       {/* Actions */}
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        {/* EA mode dropdown */}
+        <select value={axialMode || 'mixed'} onChange={e => onAxialModeChange(e.target.value)} style={selectStyle}>
+          <option value="all-rigid">All Rigid (EA=inf)</option>
+          <option value="all-deformable">All Deformable</option>
+          <option value="mixed">Mixed (per member)</option>
+        </select>
+
         <button onClick={handleClear} style={secondaryBtn}
           onMouseOver={e => e.currentTarget.style.background = COLORS.bgCard}
           onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
@@ -59,12 +72,6 @@ export default function Header({ onClear, onUndo, canUndo, nodeCount }) {
           onMouseOver={e => { if (canUndo) e.currentTarget.style.background = COLORS.bgCard; }}
           onMouseOut={e => { if (canUndo) e.currentTarget.style.background = 'transparent'; }}>
           &#8617; Undo
-        </button>
-
-        <button onClick={() => console.log('settings')} style={secondaryBtn}
-          onMouseOver={e => e.currentTarget.style.background = COLORS.bgCard}
-          onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
-          &#9881; Settings
         </button>
 
         <button style={nodeCount >= 2 ? primaryBtn : primaryDisabled}
