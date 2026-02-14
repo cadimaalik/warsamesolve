@@ -1,12 +1,12 @@
 // Support type definitions
 // Internal value → display label, reactions blocked, reaction count
 export const SUPPORT_TYPES = {
-  pin:       { label: 'Pin',               reactions: 'Rx, Ry',    count: 2 },
-  'roller-h':{ label: 'Horizontal Roller', reactions: 'Ry',        count: 1 },
-  'roller-v':{ label: 'Vertical Roller',   reactions: 'Rx',        count: 1 },
-  fixed:     { label: 'Fixed',             reactions: 'Rx, Ry, M', count: 3 },
-  'guide-h': { label: 'Horizontal Guide',  reactions: 'Ry, M',     count: 2 },
-  'guide-v': { label: 'Vertical Guide',    reactions: 'Rx, M',     count: 2 },
+  pin:       { label: 'Pin',                         reactions: 'Rx, Ry',    count: 2 },
+  'roller-h':{ label: 'Roller (moves horizontally)', reactions: 'Ry',        count: 1 },
+  'roller-v':{ label: 'Roller (moves vertically)',   reactions: 'Rx',        count: 1 },
+  fixed:     { label: 'Fixed',                       reactions: 'Rx, Ry, M', count: 3 },
+  'guide-h': { label: 'Guide (moves horizontally)',  reactions: 'Ry, M',     count: 2 },
+  'guide-v': { label: 'Guide (moves vertically)',    reactions: 'Rx, M',     count: 2 },
 };
 
 // Orientation for roller/guide symbols:

@@ -3,7 +3,7 @@ import { COLORS } from '../constants/brand.js';
 import { getMemberLength } from '../utils/geometry.js';
 import NumberInput from './NumberInput.jsx';
 
-const labelStyle = { fontSize: 10, color: COLORS.textDim, marginBottom: 2, fontWeight: 600 };
+const labelStyle = { fontSize: 10, color: '#e5e5e5', marginBottom: 2, fontWeight: 600 };
 
 const toggleBtn = (active) => ({
   flex: 1, padding: '5px 0', borderRadius: 4, border: `1px solid ${COLORS.borderLight}`,
@@ -55,7 +55,7 @@ export default function MemberDetail({ member, nodes, onUpdate, onDelete, onClos
     }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-        <span style={{ fontSize: 13, fontWeight: 700, color: COLORS.textPrimary }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>
           Member {startNode?.id || '?'}&rarr;{endNode?.id || '?'}
         </span>
         <button onClick={onClose} style={{
@@ -75,7 +75,7 @@ export default function MemberDetail({ member, nodes, onUpdate, onDelete, onClos
       {/* Type (read-only) */}
       <div style={{ marginBottom: 8 }}>
         <div style={labelStyle}>Type</div>
-        <div style={{ ...readOnlyField, color: COLORS.textPrimary }}>
+        <div style={{ ...readOnlyField, color: '#e5e5e5' }}>
           {isTruss ? 'Truss' : 'Frame'}
         </div>
       </div>
@@ -114,68 +114,64 @@ export default function MemberDetail({ member, nodes, onUpdate, onDelete, onClos
             Global: all members axially {globalAxialMode === 'all-rigid' ? 'rigid' : 'deformable'}
           </div>
         ) : !isTruss ? (
-          <div style={{ display: 'flex', gap: 4, marginBottom: isDeformable ? 6 : 0 }}>
+          <div style={{ display: 'flex', gap: 4 }}>
             <button style={toggleBtn(axialStiffness === 'rigid')}
               onClick={() => onUpdate(member.id, { axialStiffness: 'rigid' })}>Rigid</button>
             <button style={toggleBtn(axialStiffness === 'deformable')}
               onClick={() => onUpdate(member.id, { axialStiffness: 'deformable' })}>Deformable</button>
           </div>
         ) : (
-          <div style={{ fontSize: 10, color: COLORS.textMuted, padding: '2px 0', marginBottom: 4 }}>
+          <div style={{ fontSize: 10, color: COLORS.textMuted, padding: '2px 0' }}>
             Truss: always deformable
           </div>
         )}
-
-        {/* EA input (shown when deformable and no global override) */}
-        {isDeformable && !globalOverride && (
-          <>
-            <div style={{ display: 'flex', gap: 4, marginBottom: 6 }}>
-              <button style={toggleBtn(eaMode === 'relative')}
-                onClick={() => onUpdate(member.id, { EA_mode: 'relative' })}>Relative</button>
-              <button style={toggleBtn(eaMode === 'absolute')}
-                onClick={() => onUpdate(member.id, { EA_mode: 'absolute' })}>Absolute</button>
-            </div>
-            {eaMode === 'relative' ? (
-              <div>
-                <div style={labelStyle}>EA Multiplier</div>
-                <div style={{ fontSize: 9, color: COLORS.textDim, marginBottom: 3, fontStyle: 'italic' }}>
-                  EA = multiplier &times; reference EA
-                </div>
-                <NumberInput value={eaFactor} onChange={v => {
-                  setEaFactor(v);
-                  const pv = parseFloat(v);
-                  if (pv && pv > 0) onUpdate(member.id, { EA_factor: pv });
-                }} min="0.1" />
-              </div>
-            ) : (
-              <div>
-                <div style={labelStyle}>EA (kN)</div>
-                <NumberInput value={eaAbsolute} onChange={v => {
-                  setEaAbsolute(v);
-                  const pv = parseFloat(v);
-                  if (pv && pv > 0) onUpdate(member.id, { EA_absolute: pv });
-                }} min="1" />
-              </div>
-            )}
-          </>
-        )}
       </div>
+
+      {/* EA (shown when deformable and no global override) */}
+      {isDeformable && !globalOverride && (
+        <div style={{ marginBottom: 8 }}>
+          <div style={labelStyle}>EA Mode</div>
+          <div style={{ display: 'flex', gap: 4, marginBottom: 6 }}>
+            <button style={toggleBtn(eaMode === 'relative')}
+              onClick={() => onUpdate(member.id, { EA_mode: 'relative' })}>Relative</button>
+            <button style={toggleBtn(eaMode === 'absolute')}
+              onClick={() => onUpdate(member.id, { EA_mode: 'absolute' })}>Numeric</button>
+          </div>
+          {eaMode === 'relative' ? (
+            <div>
+              <div style={labelStyle}>EA Multiplier (EA = multiplier &times; reference EA)</div>
+              <NumberInput value={eaFactor} onChange={v => {
+                setEaFactor(v);
+                const pv = parseFloat(v);
+                if (pv && pv > 0) onUpdate(member.id, { EA_factor: pv });
+              }} min="0.1" />
+            </div>
+          ) : (
+            <div>
+              <div style={labelStyle}>EA (kN)</div>
+              <NumberInput value={eaAbsolute} onChange={v => {
+                setEaAbsolute(v);
+                const pv = parseFloat(v);
+                if (pv && pv > 0) onUpdate(member.id, { EA_absolute: pv });
+              }} min="1" />
+            </div>
+          )}
+        </div>
+      )}
 
       {/* EI (frame only) */}
       {!isTruss && (
         <div style={{ marginBottom: 8 }}>
+          <div style={labelStyle}>EI Mode</div>
           <div style={{ display: 'flex', gap: 4, marginBottom: 6 }}>
             <button style={toggleBtn(eiMode === 'relative')}
               onClick={() => onUpdate(member.id, { EI_mode: 'relative' })}>Relative</button>
             <button style={toggleBtn(eiMode === 'absolute')}
-              onClick={() => onUpdate(member.id, { EI_mode: 'absolute' })}>Absolute</button>
+              onClick={() => onUpdate(member.id, { EI_mode: 'absolute' })}>Numeric</button>
           </div>
           {eiMode === 'relative' ? (
             <div>
-              <div style={labelStyle}>EI Multiplier</div>
-              <div style={{ fontSize: 9, color: COLORS.textDim, marginBottom: 3, fontStyle: 'italic' }}>
-                EI = multiplier &times; reference EI
-              </div>
+              <div style={labelStyle}>EI Multiplier (EI = multiplier &times; reference EI)</div>
               <NumberInput value={eiFactor} onChange={v => {
                 setEiFactor(v);
                 const pv = parseFloat(v);
@@ -236,7 +232,7 @@ function DLEditor({ dl, memberId, onUpdate, onRemove }) {
       padding: '6px 8px', background: COLORS.bgInput, borderRadius: 4, marginBottom: 4,
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-        <span style={{ fontSize: 10, color: COLORS.textMuted, fontWeight: 600 }}>
+        <span style={{ fontSize: 10, color: '#e5e5e5', fontWeight: 600 }}>
           {shapeLabels[dl.shape] || dl.shape} &middot; {dirLabels[dl.direction] || dl.direction}
         </span>
         <button onClick={() => onRemove && onRemove(memberId, dl.id)} style={{
@@ -246,11 +242,11 @@ function DLEditor({ dl, memberId, onUpdate, onRemove }) {
       </div>
       <div style={{ display: 'flex', gap: 6 }}>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 9, color: COLORS.textDim }}>Start (kN/m)</div>
+          <div style={{ fontSize: 9, color: '#e5e5e5' }}>Start (kN/m)</div>
           <NumberInput value={sI} onChange={v => { setSI(v); commitIntensity('startIntensity', v); }} allowNegative />
         </div>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 9, color: COLORS.textDim }}>End (kN/m)</div>
+          <div style={{ fontSize: 9, color: '#e5e5e5' }}>End (kN/m)</div>
           <NumberInput value={eI} onChange={v => { setEI(v); commitIntensity('endIntensity', v); }} allowNegative />
         </div>
       </div>

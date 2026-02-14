@@ -4,11 +4,11 @@ import { COLORS } from '../../constants/brand.js';
 const options = [
   { key: null,       icon: '\u2715', label: 'None',              sub: '' },
   { key: 'pin',      icon: '\u25B3', label: 'Pin',               sub: 'Rx, Ry' },
-  { key: 'roller-h', icon: '\u25CB\u2500', label: 'Horiz. Roller',    sub: 'Ry' },
-  { key: 'roller-v', icon: '\u25CB\u2502', label: 'Vert. Roller',     sub: 'Rx' },
-  { key: 'fixed',    icon: '\u2593', label: 'Fixed',              sub: 'Rx, Ry, M' },
-  { key: 'guide-h',  icon: '\u2550\u2500', label: 'Horiz. Guide',     sub: 'Ry, M' },
-  { key: 'guide-v',  icon: '\u2550\u2502', label: 'Vert. Guide',      sub: 'Rx, M' },
+  { key: 'roller-h', icon: '\u25CB\u2500', label: 'Roller (moves \u2194)',  sub: 'Ry' },
+  { key: 'roller-v', icon: '\u25CB\u2502', label: 'Roller (moves \u2195)',  sub: 'Rx' },
+  { key: 'fixed',    icon: '\u2593', label: 'Fixed',                  sub: 'Rx, Ry, M' },
+  { key: 'guide-h',  icon: '\u2550\u2500', label: 'Guide (moves \u2194)',   sub: 'Ry, M' },
+  { key: 'guide-v',  icon: '\u2550\u2502', label: 'Guide (moves \u2195)',   sub: 'Rx, M' },
 ];
 
 export default function SupportPicker({ nodeId, currentSupport, onSelect, onClose }) {

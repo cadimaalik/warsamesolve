@@ -18,51 +18,6 @@ const zoomBtnStyle = {
   fontFamily: "'JetBrains Mono', monospace", padding: 0,
 };
 
-const ANGLE_TEXT_C = '#64748b';
-
-function AngleLabel({ startNode, endNode }) {
-  const dx = endNode.x - startNode.x;
-  const dy = endNode.y - startNode.y;
-  const dist = Math.sqrt(dx * dx + dy * dy);
-  if (dist < 1) return null;
-
-  const angleDeg = Math.atan2(Math.abs(dy), Math.abs(dx)) * 180 / Math.PI;
-  // Only show for inclined members (not horizontal or vertical)
-  if (angleDeg < 3 || angleDeg > 87) return null;
-
-  const displayAngle = angleDeg <= 90 ? angleDeg : 180 - angleDeg;
-  const label = `${displayAngle.toFixed(1).replace(/\.0$/, '')}\u00B0`;
-
-  // Pick the node where the angle with horizontal is shown (the lower node, or leftmost)
-  const anchorNode = startNode.y >= endNode.y ? startNode : endNode;
-
-  // Direction from anchor toward the other node
-  const otherNode = anchorNode === startNode ? endNode : startNode;
-  const mdx = otherNode.x - anchorNode.x;
-  const mdy = otherNode.y - anchorNode.y;
-  const memberAngle = Math.atan2(mdy, mdx);
-
-  // Horizontal direction: toward the other node's x side
-  const horizAngle = mdx >= 0 ? 0 : Math.PI;
-
-  // Bisector between horizontal and member direction — this is where the label goes
-  const bisector = (memberAngle + horizAngle) / 2;
-  const labelDist = 22;
-  const lx = anchorNode.x + Math.cos(bisector) * labelDist;
-  const ly = anchorNode.y + Math.sin(bisector) * labelDist;
-
-  return (
-    <g transform={`translate(${lx},${ly})`}>
-      <rect x={-18} y={-9} width={36} height={14} rx={2}
-        fill="white" fillOpacity={0.9} />
-      <text x={0} y={3} textAnchor="middle" fontSize={10}
-        fill={ANGLE_TEXT_C} fontFamily="'JetBrains Mono', monospace" fontWeight={500}>
-        {label}
-      </text>
-    </g>
-  );
-}
-
 export default function Canvas({
   nodes, members, ui, svgRef, viewBox, svgProps, panning,
   onSelectNode, onSelectMember, onCanvasClick, onConnectTarget,
@@ -129,16 +84,13 @@ export default function Canvas({
           width={viewBox.w * 3} height={viewBox.h * 3}
           fill="url(#grid)" />
 
-        {/* Layer 1: Dimension lines + angle labels */}
+        {/* Layer 1: Dimension lines */}
         {members.map(m => {
           const sn = nodes.find(n => n.id === m.startNodeId);
           const en = nodes.find(n => n.id === m.endNodeId);
           if (!sn || !en) return null;
           return (
-            <React.Fragment key={'dim-' + m.id}>
-              <DimensionLine startNode={sn} endNode={en} length={getMemberLength(m)} />
-              <AngleLabel startNode={sn} endNode={en} />
-            </React.Fragment>
+            <DimensionLine key={'dim-' + m.id} startNode={sn} endNode={en} length={getMemberLength(m)} />
           );
         })}
 
