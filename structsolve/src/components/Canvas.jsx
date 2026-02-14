@@ -7,6 +7,7 @@ import MemberLine from './svg/MemberLine.jsx';
 import DimensionLine from './svg/DimensionLine.jsx';
 import LoadArrows from './svg/LoadArrows.jsx';
 import MomentArc from './svg/MomentArc.jsx';
+import { getMemberLength } from '../utils/geometry.js';
 
 export default function Canvas({
   nodes, members, ui, svgRef, viewBox, svgProps, panning,
@@ -78,7 +79,7 @@ export default function Canvas({
           const sn = nodes.find(n => n.id === m.startNodeId);
           const en = nodes.find(n => n.id === m.endNodeId);
           if (!sn || !en) return null;
-          return <DimensionLine key={'dim-' + m.id} startNode={sn} endNode={en} length={m.length} />;
+          return <DimensionLine key={'dim-' + m.id} startNode={sn} endNode={en} length={getMemberLength(m)} />;
         })}
 
         {/* Layer 2: Member lines */}
