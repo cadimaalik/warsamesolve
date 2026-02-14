@@ -1,19 +1,13 @@
 import React, { useState } from 'react';
 import { COLORS } from '../../constants/brand.js';
-
-const inputStyle = {
-  width: '100%', padding: '6px 8px', borderRadius: 4,
-  border: `1px solid ${COLORS.borderLight}`, background: COLORS.bgInput,
-  color: COLORS.textPrimary, fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
-  outline: 'none', boxSizing: 'border-box',
-};
+import NumberInput from '../NumberInput.jsx';
 
 const labelStyle = { fontSize: 10, color: COLORS.textDim, marginBottom: 3, fontWeight: 600 };
 
 export default function LoadInput({ nodeId, currentLoads, onApply, onClose }) {
-  const [fx, setFx] = useState(currentLoads?.fx || 0);
-  const [fy, setFy] = useState(currentLoads?.fy || 0);
-  const [moment, setMoment] = useState(currentLoads?.moment || 0);
+  const [fx, setFx] = useState(String(currentLoads?.fx || 0));
+  const [fy, setFy] = useState(String(currentLoads?.fy || 0));
+  const [moment, setMoment] = useState(String(currentLoads?.moment || 0));
 
   function handleSubmit() {
     onApply({
@@ -33,22 +27,19 @@ export default function LoadInput({ nodeId, currentLoads, onApply, onClose }) {
       {/* Fx */}
       <div style={{ marginBottom: 8 }}>
         <div style={labelStyle}>Fx (kN) &middot; positive &rarr; right</div>
-        <input type="number" value={fx} onChange={e => setFx(e.target.value)}
-          style={inputStyle} step="1" />
+        <NumberInput value={fx} onChange={setFx} allowNegative />
       </div>
 
       {/* Fy */}
       <div style={{ marginBottom: 8 }}>
         <div style={labelStyle}>Fy (kN) &middot; positive &uarr; up</div>
-        <input type="number" value={fy} onChange={e => setFy(e.target.value)}
-          style={inputStyle} step="1" />
+        <NumberInput value={fy} onChange={setFy} allowNegative />
       </div>
 
       {/* Moment */}
       <div style={{ marginBottom: 10 }}>
         <div style={labelStyle}>M (kN&middot;m) &middot; positive &#8634; CCW</div>
-        <input type="number" value={moment} onChange={e => setMoment(e.target.value)}
-          style={inputStyle} step="1" />
+        <NumberInput value={moment} onChange={setMoment} allowNegative />
       </div>
 
       {/* Actions */}

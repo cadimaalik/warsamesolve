@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { COLORS } from '../../constants/brand.js';
+import NumberInput from '../NumberInput.jsx';
 
 const toggleBtn = (active) => ({
   flex: 1, padding: '6px 0', borderRadius: 4, border: `1px solid ${COLORS.borderLight}`,
@@ -10,12 +11,6 @@ const toggleBtn = (active) => ({
 });
 
 const labelStyle = { fontSize: 10, color: COLORS.textDim, marginBottom: 3, fontWeight: 600 };
-const inputStyle = {
-  width: '100%', padding: '6px 8px', borderRadius: 4,
-  border: `1px solid ${COLORS.borderLight}`, background: COLORS.bgInput,
-  color: COLORS.textPrimary, fontSize: 12, fontFamily: "'JetBrains Mono', monospace",
-  outline: 'none', boxSizing: 'border-box',
-};
 
 export default function ConnectFlow({ fromId, toId, autoLength, onConfirm, onCancel }) {
   const [type, setType] = useState('frame');
@@ -65,8 +60,7 @@ export default function ConnectFlow({ fromId, toId, autoLength, onConfirm, onCan
       {type === 'frame' && (
         <div style={{ marginBottom: 8 }}>
           <div style={labelStyle}>EI Factor</div>
-          <input type="number" value={eiFactor} onChange={e => setEiFactor(e.target.value)}
-            style={inputStyle} min="0.1" step="1" />
+          <NumberInput value={eiFactor} onChange={setEiFactor} min="0.1" />
         </div>
       )}
 

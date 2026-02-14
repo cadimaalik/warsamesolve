@@ -59,8 +59,8 @@ export default function NodeDot({ node, members, allNodes, isSelected, isConnect
             const dy = other.y - node.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
             if (dist > 0.001) {
-              offsetX = (dx / dist) * 10;
-              offsetY = (dy / dist) * 10;
+              offsetX = (dx / dist) * 5;
+              offsetY = (dy / dist) * 5;
             }
           }
           return (
