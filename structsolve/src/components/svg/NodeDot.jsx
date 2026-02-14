@@ -43,11 +43,7 @@ export default function NodeDot({ node, members, allNodes, isSelected, isConnect
           fill="#1a1f2b" stroke={STROKE} strokeWidth={1.5} />
       )}
 
-      {/* White dot at pin/roller supports — only when hinged (rigid case drawn earlier in Canvas) */}
-      {isPinOrRoller && hasAnyHinge && (
-        <circle cx={node.x} cy={node.y} r={5}
-          fill="#ffffff" stroke={STROKE} strokeWidth={1.5} />
-      )}
+      {/* White dot at pin/roller supports — drawn in Canvas Layer 1.5 (behind members) */}
 
       {/* Hinge indicators at unsupported nodes */}
       {!hasSupport && hasAnyHinge && allHinged && (
