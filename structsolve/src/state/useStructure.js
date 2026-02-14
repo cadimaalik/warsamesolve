@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { nextNodeLabel, findOverlappingNode, computeRealCoordinates } from '../utils/geometry.js';
-import { DIRECTIONS, MEMBER_SPACING } from '../constants/directions.js';
+import { DIRECTIONS, MEMBER_SPACING, PIXELS_PER_METER } from '../constants/directions.js';
 
 function createNode(id, x, y, support = null) {
   return { id, x, y, support, loads: { fx: 0, fy: 0, moment: 0 }, hinge: false };
@@ -40,12 +40,14 @@ export default function useStructure() {
       if (!fromNode) return prev;
 
       const dir = DIRECTIONS[direction];
-      let dx = dir.dx * MEMBER_SPACING;
-      let dy = dir.dy * MEMBER_SPACING;
-      if (dir.dx !== 0 && dir.dy !== 0) { dx *= 0.7; dy *= 0.7; }
+      // Calculate pixel offset from REAL displacement (to-scale rendering)
+      const rdx = realDx || 0;
+      const rdy = realDy || 0;
+      const pixelDx = rdx * PIXELS_PER_METER;
+      const pixelDy = rdy * PIXELS_PER_METER;
 
-      const newX = fromNode.x + dx;
-      const newY = fromNode.y + dy;
+      const newX = fromNode.x + pixelDx;
+      const newY = fromNode.y + pixelDy;
 
       // Check overlap with existing node
       const overlap = findOverlappingNode(newX, newY, prev.nodes);
@@ -78,13 +80,14 @@ export default function useStructure() {
       // Nudge pixel position if it collides with an existing node
       let finalX = newX, finalY = newY;
       if (findOverlappingNode(finalX, finalY, prev.nodes)) {
-        finalX += dir.dx * MEMBER_SPACING * 0.5;
-        finalY += dir.dy * MEMBER_SPACING * 0.5;
+        // Nudge by 1 meter in the direction of the member
+        const nudgeX = rdx !== 0 ? (rdx > 0 ? 1 : -1) * PIXELS_PER_METER : 0;
+        const nudgeY = rdy !== 0 ? (rdy > 0 ? 1 : -1) * PIXELS_PER_METER : 0;
+        finalX += nudgeX;
+        finalY += nudgeY;
       }
       const newNode = createNode(newId, finalX, finalY, newNodeSupport || null);
       // Store real-world displacement — length is computed on-the-fly
-      const rdx = realDx || 0;
-      const rdy = realDy || 0;
       const newMem = createMember(fromNodeId, newId, type, eiFactor);
       newMem.startHinge = startHinge;
       newMem.realDx = rdx;
@@ -102,10 +105,16 @@ export default function useStructure() {
         (m.startNodeId === toId && m.endNodeId === fromId)
       );
       if (dup) return prev;
-      // Compute realDx/realDy from BFS coordinates of existing nodes
-      const coords = computeRealCoordinates(prev.nodes, prev.members);
-      const rdx = (coords[toId]?.x ?? 0) - (coords[fromId]?.x ?? 0);
-      const rdy = (coords[toId]?.y ?? 0) - (coords[fromId]?.y ?? 0);
+      // Compute realDx/realDy directly from pixel positions (to-scale)
+      const fromNode = prev.nodes.find(n => n.id === fromId);
+      const toNode = prev.nodes.find(n => n.id === toId);
+      if (!fromNode || !toNode) return prev;
+
+      const pixelDx = toNode.x - fromNode.x;
+      const pixelDy = toNode.y - fromNode.y;
+      const rdx = pixelDx / PIXELS_PER_METER;
+      const rdy = pixelDy / PIXELS_PER_METER;
+
       const newMem = createMember(fromId, toId, type, eiFactor);
       newMem.startHinge = startHinge;
       newMem.endHinge = endHinge;
@@ -171,8 +180,10 @@ export default function useStructure() {
 
   const createInitialBeam = useCallback(({ length, orientation = 'horizontal', type = 'frame', supportA = 'pin', supportB = null }) => {
     const isVert = orientation === 'vertical';
-    const bx = isVert ? 200 : 200 + MEMBER_SPACING;
-    const by = isVert ? 300 + MEMBER_SPACING : 300;
+    // To-scale positioning: length in meters × PIXELS_PER_METER
+    const pixelLength = length * PIXELS_PER_METER;
+    const bx = isVert ? 200 : 200 + pixelLength;
+    const by = isVert ? 300 + pixelLength : 300;
     const nodeA = createNode('A', 200, 300, supportA);
     const nodeB = createNode('B', bx, by, supportB);
     const mem = createMember('A', 'B', type);
