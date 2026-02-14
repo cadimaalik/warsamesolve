@@ -12,6 +12,9 @@ export const DIRECTIONS = {
 // Pixel spacing when growing a new member
 export const MEMBER_SPACING = 200;
 
+// Scale factor for to-scale rendering: 1 meter = 50 pixels
+export const PIXELS_PER_METER = 50;
+
 // For compass popup layout (CSS positions)
 export const COMPASS_POSITIONS = {
   N:  { top: '0%',  left: '50%' },
