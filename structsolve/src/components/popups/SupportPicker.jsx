@@ -4,11 +4,11 @@ import { COLORS } from '../../constants/brand.js';
 const options = [
   { key: null,       icon: '\u2715', label: 'None',              sub: '' },
   { key: 'pin',      icon: '\u25B3', label: 'Pin',               sub: 'Rx, Ry' },
-  { key: 'roller-h', icon: '\u25CB\u2500', label: 'Roller (moves \u2194)',  sub: 'Ry' },
-  { key: 'roller-v', icon: '\u25CB\u2502', label: 'Roller (moves \u2195)',  sub: 'Rx' },
+  { key: 'roller-h', icon: '\u25CB\u2500', label: 'Roller (horizontal)',  sub: 'Rx' },
+  { key: 'roller-v', icon: '\u25CB\u2502', label: 'Roller (vertical)',  sub: 'Ry' },
   { key: 'fixed',    icon: '\u2593', label: 'Fixed',                  sub: 'Rx, Ry, M' },
-  { key: 'guide-h',  icon: '\u2550\u2500', label: 'Guide (moves \u2194)',   sub: 'Ry, M' },
-  { key: 'guide-v',  icon: '\u2550\u2502', label: 'Guide (moves \u2195)',   sub: 'Rx, M' },
+  { key: 'guide-h',  icon: '\u2550\u2500', label: 'Guide (horizontal)',   sub: 'Rx, M' },
+  { key: 'guide-v',  icon: '\u2550\u2502', label: 'Guide (vertical)',   sub: 'Ry, M' },
 ];
 
 export default function SupportPicker({ nodeId, currentSupport, onSelect, onClose }) {
