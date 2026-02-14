@@ -2,73 +2,88 @@ import React from 'react';
 
 const C = '#dc2626';
 
-/** Find best offset direction for moment arc (away from members) */
-function findArcOffset(x, y, members, allNodes) {
-  const connected = members.filter(m => m.startNodeId === findNodeId(x, y, allNodes) || m.endNodeId === findNodeId(x, y, allNodes));
-  // Collect angles of connected members
-  const angles = [];
-  const nodeId = findNodeId(x, y, allNodes);
+/**
+ * Find the emptiest quadrant around the node for the label.
+ * Checks where members, Fx arrows, and Fy arrows occupy space.
+ * Quadrants: 0=top-right, 1=top-left, 2=bottom-left, 3=bottom-right
+ */
+function findBestLabelQuadrant(node, members, allNodes) {
+  const occupancy = [0, 0, 0, 0]; // TR, TL, BL, BR
+
+  const connected = members.filter(m => m.startNodeId === node.id || m.endNodeId === node.id);
   for (const m of connected) {
-    const otherId = m.startNodeId === nodeId ? m.endNodeId : m.startNodeId;
+    const otherId = m.startNodeId === node.id ? m.endNodeId : m.startNodeId;
     const other = allNodes.find(n => n.id === otherId);
     if (!other) continue;
-    angles.push(Math.atan2(other.y - y, other.x - x));
+    const dx = other.x - node.x;
+    const dy = other.y - node.y;
+    if (dx >= 0 && dy <= 0) occupancy[0]++;
+    if (dx <= 0 && dy <= 0) occupancy[1]++;
+    if (dx <= 0 && dy >= 0) occupancy[2]++;
+    if (dx >= 0 && dy >= 0) occupancy[3]++;
   }
 
-  if (angles.length === 0) return { dx: 0, dy: -28 }; // default: above
-
-  // Find largest gap between member angles, place arc in that gap
-  if (angles.length === 1) {
-    // Single member: place opposite
-    const a = angles[0] + Math.PI;
-    return { dx: Math.cos(a) * 28, dy: Math.sin(a) * 28 };
+  if (node.loads) {
+    if (node.loads.fx > 0) { occupancy[0]++; occupancy[3]++; }
+    if (node.loads.fx < 0) { occupancy[1]++; occupancy[2]++; }
+    if (node.loads.fy > 0) { occupancy[2]++; occupancy[3]++; }
+    if (node.loads.fy < 0) { occupancy[0]++; occupancy[1]++; }
   }
 
-  // Sort angles and find largest gap
-  angles.sort((a, b) => a - b);
-  let maxGap = 0, maxMid = -Math.PI / 2; // default: up
-  for (let i = 0; i < angles.length; i++) {
-    const next = i < angles.length - 1 ? angles[i + 1] : angles[0] + 2 * Math.PI;
-    const gap = next - angles[i];
-    if (gap > maxGap) {
-      maxGap = gap;
-      maxMid = angles[i] + gap / 2;
-    }
+  let minIdx = 0;
+  for (let i = 1; i < 4; i++) {
+    if (occupancy[i] < occupancy[minIdx]) minIdx = i;
   }
-  return { dx: Math.cos(maxMid) * 28, dy: Math.sin(maxMid) * 28 };
+  return minIdx;
 }
 
-function findNodeId(x, y, allNodes) {
-  const n = allNodes.find(n => n.x === x && n.y === y);
-  return n ? n.id : null;
+/**
+ * Find the direction of the arc gap — face toward members
+ * so the arc curves away from them.
+ */
+function findArcGapAngle(node, members, allNodes) {
+  const connected = members.filter(m => m.startNodeId === node.id || m.endNodeId === node.id);
+  if (connected.length === 0) return -Math.PI / 2;
+
+  let sumDx = 0, sumDy = 0;
+  for (const m of connected) {
+    const otherId = m.startNodeId === node.id ? m.endNodeId : m.startNodeId;
+    const other = allNodes.find(n => n.id === otherId);
+    if (!other) continue;
+    const dx = other.x - node.x;
+    const dy = other.y - node.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist > 0) { sumDx += dx / dist; sumDy += dy / dist; }
+  }
+
+  if (Math.abs(sumDx) < 0.001 && Math.abs(sumDy) < 0.001) return -Math.PI / 2;
+  return Math.atan2(sumDy, sumDx);
 }
 
-export default function MomentArc({ x, y, moment, members, allNodes }) {
+export default function MomentArc({ x, y, moment, node, members, allNodes }) {
   if (!moment) return null;
 
   const r = 18;
   const isCCW = moment > 0;
 
-  // Compute offset to position arc away from members
-  const offset = (members && allNodes) ? findArcOffset(x, y, members, allNodes) : { dx: 0, dy: -28 };
-  const cx = x + offset.dx;
-  const cy = y + offset.dy;
+  // Arc centered ON the node
+  const cx = x;
+  const cy = y;
 
-  // 270° arc (three-quarter circle)
-  // For CCW (positive moment): arc sweeps counter-clockwise
-  // For CW (negative moment): arc sweeps clockwise
-  // Start at 45° from top, sweep 270°
+  // Gap faces toward members so arc curves away
+  const gapAngle = (members && allNodes && node)
+    ? findArcGapAngle(node, members, allNodes)
+    : -Math.PI / 2;
 
-  const startAngle = -Math.PI / 4; // -45° (upper-right)
-  const sweepAngle = (270 * Math.PI) / 180;
-
-  let endAngle;
+  // 300-degree arc with 60-degree gap centered on gapAngle
+  const halfGap = (30 * Math.PI) / 180;
+  let startAngle, endAngle;
   if (isCCW) {
-    // CCW sweep: go counter-clockwise (subtract)
-    endAngle = startAngle - sweepAngle;
+    startAngle = gapAngle + halfGap;
+    endAngle = gapAngle - halfGap;
   } else {
-    // CW sweep: go clockwise (add)
-    endAngle = startAngle + sweepAngle;
+    startAngle = gapAngle - halfGap;
+    endAngle = gapAngle + halfGap;
   }
 
   const sx = cx + r * Math.cos(startAngle);
@@ -76,26 +91,33 @@ export default function MomentArc({ x, y, moment, members, allNodes }) {
   const ex = cx + r * Math.cos(endAngle);
   const ey = cy + r * Math.sin(endAngle);
 
-  // SVG arc: large-arc-flag = 1 for >180°, sweep-flag: 0=CCW, 1=CW
-  const largeArc = 1; // always >180° since we're doing 270°
+  const largeArc = 1;
   const sweepFlag = isCCW ? 0 : 1;
-
   const path = `M ${sx} ${sy} A ${r} ${r} 0 ${largeArc} ${sweepFlag} ${ex} ${ey}`;
 
-  // Arrowhead tangent to arc at the end point
-  // Tangent direction at end of arc
+  // Arrowhead tangent to arc at endpoint
   let tangentAngle;
   if (isCCW) {
-    // CCW: tangent at end points in CCW direction (perpendicular to radius, left)
     tangentAngle = (endAngle - Math.PI / 2) * 180 / Math.PI;
   } else {
-    // CW: tangent at end points in CW direction (perpendicular to radius, right)
     tangentAngle = (endAngle + Math.PI / 2) * 180 / Math.PI;
   }
 
-  // Label position: opposite side of arc center from node
-  const labelX = cx;
-  const labelY = cy - r - 14;
+  // Smart label positioning
+  const quadrant = (members && allNodes && node)
+    ? findBestLabelQuadrant(node, members, allNodes)
+    : 0;
+
+  const labelDist = r + 16;
+  const quadrantOffsets = [
+    { dx: labelDist, dy: -labelDist },
+    { dx: -labelDist, dy: -labelDist },
+    { dx: -labelDist, dy: labelDist },
+    { dx: labelDist, dy: labelDist },
+  ];
+  const labelOffset = quadrantOffsets[quadrant];
+  const labelX = cx + labelOffset.dx;
+  const labelY = cy + labelOffset.dy;
 
   return (
     <g>
@@ -109,7 +131,7 @@ export default function MomentArc({ x, y, moment, members, allNodes }) {
         fill="white" fillOpacity={0.85} />
       <text x={labelX} y={labelY + 4} textAnchor="middle" fontSize={11}
         fill={C} fontFamily="'JetBrains Mono', monospace" fontWeight={500}>
-        {Math.abs(moment)} kN·m
+        {Math.abs(moment)} kN&middot;m
       </text>
     </g>
   );

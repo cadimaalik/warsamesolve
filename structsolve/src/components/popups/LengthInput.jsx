@@ -73,7 +73,7 @@ export default function LengthInput({ direction, onConfirm, onCancel }) {
       realDy: Math.round(rdy * 100) / 100,
       type,
       eiFactor: parseFloat(eiFactor) || 1,
-      startHinge: startConn === 'hinge',
+      startHinge: type === 'truss' ? true : startConn === 'hinge',
       newNodeSupport: newSupport,
     });
   }
@@ -157,19 +157,21 @@ export default function LengthInput({ direction, onConfirm, onCancel }) {
         </div>
       )}
 
-      {/* Connection at starting node */}
-      <div style={{ marginBottom: 8 }}>
-        <div style={labelStyle}>Connection at Start</div>
-        <div style={{ display: 'flex', gap: 4 }}>
-          <button style={toggleBtn(startConn === 'rigid')} onClick={() => setStartConn('rigid')}>Rigid</button>
-          <button style={toggleBtn(startConn === 'hinge')} onClick={() => setStartConn('hinge')}>Hinge</button>
+      {/* Connection at starting node (frame only — truss is always hinged) */}
+      {type === 'frame' && (
+        <div style={{ marginBottom: 8 }}>
+          <div style={labelStyle}>Connection at Start</div>
+          <div style={{ display: 'flex', gap: 4 }}>
+            <button style={toggleBtn(startConn === 'rigid')} onClick={() => setStartConn('rigid')}>Rigid</button>
+            <button style={toggleBtn(startConn === 'hinge')} onClick={() => setStartConn('hinge')}>Hinge</button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Support at new node */}
       <div style={{ marginBottom: 10 }}>
         <div style={labelStyle}>Support at New Node</div>
-        <SupportGrid value={newSupport} onChange={setNewSupport} />
+        <SupportGrid value={newSupport} onChange={setNewSupport} trussMode={type === 'truss'} />
       </div>
 
       {/* Actions */}

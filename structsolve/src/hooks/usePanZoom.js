@@ -63,6 +63,32 @@ export default function usePanZoom() {
     });
   }, []);
 
+  const zoomIn = useCallback(() => {
+    setViewBox(v => {
+      const newW = v.w * 0.8;
+      const newH = v.h * 0.8;
+      if (newW < 100) return v;
+      return {
+        x: v.x + (v.w - newW) * 0.5,
+        y: v.y + (v.h - newH) * 0.5,
+        w: newW, h: newH,
+      };
+    });
+  }, []);
+
+  const zoomOut = useCallback(() => {
+    setViewBox(v => {
+      const newW = v.w * 1.25;
+      const newH = v.h * 1.25;
+      if (newW > 5000) return v;
+      return {
+        x: v.x + (v.w - newW) * 0.5,
+        y: v.y + (v.h - newH) * 0.5,
+        w: newW, h: newH,
+      };
+    });
+  }, []);
+
   const fitToNodes = useCallback((nodes, padding = 80) => {
     if (nodes.length === 0) return;
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
@@ -80,6 +106,6 @@ export default function usePanZoom() {
   return {
     viewBox, panning,
     svgProps: { onMouseDown, onMouseMove, onMouseUp, onWheel },
-    fitToNodes,
+    fitToNodes, zoomIn, zoomOut,
   };
 }

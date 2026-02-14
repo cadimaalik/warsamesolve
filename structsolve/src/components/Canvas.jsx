@@ -9,9 +9,18 @@ import LoadArrows from './svg/LoadArrows.jsx';
 import MomentArc from './svg/MomentArc.jsx';
 import { getMemberLength } from '../utils/geometry.js';
 
+const zoomBtnStyle = {
+  width: 32, height: 32, borderRadius: 6,
+  background: '#171717', border: '1px solid #2a2a2a',
+  color: '#e5e5e5', fontSize: 16, cursor: 'pointer',
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  fontFamily: "'JetBrains Mono', monospace", padding: 0,
+};
+
 export default function Canvas({
   nodes, members, ui, svgRef, viewBox, svgProps, panning,
   onSelectNode, onSelectMember, onCanvasClick, onConnectTarget,
+  onZoomIn, onZoomOut, onFit,
 }) {
   function handleSvgClick(e) {
     const tag = e.target.tagName;
@@ -106,7 +115,8 @@ export default function Canvas({
           <React.Fragment key={'load-' + n.id}>
             <LoadArrows node={n} members={members} allNodes={nodes} />
             {n.loads.moment !== 0 && (
-              <MomentArc x={n.x} y={n.y} moment={n.loads.moment} members={members} allNodes={nodes} />
+              <MomentArc x={n.x} y={n.y} moment={n.loads.moment}
+                node={n} members={members} allNodes={nodes} />
             )}
           </React.Fragment>
         ))}
@@ -121,7 +131,7 @@ export default function Canvas({
               style={{ cursor: 'pointer' }}
             >
               <NodeDot
-                node={n} members={members}
+                node={n} members={members} allNodes={nodes}
                 isSelected={ui.activeNodeId === n.id}
                 isConnectTarget={isTarget}
               />
@@ -134,6 +144,16 @@ export default function Canvas({
           <NodeLabel key={'lbl-' + n.id} node={n} allNodes={nodes} members={members} />
         ))}
       </svg>
+
+      {/* Zoom controls — bottom-right */}
+      <div style={{
+        position: 'absolute', bottom: 16, right: 16, zIndex: 10,
+        display: 'flex', flexDirection: 'column', gap: 4,
+      }}>
+        <button style={zoomBtnStyle} onClick={onZoomIn} title="Zoom in">+</button>
+        <button style={zoomBtnStyle} onClick={onZoomOut} title="Zoom out">&minus;</button>
+        <button style={zoomBtnStyle} onClick={onFit} title="Fit to view">&#8862;</button>
+      </div>
     </div>
   );
 }

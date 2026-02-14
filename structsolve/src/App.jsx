@@ -28,7 +28,7 @@ export default function App() {
   } = useUI();
 
   const svgRef = useRef(null);
-  const { viewBox, panning, svgProps, fitToNodes } = usePanZoom();
+  const { viewBox, panning, svgProps, fitToNodes, zoomIn, zoomOut } = usePanZoom();
   const { nodes, members } = structure;
 
   // Connect flow state
@@ -189,6 +189,8 @@ export default function App() {
             svgRef={svgRef} viewBox={viewBox} svgProps={svgProps} panning={panning}
             onSelectNode={selectNode} onSelectMember={selectMember}
             onCanvasClick={reset} onConnectTarget={handleConnectTarget}
+            onZoomIn={zoomIn} onZoomOut={zoomOut}
+            onFit={() => { if (nodes.length > 0) fitToNodes(nodes); }}
           />
 
           {ui.showStartOverlay && nodes.length === 0 && (

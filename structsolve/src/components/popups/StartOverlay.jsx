@@ -80,12 +80,12 @@ export default function StartOverlay({ onCreate }) {
 
         <div style={{ marginBottom: 10 }}>
           <div style={labelStyle}>Support at Node A</div>
-          <SupportGrid value={supportA} onChange={setSupportA} />
+          <SupportGrid value={supportA} onChange={setSupportA} trussMode={type === 'truss'} />
         </div>
 
         <div style={{ marginBottom: 16 }}>
           <div style={labelStyle}>Support at Node B</div>
-          <SupportGrid value={supportB} onChange={setSupportB} />
+          <SupportGrid value={supportB} onChange={setSupportB} trussMode={type === 'truss'} />
         </div>
 
         <button onClick={handleCreate} style={{
