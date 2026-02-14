@@ -11,15 +11,15 @@ const disabledBtn = {
   ...secondaryBtn, opacity: 0.4, cursor: 'default', pointerEvents: 'none',
 };
 
-const primaryBtn = {
-  padding: '6px 14px', borderRadius: 6, border: 'none',
-  background: COLORS.greenDark, color: '#fff', fontSize: 12,
+const analyzeBtn = {
+  padding: '8px 22px', borderRadius: 8, border: 'none',
+  background: COLORS.greenDark, color: '#fff', fontSize: 14,
   fontFamily: FONTS.mono, fontWeight: 700, cursor: 'pointer',
-  transition: 'all 0.15s',
+  transition: 'all 0.15s', letterSpacing: 0.5,
 };
 
-const primaryDisabled = {
-  ...primaryBtn, opacity: 0.4, cursor: 'default', pointerEvents: 'none',
+const analyzeDisabled = {
+  ...analyzeBtn, opacity: 0.4, cursor: 'default', pointerEvents: 'none',
 };
 
 const selectStyle = {
@@ -28,12 +28,14 @@ const selectStyle = {
   fontFamily: FONTS.mono, cursor: 'pointer', outline: 'none', minWidth: 160,
 };
 
-export default function Header({ onClear, onUndo, canUndo, nodeCount, axialMode, onAxialModeChange }) {
+export default function Header({ onClear, onUndo, canUndo, nodeCount, axialMode, onAxialModeChange, onAnalyze, currentView, onBackToBuilder }) {
   function handleClear() {
     if (window.confirm('Clear the entire structure? This cannot be undone.')) {
       onClear();
     }
   }
+
+  const canAnalyze = nodeCount >= 2;
 
   return (
     <div style={{
@@ -55,32 +57,42 @@ export default function Header({ onClear, onUndo, canUndo, nodeCount, axialMode,
 
       {/* Actions */}
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        {/* EA mode dropdown */}
-        <span style={{ fontSize: 11, color: COLORS.textDim, fontWeight: 600 }}>Axial Rigidity:</span>
-        <select value={axialMode || 'mixed'} onChange={e => onAxialModeChange(e.target.value)} style={selectStyle}>
-          <option value="all-rigid">{`All Rigid (EA=\u221E)`}</option>
-          <option value="all-deformable">All Deformable</option>
-          <option value="mixed">Mixed (per member)</option>
-        </select>
+        {currentView === 'builder' ? (
+          <>
+            {/* EA mode dropdown */}
+            <span style={{ fontSize: 11, color: COLORS.textDim, fontWeight: 600 }}>Axial Rigidity:</span>
+            <select value={axialMode || 'mixed'} onChange={e => onAxialModeChange(e.target.value)} style={selectStyle}>
+              <option value="all-rigid">{`All Rigid (EA=\u221E)`}</option>
+              <option value="all-deformable">All Deformable</option>
+              <option value="mixed">Mixed (per member)</option>
+            </select>
 
-        <button onClick={handleClear} style={secondaryBtn}
-          onMouseOver={e => e.currentTarget.style.background = COLORS.bgCard}
-          onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
-          Clear
-        </button>
+            <button onClick={handleClear} style={secondaryBtn}
+              onMouseOver={e => e.currentTarget.style.background = COLORS.bgCard}
+              onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
+              Clear
+            </button>
 
-        <button onClick={onUndo} style={canUndo ? secondaryBtn : disabledBtn}
-          onMouseOver={e => { if (canUndo) e.currentTarget.style.background = COLORS.bgCard; }}
-          onMouseOut={e => { if (canUndo) e.currentTarget.style.background = 'transparent'; }}>
-          &#8617; Undo
-        </button>
+            <button onClick={onUndo} style={canUndo ? secondaryBtn : disabledBtn}
+              onMouseOver={e => { if (canUndo) e.currentTarget.style.background = COLORS.bgCard; }}
+              onMouseOut={e => { if (canUndo) e.currentTarget.style.background = 'transparent'; }}>
+              &#8617; Undo
+            </button>
 
-        <button style={nodeCount >= 2 ? primaryBtn : primaryDisabled}
-          onMouseOver={e => { if (nodeCount >= 2) e.currentTarget.style.background = COLORS.greenDarker; }}
-          onMouseOut={e => { if (nodeCount >= 2) e.currentTarget.style.background = COLORS.greenDark; }}
-          onClick={() => { if (nodeCount >= 2) console.log('analyze'); }}>
-          Analyze &rarr;
-        </button>
+            <button style={canAnalyze ? analyzeBtn : analyzeDisabled}
+              onMouseOver={e => { if (canAnalyze) e.currentTarget.style.background = COLORS.greenDarker; }}
+              onMouseOut={e => { if (canAnalyze) e.currentTarget.style.background = COLORS.greenDark; }}
+              onClick={() => { if (canAnalyze && onAnalyze) onAnalyze(); }}>
+              Analyze &rarr;
+            </button>
+          </>
+        ) : (
+          <button onClick={onBackToBuilder} style={secondaryBtn}
+            onMouseOver={e => e.currentTarget.style.background = COLORS.bgCard}
+            onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
+            &larr; Back to Builder
+          </button>
+        )}
       </div>
     </div>
   );

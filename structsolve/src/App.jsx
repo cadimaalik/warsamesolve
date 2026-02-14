@@ -19,6 +19,8 @@ import StartOverlay from './components/popups/StartOverlay.jsx';
 import MemberActionBar from './components/popups/MemberActionBar.jsx';
 import PointLoadInput from './components/popups/PointLoadInput.jsx';
 import DistributedLoadInput from './components/popups/DistributedLoadInput.jsx';
+import AnalysisPage from './components/AnalysisPage.jsx';
+import SolverPage from './components/SolverPage.jsx';
 
 export default function App() {
   const {
@@ -32,6 +34,11 @@ export default function App() {
     startConnect, cancelConnect, reset, hideStartOverlay, showStartOverlay, setDirection,
   } = useUI();
 
+  // View switching: 'builder' | 'analyze' | 'solver'
+  const [currentView, setCurrentView] = useState('builder');
+  const [solverMethod, setSolverMethod] = useState('');
+  const [validationError, setValidationError] = useState(null);
+
   const svgRef = useRef(null);
   const { viewBox, panning, svgProps, fitToNodes, zoomIn, zoomOut } = usePanZoom();
   const { nodes, members, settings } = structure;
@@ -44,6 +51,54 @@ export default function App() {
   useEffect(() => {
     if (nodes.length > 0) fitToNodes(nodes);
   }, [nodes.length]);
+
+  // Clear validation error after 4 seconds
+  useEffect(() => {
+    if (validationError) {
+      const t = setTimeout(() => setValidationError(null), 4000);
+      return () => clearTimeout(t);
+    }
+  }, [validationError]);
+
+  // --- Analyze handler ---
+  const handleAnalyze = useCallback(() => {
+    if (nodes.length < 2) {
+      setValidationError('Cannot analyze: need at least 2 nodes');
+      return;
+    }
+    if (members.length < 1) {
+      setValidationError('Cannot analyze: need at least 1 member');
+      return;
+    }
+    const hasSupport = nodes.some(n => !!n.support);
+    if (!hasSupport) {
+      setValidationError('Cannot analyze: no supports defined');
+      return;
+    }
+    const hasLoad = nodes.some(n => n.loads && (n.loads.fx || n.loads.fy || n.loads.moment))
+      || members.some(m => m.distributedLoads && m.distributedLoads.length > 0);
+    if (!hasLoad) {
+      setValidationError('Cannot analyze: no loads applied');
+      return;
+    }
+
+    setValidationError(null);
+    reset();
+    setCurrentView('analyze');
+  }, [nodes, members, reset]);
+
+  const handleBackToBuilder = useCallback(() => {
+    setCurrentView('builder');
+  }, []);
+
+  const handleLaunchMethod = useCallback((methodName) => {
+    setSolverMethod(methodName);
+    setCurrentView('solver');
+  }, []);
+
+  const handleBackToMethods = useCallback(() => {
+    setCurrentView('analyze');
+  }, []);
 
   // --- Handlers ---
 
@@ -138,9 +193,10 @@ export default function App() {
       else if (ui.activeNodeId) { removeNode(ui.activeNodeId); reset(); }
     }, [ui.activeMemberId, ui.activeNodeId, removeMember, removeNode, reset]),
     onEscape: useCallback(() => {
+      if (currentView !== 'builder') { setCurrentView('builder'); return; }
       if (ui.connectMode) { setConnectTarget(null); cancelConnect(); }
       closePopup();
-    }, [ui.connectMode, cancelConnect, closePopup]),
+    }, [currentView, ui.connectMode, cancelConnect, closePopup]),
     onFit: useCallback(() => { if (nodes.length > 0) fitToNodes(nodes); }, [nodes, fitToNodes]),
   });
 
@@ -296,39 +352,73 @@ export default function App() {
       <Header
         onClear={handleClear} onUndo={undo} canUndo={canUndo} nodeCount={nodes.length}
         axialMode={settings.axialMode} onAxialModeChange={setGlobalAxialMode}
+        onAnalyze={handleAnalyze}
+        currentView={currentView}
+        onBackToBuilder={handleBackToBuilder}
       />
 
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden', background: COLORS.canvasBg }}>
-        <SidePanel
-          nodes={nodes} members={members}
-          activeNodeId={ui.activeNodeId} activeMemberId={ui.activeMemberId}
-          onSelectNode={selectNode} onSelectMember={selectMember}
-          onDeleteNode={handleDeleteNode} onDeleteMember={handleDeleteMember}
-          onUpdateMember={updateMember}
-          globalAxialMode={settings.axialMode}
-          onRemoveDL={removeDistributedLoad}
-          onUpdateDL={updateDistributedLoad}
-        />
+      {/* Validation error toast */}
+      {validationError && (
+        <div style={{
+          background: '#7f1d1d', color: '#fca5a5', padding: '8px 16px',
+          fontSize: 12, fontFamily: FONTS.mono, fontWeight: 600,
+          textAlign: 'center',
+        }}>
+          {validationError}
+        </div>
+      )}
 
-        <div style={{ flex: 1, position: 'relative', overflow: 'hidden', background: COLORS.canvasBg }}>
-          <Canvas
-            nodes={nodes} members={members} ui={ui}
-            svgRef={svgRef} viewBox={viewBox} svgProps={svgProps} panning={panning}
+      {/* View switching */}
+      {currentView === 'builder' && (
+        <div style={{ display: 'flex', flex: 1, overflow: 'hidden', background: COLORS.canvasBg }}>
+          <SidePanel
+            nodes={nodes} members={members}
+            activeNodeId={ui.activeNodeId} activeMemberId={ui.activeMemberId}
             onSelectNode={selectNode} onSelectMember={selectMember}
-            onCanvasClick={reset} onConnectTarget={handleConnectTarget}
-            onZoomIn={zoomIn} onZoomOut={zoomOut}
-            onFit={() => { if (nodes.length > 0) fitToNodes(nodes); }}
+            onDeleteNode={handleDeleteNode} onDeleteMember={handleDeleteMember}
+            onUpdateMember={updateMember}
             globalAxialMode={settings.axialMode}
+            onRemoveDL={removeDistributedLoad}
+            onUpdateDL={updateDistributedLoad}
           />
 
-          {ui.showStartOverlay && nodes.length === 0 && (
-            <StartOverlay onCreate={handleCreateBeam} />
-          )}
+          <div style={{ flex: 1, position: 'relative', overflow: 'hidden', background: COLORS.canvasBg }}>
+            <Canvas
+              nodes={nodes} members={members} ui={ui}
+              svgRef={svgRef} viewBox={viewBox} svgProps={svgProps} panning={panning}
+              onSelectNode={selectNode} onSelectMember={selectMember}
+              onCanvasClick={reset} onConnectTarget={handleConnectTarget}
+              onZoomIn={zoomIn} onZoomOut={zoomOut}
+              onFit={() => { if (nodes.length > 0) fitToNodes(nodes); }}
+              globalAxialMode={settings.axialMode}
+            />
 
-          {renderPopup()}
-          {renderConnectFlow()}
+            {ui.showStartOverlay && nodes.length === 0 && (
+              <StartOverlay onCreate={handleCreateBeam} />
+            )}
+
+            {renderPopup()}
+            {renderConnectFlow()}
+          </div>
         </div>
-      </div>
+      )}
+
+      {currentView === 'analyze' && (
+        <AnalysisPage
+          nodes={nodes} members={members}
+          onEdit={handleBackToBuilder}
+          onLaunchMethod={handleLaunchMethod}
+        />
+      )}
+
+      {currentView === 'solver' && (
+        <SolverPage
+          nodes={nodes} members={members}
+          methodName={solverMethod}
+          onBack={handleBackToMethods}
+          onEdit={handleBackToBuilder}
+        />
+      )}
     </div>
   );
 }
