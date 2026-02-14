@@ -43,7 +43,7 @@ export default function Canvas({
 
   return (
     <div style={{
-      flex: 1, position: 'relative', background: COLORS.canvasBg, overflow: 'hidden',
+      width: '100%', height: '100%', position: 'relative', background: COLORS.canvasBg, overflow: 'hidden',
       userSelect: 'none', WebkitUserSelect: 'none',
     }}>
       {/* Connect mode banner */}
