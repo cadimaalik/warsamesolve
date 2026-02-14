@@ -16,6 +16,7 @@ export default function NodeDot({ node, members, allNodes, isSelected, isConnect
   const hasAnyHinge = hingedMembers.length > 0;
   const allHinged = connected.length > 0 && hingedMembers.length === connected.length;
   const hasSupport = !!node.support;
+  const isPinOrRoller = node.support === 'pin' || node.support === 'roller-h' || node.support === 'roller-v';
   const isFreeEnd = connected.length <= 1;
 
   // Visible dot: only at unsupported free-end nodes with no hinges
@@ -42,14 +43,20 @@ export default function NodeDot({ node, members, allNodes, isSelected, isConnect
           fill="#1a1f2b" stroke={STROKE} strokeWidth={1.5} />
       )}
 
-      {/* Hinge indicators */}
-      {hasAnyHinge && allHinged && (
-        /* All members hinged at this node: one circle at center (pure pin joint) */
+      {/* White dot at pin/roller supports — always shown */}
+      {isPinOrRoller && (
         <circle cx={node.x} cy={node.y} r={5}
           fill="#ffffff" stroke={STROKE} strokeWidth={1.5} />
       )}
-      {hasAnyHinge && !allHinged && !hasSupport && (
-        /* Unsupported node with only some members hinged: offset circles along each hinged member */
+
+      {/* Hinge indicators at unsupported nodes */}
+      {!hasSupport && hasAnyHinge && allHinged && (
+        /* All members hinged at unsupported node: one circle at center */
+        <circle cx={node.x} cy={node.y} r={5}
+          fill="#ffffff" stroke={STROKE} strokeWidth={1.5} />
+      )}
+      {!hasSupport && hasAnyHinge && !allHinged && (
+        /* Unsupported node with only some members hinged: offset circles */
         hingedMembers.map(m => {
           const otherId = m.startNodeId === node.id ? m.endNodeId : m.startNodeId;
           const other = allNodes ? allNodes.find(n => n.id === otherId) : null;
