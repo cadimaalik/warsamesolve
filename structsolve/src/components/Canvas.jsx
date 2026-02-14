@@ -134,16 +134,17 @@ export default function Canvas({
           );
         })}
 
-        {/* Layer 1.5: White dots at pin/roller supports — BELOW members when rigidly connected */}
+        {/* Layer 1.5: White dots at pin/roller supports BEHIND members (when hinged) */}
         {nodes.map(n => {
-          if (n.support !== 'pin' && n.support !== 'roller-h' && n.support !== 'roller-v') return null;
+          const isPinOrRoller = n.support === 'pin' || n.support === 'roller-h' || n.support === 'roller-v';
+          if (!isPinOrRoller) return null;
           const connected = members.filter(m => m.startNodeId === n.id || m.endNodeId === n.id);
           const hasHinge = connected.some(m => {
             if (m.startNodeId === n.id && m.startHinge) return true;
             if (m.endNodeId === n.id && m.endHinge) return true;
             return false;
           });
-          if (hasHinge) return null; // rendered later in NodeDot layer (on top of members)
+          if (!hasHinge) return null; // rigid: no dot at all
           return (
             <circle key={'supdot-' + n.id} cx={n.x} cy={n.y} r={5}
               fill="#ffffff" stroke="#374151" strokeWidth={1.5} />
