@@ -7,11 +7,11 @@ const SELECT_C = 'rgba(74, 222, 128, 0.2)';
 
 export default function MemberLine({ member, startNode, endNode, isSelected, onSelect }) {
   const isTruss = member.type === 'truss';
-  const isDeformable = !isTruss && member.EI_factor !== 1;
+  const axiallyDeformable = isTruss || (member.axialStiffness === 'deformable');
 
   let strokeColor = FRAME_C;
   if (isTruss) strokeColor = TRUSS_C;
-  else if (isDeformable) strokeColor = DEFORM_C;
+  else if (axiallyDeformable) strokeColor = DEFORM_C;
 
   return (
     <g>

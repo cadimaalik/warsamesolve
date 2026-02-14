@@ -13,26 +13,32 @@ const toggleBtn = (active) => ({
   fontWeight: active ? 600 : 400, transition: 'all 0.15s',
 });
 
-export default function MemberDetail({ member, nodes, onUpdate, onDelete, onClose }) {
+const readOnlyField = {
+  padding: '5px 8px', borderRadius: 4, background: COLORS.bgInput,
+  border: `1px solid ${COLORS.borderLight}`, fontSize: 12,
+  fontFamily: "'JetBrains Mono', monospace",
+};
+
+export default function MemberDetail({ member, nodes, onUpdate, onDelete, onClose, globalAxialMode }) {
   const [eiFactor, setEiFactor] = useState(String(member.EI_factor));
+  const [eaFactor, setEaFactor] = useState(String(member.EA_factor || 1));
+  const [eaAbsolute, setEaAbsolute] = useState(String(member.EA_absolute || 200000));
 
   useEffect(() => {
     setEiFactor(String(member.EI_factor));
-  }, [member.id, member.EI_factor]);
+    setEaFactor(String(member.EA_factor || 1));
+    setEaAbsolute(String(member.EA_absolute || 200000));
+  }, [member.id, member.EI_factor, member.EA_factor, member.EA_absolute]);
 
   const startNode = nodes.find(n => n.id === member.startNodeId);
   const endNode = nodes.find(n => n.id === member.endNodeId);
   const computedLength = getMemberLength(member);
   const isTruss = member.type === 'truss';
 
-  function commitEI() {
-    const v = parseFloat(eiFactor);
-    if (v && v > 0 && v !== member.EI_factor) onUpdate(member.id, { EI_factor: v });
-  }
-
-  function handleKey(e, commitFn) {
-    if (e.key === 'Enter') commitFn();
-  }
+  const axialStiffness = member.axialStiffness || 'rigid';
+  const eaMode = member.EA_mode || 'relative';
+  const isDeformable = isTruss || axialStiffness === 'deformable';
+  const globalOverride = globalAxialMode && globalAxialMode !== 'mixed';
 
   return (
     <div style={{
@@ -53,38 +59,18 @@ export default function MemberDetail({ member, nodes, onUpdate, onDelete, onClos
       {/* Length (read-only) */}
       <div style={{ marginBottom: 8 }}>
         <div style={labelStyle}>Length (m)</div>
-        <div style={{
-          padding: '5px 8px', borderRadius: 4, background: COLORS.bgInput,
-          border: `1px solid ${COLORS.borderLight}`, fontSize: 12,
-          color: COLORS.green, fontWeight: 600,
-          fontFamily: "'JetBrains Mono', monospace",
-        }}>
+        <div style={{ ...readOnlyField, color: COLORS.green, fontWeight: 600 }}>
           {computedLength} m
         </div>
       </div>
 
-      {/* Type */}
+      {/* Type (read-only) */}
       <div style={{ marginBottom: 8 }}>
         <div style={labelStyle}>Type</div>
-        <div style={{ display: 'flex', gap: 4 }}>
-          <button style={toggleBtn(member.type === 'frame')}
-            onClick={() => onUpdate(member.id, { type: 'frame' })}>Frame</button>
-          <button style={toggleBtn(member.type === 'truss')}
-            onClick={() => onUpdate(member.id, { type: 'truss' })}>Truss</button>
+        <div style={{ ...readOnlyField, color: COLORS.textPrimary }}>
+          {isTruss ? 'Truss' : 'Frame'}
         </div>
       </div>
-
-      {/* EI Factor (frame only) */}
-      {!isTruss && (
-        <div style={{ marginBottom: 8 }}>
-          <div style={labelStyle}>EI Factor</div>
-          <NumberInput value={eiFactor} onChange={v => {
-            setEiFactor(v);
-            const pv = parseFloat(v);
-            if (pv && pv > 0 && pv !== member.EI_factor) onUpdate(member.id, { EI_factor: pv });
-          }} min="0.1" />
-        </div>
-      )}
 
       {/* Connection at start (frame only — truss always hinged) */}
       {!isTruss && (
@@ -101,7 +87,7 @@ export default function MemberDetail({ member, nodes, onUpdate, onDelete, onClos
 
       {/* Connection at end (frame only) */}
       {!isTruss && (
-        <div style={{ marginBottom: 10 }}>
+        <div style={{ marginBottom: 8 }}>
           <div style={labelStyle}>Connection at {endNode?.id || 'end'}</div>
           <div style={{ display: 'flex', gap: 4 }}>
             <button style={toggleBtn(!member.endHinge)}
@@ -109,6 +95,87 @@ export default function MemberDetail({ member, nodes, onUpdate, onDelete, onClos
             <button style={toggleBtn(member.endHinge)}
               onClick={() => onUpdate(member.id, { endHinge: true })}>Hinge</button>
           </div>
+        </div>
+      )}
+
+      {/* Axial Stiffness */}
+      <div style={{ marginBottom: 8 }}>
+        <div style={labelStyle}>Axial Stiffness</div>
+        {globalOverride ? (
+          <div style={{ fontSize: 10, color: '#f59e0b', padding: '4px 0' }}>
+            Global: all members axially {globalAxialMode === 'all-rigid' ? 'rigid' : 'deformable'}
+          </div>
+        ) : !isTruss ? (
+          <div style={{ display: 'flex', gap: 4, marginBottom: isDeformable ? 6 : 0 }}>
+            <button style={toggleBtn(axialStiffness === 'rigid')}
+              onClick={() => onUpdate(member.id, { axialStiffness: 'rigid' })}>Rigid</button>
+            <button style={toggleBtn(axialStiffness === 'deformable')}
+              onClick={() => onUpdate(member.id, { axialStiffness: 'deformable' })}>Deformable</button>
+          </div>
+        ) : (
+          <div style={{ fontSize: 10, color: COLORS.textMuted, padding: '2px 0', marginBottom: 4 }}>
+            Truss: always deformable
+          </div>
+        )}
+
+        {/* EA input (shown when deformable and no global override) */}
+        {isDeformable && !globalOverride && (
+          <>
+            <div style={{ display: 'flex', gap: 4, marginBottom: 6 }}>
+              <button style={toggleBtn(eaMode === 'relative')}
+                onClick={() => onUpdate(member.id, { EA_mode: 'relative' })}>Relative</button>
+              <button style={toggleBtn(eaMode === 'absolute')}
+                onClick={() => onUpdate(member.id, { EA_mode: 'absolute' })}>Absolute</button>
+            </div>
+            {eaMode === 'relative' ? (
+              <div>
+                <div style={labelStyle}>EA Multiplier</div>
+                <NumberInput value={eaFactor} onChange={v => {
+                  setEaFactor(v);
+                  const pv = parseFloat(v);
+                  if (pv && pv > 0) onUpdate(member.id, { EA_factor: pv });
+                }} min="0.1" />
+              </div>
+            ) : (
+              <div>
+                <div style={labelStyle}>EA (kN)</div>
+                <NumberInput value={eaAbsolute} onChange={v => {
+                  setEaAbsolute(v);
+                  const pv = parseFloat(v);
+                  if (pv && pv > 0) onUpdate(member.id, { EA_absolute: pv });
+                }} min="1" />
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* EI Factor (frame only) */}
+      {!isTruss && (
+        <div style={{ marginBottom: 8 }}>
+          <div style={labelStyle}>EI Factor</div>
+          <NumberInput value={eiFactor} onChange={v => {
+            setEiFactor(v);
+            const pv = parseFloat(v);
+            if (pv && pv > 0 && pv !== member.EI_factor) onUpdate(member.id, { EI_factor: pv });
+          }} min="0.1" />
+        </div>
+      )}
+
+      {/* Distributed loads summary */}
+      {(member.distributedLoads || []).length > 0 && (
+        <div style={{ marginBottom: 8 }}>
+          <div style={labelStyle}>Distributed Loads</div>
+          {member.distributedLoads.map(dl => (
+            <div key={dl.id} style={{
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              fontSize: 10, padding: '3px 6px', background: COLORS.bgInput, borderRadius: 3, marginBottom: 2,
+            }}>
+              <span style={{ color: COLORS.textMuted }}>
+                {dl.shape} &middot; {dl.startIntensity}/{dl.endIntensity} kN/m
+              </span>
+            </div>
+          ))}
         </div>
       )}
 
