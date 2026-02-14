@@ -6,12 +6,13 @@ function createNode(id, x, y, support = null) {
   return { id, x, y, support, loads: { fx: 0, fy: 0, moment: 0 }, hinge: false };
 }
 
-function createMember(startNodeId, endNodeId, length, type = 'frame', eiFactor = 1) {
+function createMember(startNodeId, endNodeId, type = 'frame', eiFactor = 1) {
   return {
     id: 'mem_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-    startNodeId, endNodeId, length,
+    startNodeId, endNodeId,
     type, EI_factor: eiFactor,
     startHinge: false, endHinge: false,
+    realDx: 0, realDy: 0,
   };
 }
 
@@ -65,8 +66,7 @@ export default function useStructure() {
         }
 
         if (useOverlap) {
-          const autoLen = Math.round(Math.sqrt(rdx * rdx + rdy * rdy) * 100) / 100;
-          const newMem = createMember(fromNodeId, overlap.id, autoLen, type, eiFactor);
+          const newMem = createMember(fromNodeId, overlap.id, type, eiFactor);
           newMem.startHinge = startHinge;
           newMem.realDx = rdx;
           newMem.realDy = rdy;
@@ -82,11 +82,10 @@ export default function useStructure() {
         finalY += dir.dy * MEMBER_SPACING * 0.5;
       }
       const newNode = createNode(newId, finalX, finalY, newNodeSupport || null);
-      // Always compute length from real-world displacement to avoid pixel-based errors
+      // Store real-world displacement — length is computed on-the-fly
       const rdx = realDx || 0;
       const rdy = realDy || 0;
-      const computedLength = Math.round(Math.sqrt(rdx * rdx + rdy * rdy) * 100) / 100;
-      const newMem = createMember(fromNodeId, newId, computedLength, type, eiFactor);
+      const newMem = createMember(fromNodeId, newId, type, eiFactor);
       newMem.startHinge = startHinge;
       newMem.realDx = rdx;
       newMem.realDy = rdy;
@@ -107,9 +106,7 @@ export default function useStructure() {
       const coords = computeRealCoordinates(prev.nodes, prev.members);
       const rdx = (coords[toId]?.x ?? 0) - (coords[fromId]?.x ?? 0);
       const rdy = (coords[toId]?.y ?? 0) - (coords[fromId]?.y ?? 0);
-      // Always compute length from real-world displacement
-      const computedLength = Math.round(Math.sqrt(rdx * rdx + rdy * rdy) * 100) / 100;
-      const newMem = createMember(fromId, toId, computedLength, type, eiFactor);
+      const newMem = createMember(fromId, toId, type, eiFactor);
       newMem.startHinge = startHinge;
       newMem.endHinge = endHinge;
       newMem.realDx = rdx;
@@ -178,7 +175,7 @@ export default function useStructure() {
     const by = isVert ? 300 + MEMBER_SPACING : 300;
     const nodeA = createNode('A', 200, 300, supportA);
     const nodeB = createNode('B', bx, by, supportB);
-    const mem = createMember('A', 'B', length, type);
+    const mem = createMember('A', 'B', type);
     mem.realDx = isVert ? 0 : length;
     mem.realDy = isVert ? length : 0;
     setStructure(prev => ({

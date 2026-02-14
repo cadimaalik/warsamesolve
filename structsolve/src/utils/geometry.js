@@ -1,4 +1,14 @@
 /**
+ * Compute member length from real-world displacement.
+ * Always use this instead of accessing member.length directly.
+ */
+export function getMemberLength(member) {
+  if (!member.realDx && !member.realDy) return 0;
+  const len = Math.sqrt(member.realDx * member.realDx + member.realDy * member.realDy);
+  return Math.round(len * 100) / 100;
+}
+
+/**
  * Compute support auto-rotation angle based on connected members.
  * Returns:
  *   0   — support faces DOWN (default, member goes up)
@@ -75,29 +85,14 @@ export function computeRealCoordinates(nodes, members) {
       else if (m.endNodeId === curId) otherId = m.startNodeId;
       if (!otherId || visited.has(otherId)) return;
 
-      if (m.realDx != null && m.realDy != null) {
-        // Use stored real-world displacement (start → end)
-        // If we're traversing end → start, flip the sign
-        const flip = (m.endNodeId === curId) ? -1 : 1;
-        realCoords[otherId] = {
-          x: realCoords[curId].x + m.realDx * flip,
-          y: realCoords[curId].y + m.realDy * flip,
-        };
-      } else {
-        // Fallback: pixel direction scaled by member length
-        const curNode = nodes.find(n => n.id === curId);
-        const otherNode = nodes.find(n => n.id === otherId);
-        if (!curNode || !otherNode) return;
-        const pdx = otherNode.x - curNode.x;
-        const pdy = otherNode.y - curNode.y;
-        const pixDist = Math.sqrt(pdx * pdx + pdy * pdy);
-        if (pixDist < 1) return;
-        const scale = m.length / pixDist;
-        realCoords[otherId] = {
-          x: realCoords[curId].x + pdx * scale,
-          y: realCoords[curId].y + pdy * scale,
-        };
-      }
+      // Use stored real-world displacement (start → end)
+      // If we're traversing end → start, flip the sign
+      if (!m.realDx && !m.realDy) return; // Skip members without real displacement
+      const flip = (m.endNodeId === curId) ? -1 : 1;
+      realCoords[otherId] = {
+        x: realCoords[curId].x + m.realDx * flip,
+        y: realCoords[curId].y + m.realDy * flip,
+      };
 
       visited.add(otherId);
       queue.push(otherId);

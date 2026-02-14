@@ -3,6 +3,7 @@ import { COLORS } from '../constants/brand.js';
 import { SUPPORT_TYPES } from '../constants/supports.js';
 import { classify } from '../utils/analysis.js';
 import MemberDetail from './MemberDetail.jsx';
+import { getMemberLength } from '../utils/geometry.js';
 
 const sectionTitle = { fontSize: 11, color: COLORS.textDim, fontWeight: 700, marginBottom: 6, letterSpacing: 1 };
 
@@ -36,7 +37,7 @@ function MemberRow({ member, isActive, onSelect, onDelete }) {
       <span style={{ fontSize: 11, color: COLORS.textPrimary, fontWeight: 600, minWidth: 42 }}>
         {member.startNodeId}&rarr;{member.endNodeId}
       </span>
-      <span style={{ fontSize: 11, color: COLORS.textMuted, minWidth: 30 }}>{member.length}m</span>
+      <span style={{ fontSize: 11, color: COLORS.textMuted, minWidth: 30 }}>{getMemberLength(member)}m</span>
       <span style={{
         fontSize: 9, padding: '1px 5px', borderRadius: 3, fontWeight: 600,
         background: isTruss ? 'rgba(194,65,12,0.15)' : COLORS.bgInput,

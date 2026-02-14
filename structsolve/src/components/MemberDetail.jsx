@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { COLORS } from '../constants/brand.js';
+import { getMemberLength } from '../utils/geometry.js';
 
 const inputStyle = {
   width: '100%', padding: '5px 8px', borderRadius: 4,
@@ -19,20 +20,28 @@ const toggleBtn = (active) => ({
 });
 
 export default function MemberDetail({ member, nodes, onUpdate, onDelete, onClose }) {
-  const [length, setLength] = useState(String(member.length));
+  const [realDx, setRealDx] = useState(String(member.realDx || 0));
+  const [realDy, setRealDy] = useState(String(member.realDy || 0));
   const [eiFactor, setEiFactor] = useState(String(member.EI_factor));
 
   useEffect(() => {
-    setLength(String(member.length));
+    setRealDx(String(member.realDx || 0));
+    setRealDy(String(member.realDy || 0));
     setEiFactor(String(member.EI_factor));
-  }, [member.id, member.length, member.EI_factor]);
+  }, [member.id, member.realDx, member.realDy, member.EI_factor]);
 
   const startNode = nodes.find(n => n.id === member.startNodeId);
   const endNode = nodes.find(n => n.id === member.endNodeId);
+  const computedLength = getMemberLength(member);
 
-  function commitLength() {
-    const v = parseFloat(length);
-    if (v && v > 0 && v !== member.length) onUpdate(member.id, { length: v });
+  function commitRealDx() {
+    const v = parseFloat(realDx);
+    if (!isNaN(v) && v !== (member.realDx || 0)) onUpdate(member.id, { realDx: v });
+  }
+
+  function commitRealDy() {
+    const v = parseFloat(realDy);
+    if (!isNaN(v) && v !== (member.realDy || 0)) onUpdate(member.id, { realDy: v });
   }
 
   function commitEI() {
@@ -60,12 +69,26 @@ export default function MemberDetail({ member, nodes, onUpdate, onDelete, onClos
         }}>&times;</button>
       </div>
 
-      {/* Length */}
+      {/* Real-world displacement */}
       <div style={{ marginBottom: 8 }}>
-        <div style={labelStyle}>Length (m)</div>
-        <input type="number" value={length} onChange={e => setLength(e.target.value)}
-          onBlur={commitLength} onKeyDown={e => handleKey(e, commitLength)}
-          style={inputStyle} min="0.1" step="1" />
+        <div style={labelStyle}>Real Displacement (m)</div>
+        <div style={{ display: 'flex', gap: 4 }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 9, color: COLORS.textDim, marginBottom: 2 }}>dx</div>
+            <input type="number" value={realDx} onChange={e => setRealDx(e.target.value)}
+              onBlur={commitRealDx} onKeyDown={e => handleKey(e, commitRealDx)}
+              style={inputStyle} step="0.1" />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 9, color: COLORS.textDim, marginBottom: 2 }}>dy</div>
+            <input type="number" value={realDy} onChange={e => setRealDy(e.target.value)}
+              onBlur={commitRealDy} onKeyDown={e => handleKey(e, commitRealDy)}
+              style={inputStyle} step="0.1" />
+          </div>
+        </div>
+        <div style={{ fontSize: 10, color: COLORS.textMuted, marginTop: 4 }}>
+          Length: {computedLength}m
+        </div>
       </div>
 
       {/* Type */}
