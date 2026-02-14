@@ -8,12 +8,12 @@ export function identifyUnknowns(nodes) {
 
     // Each support type contributes specific reaction components
     const supportMap = {
-      'pin':      ['Rx', 'Ry'],           // 2 reactions
-      'roller-h': ['Ry'],                  // moves horizontally, blocks vertical
-      'roller-v': ['Rx'],                  // moves vertically, blocks horizontal
-      'fixed':    ['Rx', 'Ry', 'M'],       // 3 reactions
-      'guide-h':  ['Ry', 'M'],             // moves horizontally, blocks Ry + moment
-      'guide-v':  ['Rx', 'M'],             // moves vertically, blocks Rx + moment
+      'pin':      ['Rx', 'Ry'],
+      'roller-h': ['Ry'],
+      'roller-v': ['Rx'],
+      'fixed':    ['Rx', 'Ry', 'M'],
+      'guide-h':  ['Ry', 'M'],
+      'guide-v':  ['Rx', 'M'],
     };
 
     const types = supportMap[node.support];

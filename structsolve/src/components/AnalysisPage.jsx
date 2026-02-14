@@ -154,10 +154,9 @@ export default function AnalysisPage({ nodes, members, structure, onEdit, onLaun
               return <DimensionLine key={'dim-' + m.id} startNode={sn} endNode={en} length={getMemberLength(m)} />;
             })}
 
-            {/* Layer 1.5: White dots at pin/roller when all hinged */}
+            {/* Layer 1.5: White dots at supports when all hinged */}
             {nodes.map(n => {
-              const isPinOrRoller = n.support === 'pin' || n.support === 'roller-h' || n.support === 'roller-v';
-              if (!isPinOrRoller) return null;
+              if (!n.support) return null;
               const connected = members.filter(m => m.startNodeId === n.id || m.endNodeId === n.id);
               if (connected.length === 0) return null;
               const allHinged = connected.every(m => {
