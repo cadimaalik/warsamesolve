@@ -95,55 +95,61 @@ export default function DistributedLoadArrows({ member, startNode, endNode }) {
       tailLine = <path key={`${dl.id}-line`} d={pathD} fill="none" stroke={C} strokeWidth={1.5} />;
     }
 
-    // Intensity labels at start and end
+    // Intensity labels
     const sRatio = startPos / totalLength;
     const eRatio = endPos / totalLength;
     const labelSx = startNode.x + dx * sRatio;
     const labelSy = startNode.y + dy * sRatio;
     const labelEx = startNode.x + dx * eRatio;
     const labelEy = startNode.y + dy * eRatio;
+    const midLx = (labelSx + labelEx) / 2;
+    const midLy = (labelSy + labelEy) / 2;
 
-    // Offset labels away from member
+    // Direction away from member for label offset (same as arrow direction)
+    const refIntensity = startIntensity !== 0 ? startIntensity : endIntensity;
     let labelDirX, labelDirY;
     if (direction === 'global-y') {
       labelDirX = 0;
-      labelDirY = startIntensity >= 0 ? -1 : 1;
+      labelDirY = refIntensity >= 0 ? -1 : 1;
     } else if (direction === 'global-x') {
-      labelDirX = startIntensity >= 0 ? 1 : -1;
+      labelDirX = refIntensity >= 0 ? 1 : -1;
       labelDirY = 0;
     } else {
-      labelDirX = Math.cos(perpAngle) * (startIntensity >= 0 ? 1 : -1);
-      labelDirY = Math.sin(perpAngle) * (startIntensity >= 0 ? 1 : -1);
+      labelDirX = Math.cos(perpAngle) * (refIntensity >= 0 ? 1 : -1);
+      labelDirY = Math.sin(perpAngle) * (refIntensity >= 0 ? 1 : -1);
     }
-    const labelOffset = MAX_ARROW + 22;
+    // Place labels just outside the connecting line (tail line)
+    const labelOffset = MAX_ARROW + 18;
+
+    const isUDL = startIntensity === endIntensity;
+
+    function renderLabel(cx, cy, value) {
+      return (
+        <g>
+          <rect x={cx + labelDirX * labelOffset - 30} y={cy + labelDirY * labelOffset - 8}
+            width={60} height={16} rx={2} fill="white" fillOpacity={0.85} />
+          <text x={cx + labelDirX * labelOffset} y={cy + labelDirY * labelOffset + 4}
+            textAnchor="middle" fontSize={10} fill={C}
+            fontFamily="'JetBrains Mono', monospace" fontWeight={500}>
+            {Math.abs(value)} kN/m
+          </text>
+        </g>
+      );
+    }
 
     elements.push(
       <g key={dl.id}>
         {tailLine}
         {arrows}
-        {/* Start intensity label */}
-        {startIntensity !== 0 && (
-          <g>
-            <rect x={labelSx + labelDirX * labelOffset - 30} y={labelSy + labelDirY * labelOffset - 8}
-              width={60} height={16} rx={2} fill="white" fillOpacity={0.85} />
-            <text x={labelSx + labelDirX * labelOffset} y={labelSy + labelDirY * labelOffset + 4}
-              textAnchor="middle" fontSize={10} fill={C}
-              fontFamily="'JetBrains Mono', monospace" fontWeight={500}>
-              {Math.abs(startIntensity)} kN/m
-            </text>
-          </g>
-        )}
-        {/* End intensity label (if different from start) */}
-        {endIntensity !== startIntensity && endIntensity !== 0 && (
-          <g>
-            <rect x={labelEx + labelDirX * labelOffset - 30} y={labelEy + labelDirY * labelOffset - 8}
-              width={60} height={16} rx={2} fill="white" fillOpacity={0.85} />
-            <text x={labelEx + labelDirX * labelOffset} y={labelEy + labelDirY * labelOffset + 4}
-              textAnchor="middle" fontSize={10} fill={C}
-              fontFamily="'JetBrains Mono', monospace" fontWeight={500}>
-              {Math.abs(endIntensity)} kN/m
-            </text>
-          </g>
+        {isUDL ? (
+          /* UDL: single centered label */
+          startIntensity !== 0 && renderLabel(midLx, midLy, startIntensity)
+        ) : (
+          /* Triangular / Trapezoidal: labels at both ends */
+          <>
+            {startIntensity !== 0 && renderLabel(labelSx, labelSy, startIntensity)}
+            {endIntensity !== 0 && renderLabel(labelEx, labelEy, endIntensity)}
+          </>
         )}
       </g>
     );

@@ -48,8 +48,8 @@ export default function NodeDot({ node, members, allNodes, isSelected, isConnect
         <circle cx={node.x} cy={node.y} r={5}
           fill="#ffffff" stroke={STROKE} strokeWidth={1.5} />
       )}
-      {hasAnyHinge && !allHinged && (
-        /* Only some members hinged: offset circle along each hinged member's direction */
+      {hasAnyHinge && !allHinged && !hasSupport && (
+        /* Unsupported node with only some members hinged: offset circles along each hinged member */
         hingedMembers.map(m => {
           const otherId = m.startNodeId === node.id ? m.endNodeId : m.startNodeId;
           const other = allNodes ? allNodes.find(n => n.id === otherId) : null;

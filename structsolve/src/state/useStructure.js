@@ -264,6 +264,38 @@ export default function useStructure() {
       mem2.EA_absolute = member.EA_absolute || null;
       mem2.EA_mode = member.EA_mode || 'relative';
 
+      // Redistribute distributed loads from original member to the two new members
+      const origDLs = member.distributedLoads || [];
+      const mem1Len = distance;
+      const mem2Len = totalLength - distance;
+      for (const dl of origDLs) {
+        const dlStart = dl.startPos;
+        const dlEnd = dl.endPos;
+        // DL entirely within mem1
+        if (dlEnd <= distance) {
+          mem1.distributedLoads.push({ ...dl, id: 'dl_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6) });
+        }
+        // DL entirely within mem2
+        else if (dlStart >= distance) {
+          mem2.distributedLoads.push({ ...dl, id: 'dl_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), startPos: dlStart - distance, endPos: dlEnd - distance });
+        }
+        // DL spans the split point — split into two
+        else {
+          const dlLen = dlEnd - dlStart;
+          const splitT = (distance - dlStart) / dlLen;
+          const midIntensity = dl.startIntensity + splitT * (dl.endIntensity - dl.startIntensity);
+          const roundedMid = Math.round(midIntensity * 100) / 100;
+          mem1.distributedLoads.push({
+            ...dl, id: 'dl_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+            endPos: distance, endIntensity: roundedMid,
+          });
+          mem2.distributedLoads.push({
+            ...dl, id: 'dl_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+            startPos: 0, endPos: dlEnd - distance, startIntensity: roundedMid,
+          });
+        }
+      }
+
       const remainingMembers = prev.members.filter(m => m.id !== memberId);
       return {
         ...prev,

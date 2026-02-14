@@ -12,8 +12,15 @@ const toggleBtn = (active) => ({
   fontWeight: active ? 600 : 400, transition: 'all 0.15s',
 });
 
+function getDefaultDirection(member) {
+  const angleDeg = Math.atan2(Math.abs(member.realDy), Math.abs(member.realDx)) * 180 / Math.PI;
+  if (angleDeg >= 60) return 'global-x';       // near-vertical → horizontal loads
+  if (angleDeg >= 30) return 'perpendicular';   // angled → perpendicular loads
+  return 'global-y';                            // near-horizontal → vertical loads
+}
+
 export default function DistributedLoadInput({ member, startNodeId, endNodeId, memberLength, isInclined, onApply, onCancel }) {
-  const [direction, setDirection] = useState('global-y');
+  const [direction, setDirection] = useState(() => getDefaultDirection(member));
   const [shape, setShape] = useState('udl');
   const [intensity, setIntensity] = useState('-10');
   const [startIntensity, setStartIntensity] = useState('-10');
