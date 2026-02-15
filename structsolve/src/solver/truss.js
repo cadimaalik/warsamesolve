@@ -1,5 +1,101 @@
 // truss.js — Method of Joints for Truss Member Forces
 
+/**
+ * Detect zero-force members before the main Method of Joints loop.
+ *
+ * Rules (applied at joints with NO external load and NO reactions):
+ *
+ * 1. Two non-collinear members meet → BOTH are zero-force.
+ * 2. Three members meet and two are collinear → the THIRD is zero-force.
+ *
+ * This is iterated because eliminating a zero-force member can reveal
+ * new zero-force members at neighbouring joints.
+ */
+function detectZeroForceMembers(nodes, members, reactions) {
+  const zeroForce = new Set();
+
+  // Helper: does this joint have any external load or reaction?
+  function hasExternalForce(nodeId) {
+    const node = nodes.find(n => n.id === nodeId);
+    if (!node) return false;
+    const fx = node.loads?.fx || 0;
+    const fy = node.loads?.fy || 0;
+    if (Math.abs(fx) > 1e-10 || Math.abs(fy) > 1e-10) return true;
+    return reactions.some(r => r.nodeId === nodeId);
+  }
+
+  // Helper: unit direction vector of a member FROM a given node
+  function unitDir(member, fromNodeId) {
+    const other = member.startNodeId === fromNodeId ? member.endNodeId : member.startNodeId;
+    const fn = nodes.find(n => n.id === fromNodeId);
+    const on = nodes.find(n => n.id === other);
+    const dx = on.x - fn.x;
+    const dy = on.y - fn.y;
+    const L = Math.sqrt(dx * dx + dy * dy);
+    if (L < 1e-12) return { cos: 0, sin: 0 };
+    return { cos: dx / L, sin: dy / L };
+  }
+
+  // Helper: are two direction vectors collinear (parallel or anti-parallel)?
+  function areCollinear(d1, d2) {
+    // Cross product ≈ 0 → collinear
+    return Math.abs(d1.cos * d2.sin - d1.sin * d2.cos) < 1e-6;
+  }
+
+  let progress = true;
+  while (progress) {
+    progress = false;
+
+    for (const node of nodes) {
+      if (hasExternalForce(node.id)) continue;
+
+      // Active (non-zero-force) truss members at this joint
+      const active = members.filter(m =>
+        m.type === 'truss' &&
+        !zeroForce.has(m.id) &&
+        (m.startNodeId === node.id || m.endNodeId === node.id)
+      );
+
+      if (active.length === 0) continue;
+
+      // Rule 1: exactly 2 non-collinear members → both zero-force
+      if (active.length === 2) {
+        const d1 = unitDir(active[0], node.id);
+        const d2 = unitDir(active[1], node.id);
+        if (!areCollinear(d1, d2)) {
+          zeroForce.add(active[0].id);
+          zeroForce.add(active[1].id);
+          progress = true;
+        }
+      }
+
+      // Rule 2: exactly 3 members, two collinear → third is zero-force
+      if (active.length === 3) {
+        const dirs = active.map(m => unitDir(m, node.id));
+        for (let i = 0; i < 3; i++) {
+          const j = (i + 1) % 3;
+          const k = (i + 2) % 3;
+          if (areCollinear(dirs[j], dirs[k])) {
+            // j and k are collinear → member i is zero-force
+            if (!zeroForce.has(active[i].id)) {
+              zeroForce.add(active[i].id);
+              progress = true;
+            }
+          }
+        }
+      }
+
+      // Rule 1 extended: single member at an unloaded joint → zero-force
+      if (active.length === 1) {
+        zeroForce.add(active[0].id);
+        progress = true;
+      }
+    }
+  }
+
+  return zeroForce;
+}
+
 export function solveTrussForces(nodes, members, reactions) {
   const trussMembers = members.filter(m => m.type === 'truss');
   if (trussMembers.length === 0) return [];
@@ -16,7 +112,14 @@ export function solveTrussForces(nodes, members, reactions) {
   const memberForces = {};  // memberId → force value
   const solved = new Set();
 
-  // Iterative: find joints with ≤ 2 unsolved truss members
+  // --- Phase 1: Detect and mark zero-force members ---
+  const zeroForceIds = detectZeroForceMembers(nodes, trussMembers, reactions);
+  for (const id of zeroForceIds) {
+    memberForces[id] = 0;
+    solved.add(id);
+  }
+
+  // --- Phase 2: Iterative Method of Joints ---
   let progress = true;
   let maxIterations = trussMembers.length * 2; // safety limit
 
@@ -98,7 +201,8 @@ export function solveTrussForces(nodes, members, reactions) {
     startLabel: m.startLabel,
     endLabel: m.endLabel,
     force: memberForces[m.id] || 0,
-    classification: classifyForce(memberForces[m.id] || 0)
+    classification: classifyForce(memberForces[m.id] || 0),
+    isZeroForceMember: zeroForceIds.has(m.id),
   }));
 }
 
