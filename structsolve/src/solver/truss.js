@@ -24,6 +24,16 @@ export function detectZeroForceMembers(nodes, members, reactions) {
     return reactions.some(r => r.nodeId === nodeId);
   }
 
+  // Helper: does this joint connect to any non-truss (frame) member?
+  // Frame members carry axial/shear/moment forces that invalidate
+  // the truss zero-force rules at mixed joints.
+  function hasFrameConnection(nodeId) {
+    return members.some(m =>
+      m.type !== 'truss' &&
+      (m.startNodeId === nodeId || m.endNodeId === nodeId)
+    );
+  }
+
   // Helper: unit direction vector of a member FROM a given node
   function unitDir(member, fromNodeId) {
     const other = member.startNodeId === fromNodeId ? member.endNodeId : member.startNodeId;
@@ -48,6 +58,7 @@ export function detectZeroForceMembers(nodes, members, reactions) {
 
     for (const node of nodes) {
       if (hasExternalForce(node.id)) continue;
+      if (hasFrameConnection(node.id)) continue;
 
       // Active (non-zero-force) truss members at this joint
       const active = members.filter(m =>
@@ -113,7 +124,8 @@ export function solveTrussForces(nodes, members, reactions) {
   const solved = new Set();
 
   // --- Phase 1: Detect and mark zero-force members ---
-  const zeroForceIds = detectZeroForceMembers(nodes, trussMembers, reactions);
+  // Pass ALL members so frame connections are visible to the detector
+  const zeroForceIds = detectZeroForceMembers(nodes, members, reactions);
   for (const id of zeroForceIds) {
     memberForces[id] = 0;
     solved.add(id);
@@ -131,6 +143,16 @@ export function solveTrussForces(nodes, members, reactions) {
       const unsolved = connMembers.filter(m => !solved.has(m.id));
 
       if (unsolved.length === 0 || unsolved.length > 2) continue;
+
+      // Skip joints with frame members — their internal forces (axial,
+      // shear, moment) are unknown to the truss solver, so equilibrium
+      // at this joint cannot be written in terms of truss forces alone.
+      // These truss members will be solved from their OTHER end instead.
+      const hasFrame = members.some(m =>
+        m.type !== 'truss' &&
+        (m.startNodeId === nodeId || m.endNodeId === nodeId)
+      );
+      if (hasFrame) continue;
 
       // Sum known forces at this joint
       let sumFx = node.loads.fx;
