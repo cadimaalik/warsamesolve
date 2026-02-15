@@ -38,7 +38,20 @@ export default function AnalysisPage({ nodes, members, structure, onEdit, onLaun
     }
   }, [solverError]);
 
-  const info = classify(nodes, members);
+  // DOF-based classification (necessary condition only)
+  const rawInfo = classify(nodes, members);
+
+  // For DOF = 0: verify geometric stability via solver matrix.
+  // DOF = 0 is necessary but NOT sufficient — concurrent members or
+  // missing diagonals can create mechanisms the formula can't detect.
+  let info = rawInfo;
+  if (rawInfo.status === 'determinate') {
+    const check = solveReactions(structure);
+    if (!check.success && check.error && check.error.includes('Singular')) {
+      info = { ...rawInfo, status: 'geometric_unstable' };
+    }
+  }
+
   const isDeterminate = info.status === 'determinate';
 
   const handleLaunch = (methodName) => {
