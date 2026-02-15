@@ -166,6 +166,15 @@ export function buildEquations(nodes, members, unknowns) {
     usedMomentPoints.add(nextPoint.id);
   }
 
+  // Trim to exactly n equations — overdetermined systems occur when hinge
+  // conditions add equations beyond the number of reaction unknowns (e.g.
+  // 3 global eqs + 1 hinge eq for only 3 unknowns).  The extra equations
+  // are redundant for a consistent system but cause the square-matrix
+  // Gaussian elimination to falsely report singularity.
+  if (equations.length > n) {
+    equations.length = n;
+  }
+
   // Store metadata for LaTeX generation later
   return {
     equations,
