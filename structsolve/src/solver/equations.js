@@ -119,6 +119,53 @@ export function buildEquations(nodes, members, unknowns) {
   const hingeEquations = buildHingeEquations(nodes, members, unknowns, knownForces);
   equations.push(...hingeEquations);
 
+  // ═══ Additional moment equations when more unknowns than equations ═══
+  // Common case: pure truss with 2 pin supports → 4 unknowns but only
+  // 3 global equations.  Taking ΣM about each additional support point
+  // eliminates that support's force unknowns and provides an independent
+  // equation.
+  const usedMomentPoints = new Set([mp.id]);
+  while (equations.length < n) {
+    let nextPoint = null;
+    let nextScore = -1;
+    for (const node of nodes) {
+      if (!node.support) continue;
+      if (usedMomentPoints.has(node.id)) continue;
+      const forceUnknowns = unknowns.filter(
+        u => u.nodeId === node.id && (u.type === 'Rx' || u.type === 'Ry')
+      ).length;
+      if (forceUnknowns > nextScore) {
+        nextScore = forceUnknowns;
+        nextPoint = node;
+      }
+    }
+    if (!nextPoint) break; // no more support points available
+
+    const eqExtra = {
+      coefficients: new Array(n).fill(0),
+      rhs: 0,
+      description: `\\sum M_{${nextPoint.label}} = 0`,
+      type: 'moment',
+      momentPoint: nextPoint
+    };
+    for (let i = 0; i < n; i++) {
+      const u = unknowns[i];
+      const dx = u.node.x - nextPoint.x;
+      const dy = u.node.y - nextPoint.y;
+      if (u.type === 'Rx') eqExtra.coefficients[i] = -dy;
+      else if (u.type === 'Ry') eqExtra.coefficients[i] = dx;
+      else if (u.type === 'M') eqExtra.coefficients[i] = 1;
+    }
+    for (const f of knownForces) {
+      const dx = f.x - nextPoint.x;
+      const dy = f.y - nextPoint.y;
+      const moment = dx * f.fy - dy * f.fx + (f.m || 0);
+      eqExtra.rhs -= moment;
+    }
+    equations.push(eqExtra);
+    usedMomentPoints.add(nextPoint.id);
+  }
+
   // Store metadata for LaTeX generation later
   return {
     equations,
