@@ -1,6 +1,23 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { nextNodeLabel, findOverlappingNode, computeRealCoordinates, getMemberLength } from '../utils/geometry.js';
 import { DIRECTIONS, MEMBER_SPACING, PIXELS_PER_METER } from '../constants/directions.js';
+
+const STORAGE_KEY = 'structsolve_state';
+
+const defaultState = {
+  nodes: [], members: [],
+  settings: { units: 'kN-m', stiffnessMode: 'relative', baseEI: null, axialMode: 'mixed' },
+};
+
+function loadSavedState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed && Array.isArray(parsed.nodes) && Array.isArray(parsed.members)) return parsed;
+  } catch { /* corrupted — ignore */ }
+  return null;
+}
 
 function createNode(id, x, y, support = null) {
   return { id, x, y, support, loads: { fx: 0, fy: 0, moment: 0 }, hinge: false };
@@ -22,11 +39,14 @@ function createMember(startNodeId, endNodeId, type = 'frame', eiFactor = 1) {
 }
 
 export default function useStructure() {
-  const [structure, setStructure] = useState({
-    nodes: [], members: [],
-    settings: { units: 'kN-m', stiffnessMode: 'relative', baseEI: null, axialMode: 'mixed' },
-  });
+  const [structure, setStructure] = useState(() => loadSavedState() || defaultState);
   const historyRef = useRef([]);
+
+  // Persist to localStorage on every state change
+  useEffect(() => {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(structure)); }
+    catch { /* quota exceeded — ignore */ }
+  }, [structure]);
 
   function pushHistory() {
     historyRef.current.push(JSON.parse(JSON.stringify(structure)));
@@ -172,6 +192,7 @@ export default function useStructure() {
   const clearAll = useCallback(() => {
     pushHistory();
     setStructure({ nodes: [], members: [], settings: structure.settings });
+    try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
   }, [structure]);
 
   const createInitialBeam = useCallback(({ length, orientation = 'horizontal', type = 'frame', supportA = 'pin', supportB = null }) => {
