@@ -57,9 +57,16 @@ export function classify(nodes, members) {
     });
 
     const totalFrameMembers = frameConnected.length;
-    if (hingedCount === totalFrameMembers && totalFrameMembers > 1) {
-      // All frame member-ends hinged at this joint
-      c += totalFrameMembers - 1;
+    // Does the support at this joint carry a moment reaction?
+    const hasMomentSupport = n.support === 'fixed'
+      || n.support === 'guide-h'
+      || n.support === 'guide-v';
+
+    if (hingedCount > 0 && hingedCount === totalFrameMembers && !hasMomentSupport) {
+      // Every frame member-end is hinged AND the support provides no
+      // moment reaction → ∑M is trivially 0 = 0, absorbing one
+      // condition equation (it becomes linearly dependent on the hinges).
+      c += hingedCount - 1;
     } else {
       c += hingedCount;
     }
