@@ -21,16 +21,23 @@ export default function ClassificationPanel({ info }) {
   const formulaLine = `DOF = ${terms[0]} + ${terms[1]} + ${terms[2]} \u2212 ${terms[3]} \u2212 ${terms[4]} \u2212 ${terms[5]}`;
   const expandedLine = `    = ${expanded[0]} + ${expanded[1]} + ${expanded[2]} \u2212 ${expanded[3]} \u2212 ${expanded[4]} \u2212 ${expanded[5]} = ${DOF}`;
 
-  let conclusionColor, conclusionText;
+  let conclusionColor, conclusionText, conclusionIcon;
   if (status === 'determinate') {
     conclusionColor = '#4ade80';
     conclusionText = 'Stable & Statically Determinate';
+    conclusionIcon = '\u2705 ';
   } else if (status === 'indeterminate') {
     conclusionColor = '#fbbf24';
     conclusionText = `Stable & Statically Indeterminate\nDegree of Indeterminacy: ${DOF}`;
+    conclusionIcon = '\u2705 ';
+  } else if (status === 'geometric_unstable') {
+    conclusionColor = '#ef4444';
+    conclusionText = 'Geometrically Unstable';
+    conclusionIcon = '\u274C ';
   } else {
     conclusionColor = '#ef4444';
     conclusionText = `Unstable Mechanism\nDOF = ${DOF}`;
+    conclusionIcon = '\u274C ';
   }
 
   return (
@@ -95,12 +102,16 @@ export default function ClassificationPanel({ info }) {
         borderLeft: `3px solid ${conclusionColor}`,
       }}>
         <div style={{ fontSize: 14, fontWeight: 700, color: conclusionColor, whiteSpace: 'pre-line' }}>
-          {status === 'determinate' && '\u2705 '}{status === 'indeterminate' && '\u2705 '}{status === 'unstable' && '\u274C '}
-          {conclusionText}
+          {conclusionIcon}{conclusionText}
         </div>
         {status === 'unstable' && (
           <div style={{ fontSize: 11, color: '#ef4444', marginTop: 6, opacity: 0.8 }}>
             This structure cannot be analyzed. Go back and add supports or members.
+          </div>
+        )}
+        {status === 'geometric_unstable' && (
+          <div style={{ fontSize: 11, color: '#ef4444', marginTop: 6, opacity: 0.8 }}>
+            DOF = 0 but the equilibrium matrix is singular. Members may be concurrent or form a mechanism (e.g. rectangle without diagonal). Add bracing or rearrange members.
           </div>
         )}
       </div>
