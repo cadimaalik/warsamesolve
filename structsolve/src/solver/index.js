@@ -332,8 +332,11 @@ function solveMixedSystem(nodes, members, PPM) {
     let sideA = getFrameOnlySubStructure(node, nodes, frameMembers);
     let eq = buildMixedHingeEq(node, sideA, reactionUnknowns, trussMembers, knownForces, nodes, numR, N);
 
-    // If side A has no useful coefficients, try side B
-    if (eq.coefficients.every(c => c === 0)) {
+    // If the truss force columns are all zero (e.g. truss end is AT the
+    // hinge → zero moment arm), try side B where the other truss end
+    // gives a non-zero moment arm about the hinge.
+    const hasTrussCoeff = eq.coefficients.slice(numR).some(c => Math.abs(c) > 1e-12);
+    if (!hasTrussCoeff || eq.coefficients.every(c => c === 0)) {
       const sideB = new Set([node.id]);
       for (const nd of nodes) {
         if (!sideA.has(nd.id)) sideB.add(nd.id);
