@@ -221,8 +221,14 @@ export default function SolverPage({ nodes, members, methodName, solverResults, 
                         <td style={{ textAlign: 'right', padding: '8px 12px', color: '#4ade80', fontWeight: 600 }}>
                           {Math.abs(tf.force).toFixed(4)}
                         </td>
-                        <td style={{ padding: '8px 12px', color: tf.classification.includes('T') ? '#fbbf24' : '#ef4444' }}>
-                          {tf.classification}
+                        <td style={{
+                          padding: '8px 12px',
+                          color: tf.isZeroForceMember ? '#94a3b8'
+                            : tf.classification.includes('T') ? '#fbbf24'
+                            : tf.classification.includes('C') ? '#ef4444'
+                            : '#94a3b8',
+                        }}>
+                          {tf.isZeroForceMember ? 'Zero Force (detected)' : tf.classification}
                         </td>
                       </tr>
                     ))}
