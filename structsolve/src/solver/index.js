@@ -310,6 +310,10 @@ function solveMixedSystem(nodes, members, PPM) {
   equations.push(eqM);
 
   // ═══ Hinge equations (with truss force contributions) ═══
+  // Use frame-only BFS so truss members CROSS the cut instead of
+  // keeping both endpoints on the same side (which would make the
+  // truss force coefficient zero and the matrix singular).
+  const frameMembers = members.filter(m => m.type !== 'truss');
   for (const node of nodes) {
     const connected = members.filter(
       m => m.startNodeId === node.id || m.endNodeId === node.id
@@ -324,8 +328,8 @@ function solveMixedSystem(nodes, members, PPM) {
     });
     if (!hasFrameHinge) continue;
 
-    // Get sub-structure on one side of the hinge
-    let sideA = getSubStructureNodes(node, nodes, members);
+    // Frame-only BFS: partition nodes by frame connectivity only
+    let sideA = getFrameOnlySubStructure(node, nodes, frameMembers);
     let eq = buildMixedHingeEq(node, sideA, reactionUnknowns, trussMembers, knownForces, nodes, numR, N);
 
     // If side A has no useful coefficients, try side B
@@ -402,6 +406,46 @@ function solveMixedSystem(nodes, members, PPM) {
     unknowns: reactionUnknowns, knownForces, momentPoint: mp,
     nodes, members, PPM, verification,
   };
+}
+
+/**
+ * BFS from one branch of the hinge, following ONLY frame members.
+ * Truss members are ignored so they "cross the cut", giving their
+ * force a non-zero coefficient in the hinge moment equation.
+ */
+function getFrameOnlySubStructure(hingeNode, nodes, frameMembers) {
+  const connectedFrame = frameMembers.filter(
+    m => m.startNodeId === hingeNode.id || m.endNodeId === hingeNode.id
+  );
+  if (connectedFrame.length === 0) return new Set([hingeNode.id]);
+
+  const firstMember = connectedFrame[0];
+  const startId = firstMember.startNodeId === hingeNode.id
+    ? firstMember.endNodeId
+    : firstMember.startNodeId;
+
+  const visited = new Set([hingeNode.id]);
+  const queue = [startId];
+  const subNodes = new Set([hingeNode.id]);
+
+  while (queue.length > 0) {
+    const currentId = queue.shift();
+    if (visited.has(currentId)) continue;
+    visited.add(currentId);
+    subNodes.add(currentId);
+
+    for (const m of frameMembers) {
+      let otherNodeId = null;
+      if (m.startNodeId === currentId) otherNodeId = m.endNodeId;
+      else if (m.endNodeId === currentId) otherNodeId = m.startNodeId;
+      else continue;
+
+      if (otherNodeId === hingeNode.id) continue;
+      if (!visited.has(otherNodeId)) queue.push(otherNodeId);
+    }
+  }
+
+  return subNodes;
 }
 
 /**
