@@ -166,6 +166,13 @@ export function buildEquations(nodes, members, unknowns) {
     usedMomentPoints.add(nextPoint.id);
   }
 
+  // Trim to n equations — pure frame path can be overdetermined when
+  // hinge conditions add equations beyond the reaction unknown count
+  // (e.g. cyclic frame with 3 hinges but only 3 reactions).
+  if (equations.length > n) {
+    equations.length = n;
+  }
+
   // Store metadata for LaTeX generation later
   return {
     equations,
