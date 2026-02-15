@@ -11,7 +11,7 @@
  * This is iterated because eliminating a zero-force member can reveal
  * new zero-force members at neighbouring joints.
  */
-function detectZeroForceMembers(nodes, members, reactions) {
+export function detectZeroForceMembers(nodes, members, reactions) {
   const zeroForce = new Set();
 
   // Helper: does this joint have any external load or reaction?
@@ -217,7 +217,7 @@ function getMemberDirectionFromNode(member, nodeId, nodes) {
   return { cos: dx / L, sin: dy / L };
 }
 
-function classifyForce(value) {
+export function classifyForce(value) {
   if (value > 0.001) return 'Tension (T)';
   if (value < -0.001) return 'Compression (C)';
   return 'Zero Force';
