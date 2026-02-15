@@ -153,54 +153,67 @@ function buildHingeEquations(nodes, members, unknowns, knownForces) {
 
   for (const hinge of hingeNodes) {
     // Get one sub-structure by traversing from one branch
-    const subNodes = getSubStructureNodes(hinge, nodes, members);
+    const sideA = getSubStructureNodes(hinge, nodes, members);
 
-    // Build ΣM about the hinge = 0 for that sub-structure
-    const eq = {
-      coefficients: new Array(n).fill(0),
-      rhs: 0,
-      description: `\\sum M_{${hinge.label}} = 0 \\text{ (hinge condition)}`,
-      type: 'hinge-moment',
-      hingeNode: hinge
-    };
+    // Build ΣM about the hinge = 0 for side A
+    let eq = buildMomentEqForSide(hinge, sideA, unknowns, knownForces, nodes, n);
 
-    // Only include unknowns that are ON this sub-structure
-    for (let i = 0; i < n; i++) {
-      const u = unknowns[i];
-      if (!subNodes.has(u.nodeId)) continue;
-
-      const dx = u.node.x - hinge.x;
-      const dy = u.node.y - hinge.y;
-
-      if (u.type === 'Rx') eq.coefficients[i] = -dy;
-      else if (u.type === 'Ry') eq.coefficients[i] = dx;
-      else if (u.type === 'M') eq.coefficients[i] = 1;
-    }
-
-    // Known forces on this sub-structure
-    for (const f of knownForces) {
-      // Check if this force is on the sub-structure side
-      // A force at a node is on this side if the node is in subNodes
-      // An equivalent DL force needs to check if its position is on a sub-structure member
-      // Simplification: check if the force's nearest node is in subNodes
-      const nearestNode = nodes.reduce((closest, node) => {
-        const d = Math.sqrt((node.x - f.x) ** 2 + (node.y - f.y) ** 2);
-        const cd = Math.sqrt((closest.x - f.x) ** 2 + (closest.y - f.y) ** 2);
-        return d < cd ? node : closest;
-      }, nodes[0]);
-
-      if (!subNodes.has(nearestNode.id)) continue;
-
-      const dx = f.x - hinge.x;
-      const dy = f.y - hinge.y;
-      const moment = dx * f.fy - dy * f.fx + (f.m || 0);
-      eq.rhs -= moment;
+    // If side A has no reaction unknowns (all-zero coefficients), use
+    // the complementary side B.  This happens when the arbitrary first
+    // branch leads to a sub-structure with no supports.
+    if (eq.coefficients.every(c => c === 0)) {
+      const sideB = new Set([hinge.id]);
+      for (const nd of nodes) {
+        if (!sideA.has(nd.id)) sideB.add(nd.id);
+      }
+      eq = buildMomentEqForSide(hinge, sideB, unknowns, knownForces, nodes, n);
     }
 
     equations.push(eq);
   }
 
   return equations;
+}
+
+function buildMomentEqForSide(hinge, sideNodes, unknowns, knownForces, nodes, n) {
+  const eq = {
+    coefficients: new Array(n).fill(0),
+    rhs: 0,
+    description: `\\sum M_{${hinge.label}} = 0 \\text{ (hinge condition)}`,
+    type: 'hinge-moment',
+    hingeNode: hinge
+  };
+
+  // Only include unknowns that are ON this sub-structure
+  for (let i = 0; i < n; i++) {
+    const u = unknowns[i];
+    if (!sideNodes.has(u.nodeId)) continue;
+
+    const dx = u.node.x - hinge.x;
+    const dy = u.node.y - hinge.y;
+
+    if (u.type === 'Rx') eq.coefficients[i] = -dy;
+    else if (u.type === 'Ry') eq.coefficients[i] = dx;
+    else if (u.type === 'M') eq.coefficients[i] = 1;
+  }
+
+  // Known forces on this sub-structure
+  for (const f of knownForces) {
+    const nearestNode = nodes.reduce((closest, node) => {
+      const d = Math.sqrt((node.x - f.x) ** 2 + (node.y - f.y) ** 2);
+      const cd = Math.sqrt((closest.x - f.x) ** 2 + (closest.y - f.y) ** 2);
+      return d < cd ? node : closest;
+    }, nodes[0]);
+
+    if (!sideNodes.has(nearestNode.id)) continue;
+
+    const dx = f.x - hinge.x;
+    const dy = f.y - hinge.y;
+    const moment = dx * f.fy - dy * f.fx + (f.m || 0);
+    eq.rhs -= moment;
+  }
+
+  return eq;
 }
 
 function getSubStructureNodes(hingeNode, nodes, members) {
