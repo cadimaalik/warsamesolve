@@ -39,6 +39,7 @@ export default function SolverPage({ nodes, members, methodName, solverResults, 
     <div style={{
       flex: 1,
       overflowY: 'auto',
+      overflowX: 'hidden',
       background: COLORS.bgDark,
       fontFamily: FONTS.mono,
       minHeight: '100vh',
@@ -304,10 +305,11 @@ export default function SolverPage({ nodes, members, methodName, solverResults, 
                         border: '1px solid #2a2a3e',
                         borderRadius: 8,
                         padding: 16,
-                        overflowX: 'auto',
+                        overflowX: 'hidden',
+                        textAlign: 'center',
                       }}>
                         <div style={{ color: '#e5e5e5', fontSize: 14 }}>
-                          {'\\[' + step.latex + '\\]'}
+                          {'\\[\\begin{gathered}' + step.latex + '\\end{gathered}\\]'}
                         </div>
                       </div>
                     )}
