@@ -97,10 +97,11 @@ export default function Verification({ results }) {
         borderRadius: 8,
         padding: 16,
         marginBottom: 16,
-        overflowX: 'auto',
+        overflowX: 'hidden',
+        textAlign: 'center',
       }}>
         <div style={{ fontFamily: FONTS.mono, fontSize: 14, color: '#e5e5e5' }}>
-          {'\\[' + lines.join(' \\\\ ') + '\\]'}
+          {'\\[\\begin{gathered}' + lines.join(' \\\\ ') + '\\end{gathered}\\]'}
         </div>
       </div>
 

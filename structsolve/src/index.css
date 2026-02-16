@@ -56,3 +56,19 @@ input[type="number"] {
   scrollbar-width: thin;
   scrollbar-color: #059669 #0a0a0a;
 }
+
+/* Constrain MathJax equations to fit within containers — no horizontal scroll */
+mjx-container {
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+  display: block !important;
+  text-align: center !important;
+}
+
+mjx-container[jax="CHTML"] {
+  font-size: 105% !important;
+}
+
+mjx-math {
+  max-width: 100% !important;
+}
