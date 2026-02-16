@@ -10,7 +10,7 @@
  * @returns {Array} Array of step objects
  */
 export function generateSolutionSteps(solverResults) {
-  const { reactions, trussForces, equations, unknowns, knownForces, momentPoint, nodes, members } = solverResults;
+  const { reactions, trussForces, solvingSteps, unknowns, knownForces, momentPoint, nodes, members } = solverResults;
   const steps = [];
 
   // ═══════════════════════════════════════════════════════════
@@ -27,10 +27,81 @@ export function generateSolutionSteps(solverResults) {
   }
 
   // ═══════════════════════════════════════════════════════════
-  // STEP 3+: Write and Solve Equilibrium Equations
+  // STEP 3+: Follow solving order from solvingSteps (Prompt #16-PATCH)
   // ═══════════════════════════════════════════════════════════
-  const eqSteps = generateEquationSteps(equations, unknowns, knownForces, momentPoint, reactions, nodes);
-  steps.push(...eqSteps);
+  let stepNum = hasDL ? 3 : 2;
+
+  if (solvingSteps && solvingSteps.length > 0) {
+    // NEW PATH: Use solvingSteps array for pedagogically correct ordering
+    for (const solvingStep of solvingSteps) {
+      if (solvingStep.type === 'sub-structure') {
+        // Sub-structure analysis header
+        steps.push({
+          title: `Step ${stepNum}: Sub-Structure Analysis — Cut at ${solvingStep.hingeNode.label}`,
+          description: `The structure has ${unknowns.length} unknowns but only 3 global equilibrium equations. ` +
+            `Cut the structure at internal hinge ${solvingStep.hingeNode.label} and analyze the ${solvingStep.side.description} sub-structure separately. ` +
+            `Since the bending moment at a hinge is zero, taking ΣM about ${solvingStep.hingeNode.label} eliminates the internal forces at the cut.`,
+          latex: null
+        });
+        stepNum++;
+
+        // Equations for this sub-structure
+        for (const eq of solvingStep.equations) {
+          steps.push({
+            title: `Step ${stepNum}: ${getEquationTitle(eq, solvingStep.momentPoint)}`,
+            description: getEquationDescription(eq, solvingStep.momentPoint),
+            latex: buildSymbolicEquation(eq, unknowns, solvingStep.solvedValues || [], solvingStep.momentPoint, nodes),
+          });
+          stepNum++;
+        }
+
+        // Show what was solved
+        const solvedLines = solvingStep.solvedValues.map(sv => {
+          const name = getReactionLatex(sv.label, sv.type);
+          const unit = sv.type === 'M' ? '\\text{ kN·m}' : '\\text{ kN}';
+          const dir = getDirectionSymbol(sv);
+          return `\\boxed{${name} = ${roundDisplay(sv.value)} ${unit}} \\quad ${dir}`;
+        });
+
+        steps.push({
+          title: `Step ${stepNum}: Sub-Structure Results`,
+          description: `From the sub-structure analysis at hinge ${solvingStep.hingeNode.label}:`,
+          latex: solvedLines.join(' \\\\ ')
+        });
+        stepNum++;
+
+      } else if (solvingStep.type === 'global') {
+        // Global equilibrium
+        const isAfterSubStructure = solvingSteps.some(s => s.type === 'sub-structure');
+
+        if (isAfterSubStructure) {
+          steps.push({
+            title: `Step ${stepNum}: Global Equilibrium — Remaining Unknowns`,
+            description: `With ${solvingStep.solvedValues.length} unknowns remaining, ` +
+              `apply the 3 global equilibrium equations to the entire structure.`,
+            latex: null
+          });
+          stepNum++;
+        }
+
+        // Global equations
+        for (const eq of solvingStep.equations) {
+          const solved = solvingStep.solvedValues || [];
+          steps.push({
+            title: `Step ${stepNum}: ${getEquationTitle(eq, solvingStep.momentPoint)}`,
+            description: getEquationDescription(eq, solvingStep.momentPoint),
+            latex: buildSymbolicEquation(eq, unknowns, solved, solvingStep.momentPoint, nodes),
+          });
+          stepNum++;
+        }
+      }
+    }
+  } else {
+    // LEGACY PATH: For backwards compatibility with old results (no solvingSteps)
+    const equations = solverResults.equations || [];
+    const eqSteps = generateEquationSteps(equations, unknowns, knownForces, momentPoint, reactions, nodes);
+    steps.push(...eqSteps);
+  }
 
   // ═══════════════════════════════════════════════════════════
   // FINAL STEP: Summary of Solved Values
@@ -40,7 +111,7 @@ export function generateSolutionSteps(solverResults) {
   // ═══════════════════════════════════════════════════════════
   // TRUSS FORCES (if applicable)
   // ═══════════════════════════════════════════════════════════
-  if (trussForces.length > 0) {
+  if (trussForces && trussForces.length > 0) {
     const trussSteps = generateTrussSteps(trussForces, nodes, members);
     steps.push(...trussSteps);
   }
