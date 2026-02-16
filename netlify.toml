@@ -16,3 +16,18 @@
   from = "/structsolve/*"
   to = "/structsolve/index.html"
   status = 200
+
+[[redirects]]
+  from = "/rootfinder"
+  to = "/rootfinder/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/rootfinder/"
+  to = "/rootfinder/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/rootfinder/*"
+  to = "/rootfinder/index.html"
+  status = 200
