@@ -19,7 +19,7 @@ import {
 export default function App() {
   const [method, setMethod] = useState('bisection');
   const [result, setResult] = useState(null);
-  const [exprStr, setExprStr] = useState('x^3 - 2*x + 1');
+  const [exprStr, setExprStr] = useState('x**3 - 2*x + 1');
   const [showSteps, setShowSteps] = useState(true);
   const [showTable, setShowTable] = useState(true);
   const [plotRange, setPlotRange] = useState({ xMin: -3, xMax: 3 });
@@ -100,8 +100,8 @@ export default function App() {
       }}>
         {/* Left panel - input */}
         <div style={{
-          width: 320,
-          minWidth: 280,
+          width: 380,
+          minWidth: 320,
           background: COLORS.bgPanel,
           borderRight: `1px solid ${COLORS.border}`,
           padding: 16,

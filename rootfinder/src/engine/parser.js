@@ -1,18 +1,21 @@
 import { parse, derivative, compile } from 'mathjs';
 
 /**
- * Converts MATLAB-style notation to math.js compatible expression.
+ * Normalizes expression notation to math.js compatible format.
+ * Handles both MATLAB-style (^) and Python-style (**) exponentiation.
  * Examples:
  *   "x^3 - 2*x + 1"     -> "x^3 - 2*x + 1"
+ *   "x**3 - 2*x + 1"    -> "x^3 - 2*x + 1"
  *   "3x^2 + 2x - 1"     -> "3*x^2 + 2*x - 1"
- *   "sin(x) + x^2"      -> "sin(x) + x^2"
- *   "e^x - 3x"          -> "e^x - 3*x"
- *   "exp(x) - 3*x"      -> "exp(x) - 3*x"
+ *   "sin(x) + x**2"     -> "sin(x) + x^2"
+ *   "exp(-x) - x"       -> "exp(-x) - x"
  */
 export function normalizeMatlabExpr(expr) {
   let s = expr.trim();
 
-  // Replace ^ with ^ (already compatible)
+  // Convert Python ** to ^ for mathjs
+  s = s.replace(/\*\*/g, '^');
+
   // Insert * for implicit multiplication: "3x" -> "3*x", "2sin" -> "2*sin"
   s = s.replace(/(\d)([a-zA-Z(])/g, '$1*$2');
   // "x(" -> "x*(" but not for functions like sin(, cos(, etc.
