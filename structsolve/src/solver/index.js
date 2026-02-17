@@ -27,44 +27,56 @@ export function solveReactions(structure) {
 
     // 2. Identify unknowns from supports
     const unknowns = identifyUnknowns(nodes);
+    const n = unknowns.length;
 
-    // 3. Build equilibrium equations
-    const { equations, knownForces, momentPoint } = buildEquations(nodes, members, unknowns);
+    // Track solving steps for pedagogical presentation (Prompt #16-PATCH)
+    const solvingSteps = [];
 
-    // 4. Solve the linear system
-    const A = equations.map(eq => [...eq.coefficients]);
-    const b = equations.map(eq => eq.rhs);
-    const solution = gaussianElimination(A, b);
+    // 3. Branch based on number of unknowns (Prompt #16-PATCH)
+    if (n <= 3) {
+      // ═══ DIRECT SOLVE: 3 or fewer unknowns ═══
+      const { equations, knownForces, momentPoint } = buildEquations(nodes, members, unknowns);
+      const A = equations.map(eq => [...eq.coefficients]);
+      const b = equations.map(eq => eq.rhs);
+      const solution = gaussianElimination(A, b);
 
-    // 5. Map solution back to named reactions
-    const reactions = unknowns.map((u, i) => ({
-      nodeId: u.nodeId,
-      label: u.label,
-      type: u.type,
-      value: roundTo(solution[i], 4),
-      node: u.node
-    }));
+      const reactions = unknowns.map((u, i) => ({
+        nodeId: u.nodeId,
+        label: u.label,
+        type: u.type,
+        value: roundTo(solution[i], 4),
+        node: u.node
+      }));
 
-    // 6. Solve truss member forces
-    const trussForces = solveTrussForces(nodes, members, reactions);
+      solvingSteps.push({
+        type: 'global',
+        description: 'Direct solution — 3 or fewer unknowns',
+        equations,
+        momentPoint,
+        knownForces,
+        solvedReactions: reactions
+      });
 
-    // 7. Verify: plug reactions back into equations
-    const verification = verifyResults(equations, solution);
+      const trussForces = solveTrussForces(nodes, members, reactions);
+      const verification = verifyResults(equations, solution);
 
-    // 8. Return everything (16B and 16C will need this)
-    return {
-      success: true,
-      reactions,
-      trussForces,
-      equations,
-      unknowns,
-      knownForces,
-      momentPoint,
-      nodes,
-      members,
-      PPM,
-      verification
-    };
+      return {
+        success: true,
+        reactions,
+        trussForces,
+        solvingSteps,
+        verification,
+        unknowns,
+        nodes,
+        members,
+        PPM,
+        knownForces,
+        momentPoint
+      };
+    } else {
+      // ═══ SEQUENTIAL HINGE SOLVE: more than 3 unknowns ═══
+      return solveWithHinges(nodes, members, unknowns, PPM);
+    }
 
   } catch (error) {
     return {
@@ -72,6 +84,422 @@ export function solveReactions(structure) {
       error: error.message
     };
   }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SEQUENTIAL HINGE SOLVER (Prompt #16-PATCH)
+// ═══════════════════════════════════════════════════════════════
+function solveWithHinges(nodes, members, unknowns, PPM) {
+  const n = unknowns.length;
+  const solvedValues = {};  // unknownIndex → value
+  const solvingSteps = [];
+
+  // Find all internal hinge nodes
+  const hingeNodes = findInternalHinges(nodes, members);
+
+  // For each hinge, find sub-structures and solve the easier side first
+  for (const hinge of hingeNodes) {
+    const { sideA, sideB } = partitionAtHinge(hinge, nodes, members);
+
+    // Count unsolved unknowns on each side
+    const unsolvedA = countUnsolved(sideA.nodeIds, unknowns, solvedValues);
+    const unsolvedB = countUnsolved(sideB.nodeIds, unknowns, solvedValues);
+
+    // Pick the side with fewer unsolved unknowns
+    const easierSide = unsolvedA <= unsolvedB ? sideA : sideB;
+    const easierCount = Math.min(unsolvedA, unsolvedB);
+
+    if (easierCount === 0) continue; // already fully solved
+
+    // Get the unknowns on the easier side that are still unsolved
+    const sideUnknownIndices = unknowns.map((u, i) =>
+      easierSide.nodeIds.has(u.nodeId) && solvedValues[i] === undefined ? i : null
+    ).filter(i => i !== null);
+
+    // Gather known forces on this side only
+    const sideKnownForces = gatherSideForces(
+      easierSide.nodeIds, nodes, members, unknowns, solvedValues
+    );
+
+    // Build equations for the sub-structure
+    const subEquations = buildSubStructureEquations(
+      hinge, easierSide, nodes, members,
+      unknowns, sideUnknownIndices, solvedValues, sideKnownForces
+    );
+
+    // Solve the sub-system
+    if (sideUnknownIndices.length <= subEquations.length && sideUnknownIndices.length > 0) {
+      const A = subEquations.map(eq => {
+        const row = new Array(sideUnknownIndices.length).fill(0);
+        for (let j = 0; j < sideUnknownIndices.length; j++) {
+          row[j] = eq.coefficients[sideUnknownIndices[j]] || 0;
+        }
+        return row;
+      });
+      const b = subEquations.map(eq => eq.rhs);
+
+      const useCount = sideUnknownIndices.length;
+      const solution = gaussianElimination(
+        A.slice(0, useCount),
+        b.slice(0, useCount)
+      );
+
+      // Store solved values
+      for (let j = 0; j < sideUnknownIndices.length; j++) {
+        solvedValues[sideUnknownIndices[j]] = roundTo(solution[j], 4);
+      }
+
+      solvingSteps.push({
+        type: 'sub-structure',
+        hingeNode: hinge,
+        side: easierSide,
+        sideLabel: Array.from(easierSide.nodeIds).map(id =>
+          nodes.find(n => n.id === id)?.label || id
+        ).sort().join(''),
+        description: `Cut at hinge ${hinge.label}, solve ${easierSide.description} side`,
+        equations: subEquations,
+        momentPoint: hinge,
+        solvedIndices: sideUnknownIndices,
+        solvedValues: sideUnknownIndices.map((idx, j) => ({
+          ...unknowns[idx],
+          value: solution[j]
+        }))
+      });
+    }
+  }
+
+  // After all hinges processed, solve remaining unknowns with global equations
+  const remainingIndices = unknowns.map((_, i) => i).filter(i => solvedValues[i] === undefined);
+
+  if (remainingIndices.length > 0) {
+    const { equations: allEquations, knownForces, momentPoint } = buildEquations(nodes, members, unknowns);
+
+    const A = allEquations.map(eq => {
+      const row = new Array(remainingIndices.length).fill(0);
+      for (let j = 0; j < remainingIndices.length; j++) {
+        row[j] = eq.coefficients[remainingIndices[j]];
+      }
+      return row;
+    });
+    const b = allEquations.map(eq => {
+      let rhs = eq.rhs;
+      for (let i = 0; i < unknowns.length; i++) {
+        if (solvedValues[i] !== undefined) {
+          rhs -= eq.coefficients[i] * solvedValues[i];
+        }
+      }
+      return rhs;
+    });
+
+    const useCount = remainingIndices.length;
+    const solution = gaussianElimination(
+      A.slice(0, useCount),
+      b.slice(0, useCount)
+    );
+
+    for (let j = 0; j < remainingIndices.length; j++) {
+      solvedValues[remainingIndices[j]] = roundTo(solution[j], 4);
+    }
+
+    solvingSteps.push({
+      type: 'global',
+      description: `Global equilibrium — ${remainingIndices.length} remaining unknowns`,
+      equations: allEquations.slice(0, useCount),
+      momentPoint,
+      knownForces,
+      solvedIndices: remainingIndices,
+      solvedValues: remainingIndices.map((idx, j) => ({
+        ...unknowns[idx],
+        value: solution[j]
+      }))
+    });
+  }
+
+  // Assemble all reactions
+  const reactions = unknowns.map((u, i) => ({
+    ...u,
+    value: solvedValues[i] !== undefined ? solvedValues[i] : 0
+  }));
+
+  const trussForces = solveTrussForces(nodes, members, reactions);
+  const knownForces = gatherKnownForces(nodes, members);
+  const momentPoint = pickMomentPoint(nodes, unknowns);
+  const allEquations = buildEquations(nodes, members, unknowns).equations;
+  const allSolution = unknowns.map((_, i) => solvedValues[i] || 0);
+  const verification = verifyResults(allEquations, allSolution);
+
+  return {
+    success: true,
+    reactions,
+    trussForces,
+    solvingSteps,
+    verification,
+    unknowns,
+    nodes,
+    members,
+    PPM,
+    knownForces,
+    momentPoint
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HELPER FUNCTIONS FOR SEQUENTIAL HINGE SOLVING (Prompt #16-PATCH)
+// ═══════════════════════════════════════════════════════════════
+
+function findInternalHinges(nodes, members) {
+  const hinges = [];
+
+  for (const node of nodes) {
+    const connected = members.filter(
+      m => m.startNodeId === node.id || m.endNodeId === node.id
+    );
+    if (connected.length < 2) continue;
+
+    const hasFrameHinge = connected.some(m => {
+      if (m.type !== 'frame') return false;
+      return (m.startNodeId === node.id && m.startHinge) ||
+             (m.endNodeId === node.id && m.endHinge);
+    });
+
+    if (hasFrameHinge) {
+      const branchCount = connected.length;
+      hinges.push({
+        ...node,
+        branchCount,
+        conditions: branchCount - 1
+      });
+    }
+  }
+
+  return hinges;
+}
+
+function partitionAtHinge(hingeNode, nodes, members) {
+  const connectedMembers = members.filter(
+    m => m.startNodeId === hingeNode.id || m.endNodeId === hingeNode.id
+  );
+
+  if (connectedMembers.length < 2) {
+    return {
+      sideA: { nodeIds: new Set(), description: 'empty' },
+      sideB: { nodeIds: new Set(), description: 'empty' }
+    };
+  }
+
+  const sideA = bfsFromBranch(hingeNode, connectedMembers[0], nodes, members);
+  const sideB = new Set(nodes.map(n => n.id));
+  for (const id of sideA) {
+    if (id !== hingeNode.id) sideB.delete(id);
+  }
+  sideA.add(hingeNode.id);
+
+  const sideALabels = nodes.filter(n => sideA.has(n.id)).map(n => n.label).sort().join('');
+  const sideBLabels = nodes.filter(n => sideB.has(n.id)).map(n => n.label).sort().join('');
+
+  return {
+    sideA: { nodeIds: sideA, description: `Side ${sideALabels}` },
+    sideB: { nodeIds: sideB, description: `Side ${sideBLabels}` }
+  };
+}
+
+function bfsFromBranch(hingeNode, firstMember, nodes, members) {
+  const startId = firstMember.startNodeId === hingeNode.id
+    ? firstMember.endNodeId
+    : firstMember.startNodeId;
+
+  const visited = new Set([hingeNode.id]);
+  const queue = [startId];
+  const result = new Set();
+
+  while (queue.length > 0) {
+    const current = queue.shift();
+    if (visited.has(current)) continue;
+    visited.add(current);
+    result.add(current);
+
+    for (const m of members) {
+      let other = null;
+      if (m.startNodeId === current) other = m.endNodeId;
+      else if (m.endNodeId === current) other = m.startNodeId;
+      else continue;
+
+      if (other === hingeNode.id) continue;
+      if (!visited.has(other)) queue.push(other);
+    }
+  }
+
+  return result;
+}
+
+function countUnsolved(sideNodeIds, unknowns, solvedValues) {
+  let count = 0;
+  for (let i = 0; i < unknowns.length; i++) {
+    if (sideNodeIds.has(unknowns[i].nodeId) && solvedValues[i] === undefined) {
+      count++;
+    }
+  }
+  return count;
+}
+
+function gatherSideForces(sideNodeIds, nodes, members, unknowns, solvedValues) {
+  const forces = [];
+
+  for (const node of nodes) {
+    if (!sideNodeIds.has(node.id)) continue;
+    if (node.loads.fx !== 0 || node.loads.fy !== 0 || node.loads.m !== 0) {
+      forces.push({
+        fx: node.loads.fx,
+        fy: node.loads.fy,
+        m: node.loads.m,
+        x: node.x,
+        y: node.y,
+        source: `Load at ${node.label}`
+      });
+    }
+  }
+
+  const knownForces = gatherKnownForces(nodes, members);
+  for (const f of knownForces) {
+    const nearestNode = nodes.reduce((closest, n) => {
+      const d = Math.sqrt((n.x - f.x) ** 2 + (n.y - f.y) ** 2);
+      const cd = Math.sqrt((closest.x - f.x) ** 2 + (closest.y - f.y) ** 2);
+      return d < cd ? n : closest;
+    }, nodes[0]);
+
+    if (sideNodeIds.has(nearestNode.id)) {
+      forces.push(f);
+    }
+  }
+
+  for (let i = 0; i < unknowns.length; i++) {
+    if (solvedValues[i] === undefined) continue;
+    if (!sideNodeIds.has(unknowns[i].nodeId)) continue;
+
+    const u = unknowns[i];
+    forces.push({
+      fx: u.type === 'Rx' ? solvedValues[i] : 0,
+      fy: u.type === 'Ry' ? solvedValues[i] : 0,
+      m: u.type === 'M' ? solvedValues[i] : 0,
+      x: u.node.x,
+      y: u.node.y,
+      source: `Solved ${u.type} at ${u.label}`
+    });
+  }
+
+  return forces;
+}
+
+function buildSubStructureEquations(hinge, side, nodes, members, unknowns, sideUnknownIndices, solvedValues, sideKnownForces) {
+  const equations = [];
+  const n = unknowns.length;
+
+  const eqM = {
+    coefficients: new Array(n).fill(0),
+    rhs: 0,
+    description: `\\sum M_{${hinge.label}} = 0 \\text{ (sub-structure)}`,
+    type: 'sub-moment'
+  };
+
+  for (const idx of sideUnknownIndices) {
+    const u = unknowns[idx];
+    const dx = u.node.x - hinge.x;
+    const dy = u.node.y - hinge.y;
+
+    if (u.type === 'Rx') eqM.coefficients[idx] = -dy;
+    else if (u.type === 'Ry') eqM.coefficients[idx] = dx;
+    else if (u.type === 'M') eqM.coefficients[idx] = 1;
+  }
+
+  for (let i = 0; i < n; i++) {
+    if (solvedValues[i] === undefined) continue;
+    if (!side.nodeIds.has(unknowns[i].nodeId)) continue;
+    const u = unknowns[i];
+    const dx = u.node.x - hinge.x;
+    const dy = u.node.y - hinge.y;
+    let contrib = 0;
+    if (u.type === 'Rx') contrib = -dy * solvedValues[i];
+    else if (u.type === 'Ry') contrib = dx * solvedValues[i];
+    else if (u.type === 'M') contrib = solvedValues[i];
+    eqM.rhs -= contrib;
+  }
+
+  for (const f of sideKnownForces) {
+    const dx = f.x - hinge.x;
+    const dy = f.y - hinge.y;
+    const moment = dx * f.fy - dy * f.fx + (f.m || 0);
+    eqM.rhs -= moment;
+  }
+
+  equations.push(eqM);
+
+  if (sideUnknownIndices.length >= 2) {
+    const sideSupports = nodes.filter(n =>
+      side.nodeIds.has(n.id) && n.support && n.id !== hinge.id
+    );
+
+    for (let s = 0; s < sideSupports.length && equations.length < sideUnknownIndices.length; s++) {
+      const mp = sideSupports[s];
+      const eqM2 = {
+        coefficients: new Array(n).fill(0),
+        rhs: 0,
+        description: `\\sum M_{${mp.label}} = 0 \\text{ (sub-structure)}`,
+        type: 'sub-moment'
+      };
+
+      for (const idx of sideUnknownIndices) {
+        const u = unknowns[idx];
+        const dx = u.node.x - mp.x;
+        const dy = u.node.y - mp.y;
+
+        if (u.type === 'Rx') eqM2.coefficients[idx] = -dy;
+        else if (u.type === 'Ry') eqM2.coefficients[idx] = dx;
+        else if (u.type === 'M') eqM2.coefficients[idx] = 1;
+      }
+
+      for (let i = 0; i < n; i++) {
+        if (solvedValues[i] === undefined) continue;
+        if (!side.nodeIds.has(unknowns[i].nodeId)) continue;
+        const u = unknowns[i];
+        const dx = u.node.x - mp.x;
+        const dy = u.node.y - mp.y;
+        let contrib = 0;
+        if (u.type === 'Rx') contrib = -dy * solvedValues[i];
+        else if (u.type === 'Ry') contrib = dx * solvedValues[i];
+        else if (u.type === 'M') contrib = solvedValues[i];
+        eqM2.rhs -= contrib;
+      }
+
+      for (const f of sideKnownForces) {
+        const dx = f.x - mp.x;
+        const dy = f.y - mp.y;
+        const moment = dx * f.fy - dy * f.fx + (f.m || 0);
+        eqM2.rhs -= moment;
+      }
+
+      equations.push(eqM2);
+    }
+  }
+
+  return equations;
+}
+
+function pickMomentPoint(nodes, unknowns) {
+  let best = null;
+  let bestScore = -1;
+
+  for (const node of nodes) {
+    if (!node.support) continue;
+    const forceUnknowns = unknowns.filter(
+      u => u.nodeId === node.id && (u.type === 'Rx' || u.type === 'Ry')
+    ).length;
+    if (forceUnknowns > bestScore) {
+      bestScore = forceUnknowns;
+      best = node;
+    }
+  }
+
+  return best || nodes[0];
 }
 
 // ═══════════════════════════════════════════════════════════════

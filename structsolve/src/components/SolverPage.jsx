@@ -17,6 +17,8 @@ import ResultsSummary from './ResultsSummary.jsx';
 import TrussTable from './TrussTable.jsx';
 import StabilityWarnings from './StabilityWarnings.jsx';
 import Verification from './Verification.jsx';
+import FBDCanvas from './FBDCanvas.jsx';
+import ForceLegend from './ForceLegend.jsx';
 
 const noop = () => {};
 
@@ -274,6 +276,9 @@ export default function SolverPage({ nodes, members, methodName, solverResults, 
                 Step-by-Step Solution
               </div>
 
+              {/* FBD Color Legend */}
+              <ForceLegend />
+
               <div>
                 {steps.map((step, idx) => (
                   <div key={idx} style={{
@@ -289,6 +294,26 @@ export default function SolverPage({ nodes, members, methodName, solverResults, 
                     }}>
                       {step.title}
                     </div>
+
+                    {/* FBD ABOVE description (Prompt #16C) */}
+                    {step.fbd && (
+                      <FBDCanvas fbd={step.fbd} />
+                    )}
+
+                    {/* Truss Joint FBDs in 2-column grid */}
+                    {step.jointFBDs && step.jointFBDs.length > 0 && (
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(2, 1fr)',
+                        gap: 8,
+                        marginBottom: 12,
+                      }}>
+                        {step.jointFBDs.map((jfbd, jIdx) => (
+                          <FBDCanvas key={jIdx} fbd={jfbd} />
+                        ))}
+                      </div>
+                    )}
+
                     {step.description && (
                       <div style={{
                         color: '#d1d5db',
