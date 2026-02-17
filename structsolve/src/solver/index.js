@@ -345,20 +345,9 @@ function countUnsolved(sideNodeIds, unknowns, solvedValues) {
 function gatherSideForces(sideNodeIds, nodes, members, unknowns, solvedValues) {
   const forces = [];
 
-  for (const node of nodes) {
-    if (!sideNodeIds.has(node.id)) continue;
-    if (node.loads.fx !== 0 || node.loads.fy !== 0 || node.loads.m !== 0) {
-      forces.push({
-        fx: node.loads.fx,
-        fy: node.loads.fy,
-        m: node.loads.m,
-        x: node.x,
-        y: node.y,
-        source: `Load at ${node.label}`
-      });
-    }
-  }
-
+  // gatherKnownForces collects both node point loads AND distributed load
+  // equivalents in one pass — do NOT add node loads separately before this
+  // or they will be double-counted in the sub-structure moment equation.
   const knownForces = gatherKnownForces(nodes, members);
   for (const f of knownForces) {
     const nearestNode = nodes.reduce((closest, n) => {
