@@ -652,54 +652,338 @@ function solveTrussSystem(nodes, members, PPM) {
 // ═══════════════════════════════════════════════════════════════
 // MIXED FRAME+TRUSS SOLVER
 //
-// Two-phase approach:
-//   Phase 1: Solve reactions using standard frame equilibrium.
-//            Truss internal forces cancel in global equilibrium
-//            (Newton's 3rd law — they are internal). Frame hinge
-//            conditions are handled by buildEquations() as normal.
-//   Phase 2: Solve truss member forces via method of joints,
-//            now that all support reactions are known.
+// Simultaneous system: unknowns = [reactions, truss forces].
 //
-// The old approach of building a joint [reactions + trussForces]
-// matrix was wrong: the truss-force columns were all zero in every
-// global-equilibrium equation, causing a guaranteed singular matrix.
+// Equations sourced from three pools:
+//   1. Global equilibrium (ΣFx, ΣFy, ΣM) — truss forces cancel
+//      (internal), so only reaction columns are non-zero.
+//   2. Hinge conditions — frame-only BFS partitions the structure
+//      so truss members CROSS the cut.  Their forces appear with
+//      non-zero moment arms when the truss endpoint on the sub-
+//      structure is NOT at the hinge.
+//   3. Joint equilibrium at truss-only joints (ΣFx, ΣFy) — both
+//      reaction and truss-force columns are non-zero.
+//   4. Fallback: extra moment equations about support points.
+//
+// Together these provide exactly N equations for N unknowns in
+// typical DOF = 0 mixed structures (tree-like frame topology).
 // ═══════════════════════════════════════════════════════════════
 function solveMixedSystem(nodes, members, PPM) {
-  // --- Phase 1: reactions from frame equilibrium ---
-  const unknowns = identifyUnknowns(nodes);
+  const trussMembers = members.filter(m => m.type === 'truss');
+  const frameMembers = members.filter(m => m.type !== 'truss');
 
-  const { equations, knownForces, momentPoint } = buildEquations(nodes, members, unknowns);
+  // --- Unknowns: reactions first, then truss member forces ---
+  const reactionUnknowns = identifyUnknowns(nodes);
+  const numR = reactionUnknowns.length;
+  const numT = trussMembers.length;
+  const N = numR + numT;
 
+  const knownForces = gatherKnownForces(nodes, members);
+  const equations = [];
+
+  // ═══ 1. Global ΣFx = 0 ═══
+  const eqFx = { coefficients: new Array(N).fill(0), rhs: 0,
+    description: '\\sum F_x = 0', type: 'force-x' };
+  for (let i = 0; i < numR; i++) {
+    if (reactionUnknowns[i].type === 'Rx') eqFx.coefficients[i] = 1;
+  }
+  for (const f of knownForces) eqFx.rhs -= f.fx;
+  equations.push(eqFx);
+
+  // ═══ 1. Global ΣFy = 0 ═══
+  const eqFy = { coefficients: new Array(N).fill(0), rhs: 0,
+    description: '\\sum F_y = 0', type: 'force-y' };
+  for (let i = 0; i < numR; i++) {
+    if (reactionUnknowns[i].type === 'Ry') eqFy.coefficients[i] = 1;
+  }
+  for (const f of knownForces) eqFy.rhs -= f.fy;
+  equations.push(eqFy);
+
+  // ═══ 1. Global ΣM about best moment point = 0 ═══
+  let mp = null;
+  let bestScore = -1;
+  for (const node of nodes) {
+    if (!node.support) continue;
+    const sc = reactionUnknowns.filter(
+      u => u.nodeId === node.id && (u.type === 'Rx' || u.type === 'Ry')
+    ).length;
+    if (sc > bestScore) { bestScore = sc; mp = node; }
+  }
+  if (!mp) mp = nodes[0];
+
+  const eqM = { coefficients: new Array(N).fill(0), rhs: 0,
+    description: `\\sum M_{${mp.label}} = 0`, type: 'moment' };
+  for (let i = 0; i < numR; i++) {
+    const u = reactionUnknowns[i];
+    const dx = u.node.x - mp.x;
+    const dy = u.node.y - mp.y;
+    if (u.type === 'Rx') eqM.coefficients[i] = -dy;
+    else if (u.type === 'Ry') eqM.coefficients[i] = dx;
+    else if (u.type === 'M') eqM.coefficients[i] = 1;
+  }
+  for (const f of knownForces) {
+    const dx = f.x - mp.x;
+    const dy = f.y - mp.y;
+    eqM.rhs -= (dx * f.fy - dy * f.fx + (f.m || 0));
+  }
+  equations.push(eqM);
+
+  // ═══ 2. Hinge conditions (frame-only BFS) ═══
+  for (const node of nodes) {
+    const connected = members.filter(
+      m => m.startNodeId === node.id || m.endNodeId === node.id
+    );
+    if (connected.length < 2) continue;
+
+    const hasFrameHinge = connected.some(m => {
+      if (m.type !== 'frame') return false;
+      if (m.startNodeId === node.id) return m.startHinge;
+      if (m.endNodeId === node.id) return m.endHinge;
+      return false;
+    });
+    if (!hasFrameHinge) continue;
+
+    // Frame-only BFS so truss members cross the cut
+    let sideA = frameOnlyBFS(node, nodes, frameMembers);
+    let eq = buildMixedHingeEq(node, sideA, reactionUnknowns, trussMembers, knownForces, nodes, numR, N);
+
+    // If all coefficients are zero, try the complementary side
+    if (eq.coefficients.every(c => Math.abs(c) < 1e-12)) {
+      const sideB = new Set([node.id]);
+      for (const nd of nodes) {
+        if (!sideA.has(nd.id)) sideB.add(nd.id);
+      }
+      eq = buildMixedHingeEq(node, sideB, reactionUnknowns, trussMembers, knownForces, nodes, numR, N);
+    }
+
+    equations.push(eq);
+  }
+
+  // ═══ 3. Joint equilibrium at truss-only joints ═══
+  for (const node of nodes) {
+    const connTruss = trussMembers.filter(
+      m => m.startNodeId === node.id || m.endNodeId === node.id
+    );
+    if (connTruss.length === 0) continue;
+
+    // Only truss-only joints (no frame connections)
+    const hasFrame = members.some(m =>
+      m.type !== 'truss' &&
+      (m.startNodeId === node.id || m.endNodeId === node.id)
+    );
+    if (hasFrame) continue;
+
+    // ΣFx = 0 at this joint
+    const eqJx = { coefficients: new Array(N).fill(0), rhs: 0,
+      description: `\\sum F_{x,${node.label}} = 0`, type: 'joint-force-x' };
+    for (let i = 0; i < numR; i++) {
+      if (reactionUnknowns[i].nodeId !== node.id) continue;
+      if (reactionUnknowns[i].type === 'Rx') eqJx.coefficients[i] = 1;
+    }
+    for (let t = 0; t < numT; t++) {
+      const m = trussMembers[t];
+      if (m.startNodeId !== node.id && m.endNodeId !== node.id) continue;
+      const otherNodeId = m.startNodeId === node.id ? m.endNodeId : m.startNodeId;
+      const otherNode = nodes.find(n => n.id === otherNodeId);
+      const dx = otherNode.x - node.x;
+      const dy = otherNode.y - node.y;
+      const L = Math.sqrt(dx * dx + dy * dy);
+      if (L < 1e-12) continue;
+      eqJx.coefficients[numR + t] = dx / L;
+    }
+    eqJx.rhs = -(node.loads.fx || 0);
+    equations.push(eqJx);
+
+    // ΣFy = 0 at this joint
+    const eqJy = { coefficients: new Array(N).fill(0), rhs: 0,
+      description: `\\sum F_{y,${node.label}} = 0`, type: 'joint-force-y' };
+    for (let i = 0; i < numR; i++) {
+      if (reactionUnknowns[i].nodeId !== node.id) continue;
+      if (reactionUnknowns[i].type === 'Ry') eqJy.coefficients[i] = 1;
+    }
+    for (let t = 0; t < numT; t++) {
+      const m = trussMembers[t];
+      if (m.startNodeId !== node.id && m.endNodeId !== node.id) continue;
+      const otherNodeId = m.startNodeId === node.id ? m.endNodeId : m.startNodeId;
+      const otherNode = nodes.find(n => n.id === otherNodeId);
+      const dx = otherNode.x - node.x;
+      const dy = otherNode.y - node.y;
+      const L = Math.sqrt(dx * dx + dy * dy);
+      if (L < 1e-12) continue;
+      eqJy.coefficients[numR + t] = dy / L;
+    }
+    eqJy.rhs = -(node.loads.fy || 0);
+    equations.push(eqJy);
+  }
+
+  // ═══ 4. Extra moment equations if still under-determined ═══
+  const usedMomentPoints = new Set([mp.id]);
+  while (equations.length < N) {
+    let nextPoint = null;
+    let nextSc = -1;
+    for (const node of nodes) {
+      if (!node.support || usedMomentPoints.has(node.id)) continue;
+      const sc = reactionUnknowns.filter(
+        u => u.nodeId === node.id && (u.type === 'Rx' || u.type === 'Ry')
+      ).length;
+      if (sc > nextSc) { nextSc = sc; nextPoint = node; }
+    }
+    if (!nextPoint) break;
+
+    const eqExtra = { coefficients: new Array(N).fill(0), rhs: 0,
+      description: `\\sum M_{${nextPoint.label}} = 0`, type: 'moment' };
+    for (let i = 0; i < numR; i++) {
+      const u = reactionUnknowns[i];
+      const dx = u.node.x - nextPoint.x;
+      const dy = u.node.y - nextPoint.y;
+      if (u.type === 'Rx') eqExtra.coefficients[i] = -dy;
+      else if (u.type === 'Ry') eqExtra.coefficients[i] = dx;
+      else if (u.type === 'M') eqExtra.coefficients[i] = 1;
+    }
+    for (const f of knownForces) {
+      const dx = f.x - nextPoint.x;
+      const dy = f.y - nextPoint.y;
+      eqExtra.rhs -= (dx * f.fy - dy * f.fx + (f.m || 0));
+    }
+    equations.push(eqExtra);
+    usedMomentPoints.add(nextPoint.id);
+  }
+
+  // Trim to N if over-determined
+  if (equations.length > N) equations.length = N;
+
+  // --- Solve ---
   const A = equations.map(eq => [...eq.coefficients]);
   const b = equations.map(eq => eq.rhs);
   const solution = gaussianElimination(A, b);
 
-  const reactions = unknowns.map((u, i) => ({
-    nodeId: u.nodeId,
-    label: u.label,
-    type: u.type,
-    value: roundTo(solution[i], 4),
-    node: u.node,
+  // --- Extract reactions ---
+  const reactions = reactionUnknowns.map((u, i) => ({
+    nodeId: u.nodeId, label: u.label, type: u.type,
+    value: roundTo(solution[i], 4), node: u.node,
   }));
 
-  // --- Phase 2: truss forces from method of joints ---
-  const trussForces = solveTrussForces(nodes, members, reactions);
+  // --- Extract truss forces ---
+  const zeroForceIds = detectZeroForceMembers(nodes, members, reactions);
+  const trussForces = trussMembers.map((m, idx) => {
+    const force = roundTo(solution[numR + idx], 4);
+    return {
+      memberId: m.id, startLabel: m.startLabel, endLabel: m.endLabel,
+      force, classification: classifyForce(force),
+      isZeroForceMember: zeroForceIds.has(m.id),
+    };
+  });
 
   const verification = verifyResults(equations, solution);
 
   return {
-    success: true,
-    reactions,
-    trussForces,
-    equations,
-    unknowns,
-    knownForces,
-    momentPoint,
-    nodes,
-    members,
-    PPM,
-    verification,
+    success: true, reactions, trussForces, equations,
+    unknowns: reactionUnknowns, knownForces, momentPoint: mp,
+    nodes, members, PPM, verification,
   };
+}
+
+/**
+ * BFS from one branch of a hinge, following ONLY frame members.
+ * Truss members are excluded so they cross the cut, giving their
+ * force a non-zero coefficient in the hinge moment equation.
+ */
+function frameOnlyBFS(hingeNode, nodes, frameMembers) {
+  const connectedFrame = frameMembers.filter(
+    m => m.startNodeId === hingeNode.id || m.endNodeId === hingeNode.id
+  );
+  if (connectedFrame.length === 0) return new Set([hingeNode.id]);
+
+  const firstMember = connectedFrame[0];
+  const startId = firstMember.startNodeId === hingeNode.id
+    ? firstMember.endNodeId
+    : firstMember.startNodeId;
+
+  const visited = new Set([hingeNode.id]);
+  const queue = [startId];
+  const subNodes = new Set([hingeNode.id]);
+
+  while (queue.length > 0) {
+    const currentId = queue.shift();
+    if (visited.has(currentId)) continue;
+    visited.add(currentId);
+    subNodes.add(currentId);
+
+    for (const m of frameMembers) {
+      let otherNodeId = null;
+      if (m.startNodeId === currentId) otherNodeId = m.endNodeId;
+      else if (m.endNodeId === currentId) otherNodeId = m.startNodeId;
+      else continue;
+      if (otherNodeId === hingeNode.id) continue;
+      if (!visited.has(otherNodeId)) queue.push(otherNodeId);
+    }
+  }
+
+  return subNodes;
+}
+
+/**
+ * Build hinge moment equation for a sub-structure, including truss
+ * force contributions for members that cross the frame-only cut.
+ */
+function buildMixedHingeEq(hinge, sideNodes, reactionUnknowns, trussMembers, knownForces, nodes, numR, N) {
+  const eq = {
+    coefficients: new Array(N).fill(0), rhs: 0,
+    description: `\\sum M_{${hinge.label}} = 0 \\text{ (hinge)}`,
+    type: 'hinge-moment',
+  };
+
+  // Reaction contributions (only those on this sub-structure)
+  for (let i = 0; i < numR; i++) {
+    const u = reactionUnknowns[i];
+    if (!sideNodes.has(u.nodeId)) continue;
+    const dx = u.node.x - hinge.x;
+    const dy = u.node.y - hinge.y;
+    if (u.type === 'Rx') eq.coefficients[i] = -dy;
+    else if (u.type === 'Ry') eq.coefficients[i] = dx;
+    else if (u.type === 'M') eq.coefficients[i] = 1;
+  }
+
+  // Truss force contributions — only for members crossing the cut
+  for (let t = 0; t < trussMembers.length; t++) {
+    const tm = trussMembers[t];
+    const startIn = sideNodes.has(tm.startNodeId);
+    const endIn = sideNodes.has(tm.endNodeId);
+    if (startIn === endIn) continue; // internal or external — no contribution
+
+    // The endpoint INSIDE the sub-structure feels the truss force
+    const inNodeId = startIn ? tm.startNodeId : tm.endNodeId;
+    const outNodeId = startIn ? tm.endNodeId : tm.startNodeId;
+    const inNode = nodes.find(n => n.id === inNodeId);
+    const outNode = nodes.find(n => n.id === outNodeId);
+
+    const dx_t = outNode.x - inNode.x;
+    const dy_t = outNode.y - inNode.y;
+    const L = Math.sqrt(dx_t * dx_t + dy_t * dy_t);
+    if (L < 1e-12) continue;
+    const cos_t = dx_t / L;
+    const sin_t = dy_t / L;
+
+    // Moment about hinge: r × F
+    const dx_p = inNode.x - hinge.x;
+    const dy_p = inNode.y - hinge.y;
+    eq.coefficients[numR + t] = dx_p * sin_t - dy_p * cos_t;
+  }
+
+  // Known forces on this sub-structure
+  for (const f of knownForces) {
+    const nearestNode = nodes.reduce((closest, nd) => {
+      const d = Math.sqrt((nd.x - f.x) ** 2 + (nd.y - f.y) ** 2);
+      const cd = Math.sqrt((closest.x - f.x) ** 2 + (closest.y - f.y) ** 2);
+      return d < cd ? nd : closest;
+    }, nodes[0]);
+    if (!sideNodes.has(nearestNode.id)) continue;
+    const dx = f.x - hinge.x;
+    const dy = f.y - hinge.y;
+    eq.rhs -= (dx * f.fy - dy * f.fx + (f.m || 0));
+  }
+
+  return eq;
 }
 
 
