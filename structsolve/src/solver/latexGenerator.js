@@ -1,10 +1,18 @@
 // latexGenerator.js — Generate Step-by-Step LaTeX Solution
+import {
+  buildGlobalFBD,
+  buildMomentFBD,
+  buildSubStructureFBD,
+  buildEquivalentFBD,
+  buildTrussJointFBDs,
+} from './fbdGenerator.js';
 
 /**
  * Generate the complete step-by-step solution from solver results.
  *
- * Returns an array of step objects: { title, description, latex }
+ * Returns an array of step objects: { title, description, latex, fbd }
  * Matches the HydroSOLVE solution format exactly.
+ * Each step now includes an optional `fbd` field for Free Body Diagram rendering.
  *
  * @param {Object} solverResults - Complete solver output from index.js
  * @returns {Array} Array of step objects
@@ -14,16 +22,20 @@ export function generateSolutionSteps(solverResults) {
   const steps = [];
 
   // ═══════════════════════════════════════════════════════════
-  // STEP 1: Identify Support Reactions
+  // STEP 1: Identify Support Reactions (with global FBD)
   // ═══════════════════════════════════════════════════════════
-  steps.push(generateStep1_Unknowns(unknowns, nodes));
+  const step1 = generateStep1_Unknowns(unknowns, nodes);
+  step1.fbd = buildGlobalFBD(solverResults, null);
+  steps.push(step1);
 
   // ═══════════════════════════════════════════════════════════
   // STEP 2: Equivalent Forces from Distributed Loads (if any)
   // ═══════════════════════════════════════════════════════════
   const hasDL = members.some(m => m.distributedLoads && m.distributedLoads.length > 0);
   if (hasDL) {
-    steps.push(generateStep2_DistributedLoads(members, knownForces));
+    const step2 = generateStep2_DistributedLoads(members, knownForces);
+    step2.fbd = buildEquivalentFBD(solverResults);
+    steps.push(step2);
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -35,13 +47,17 @@ export function generateSolutionSteps(solverResults) {
     // NEW PATH: Use solvingSteps array for pedagogically correct ordering
     for (const solvingStep of solvingSteps) {
       if (solvingStep.type === 'sub-structure') {
+        // Sub-structure FBD for this hinge cut
+        const subFBD = buildSubStructureFBD(solverResults, solvingStep);
+
         // Sub-structure analysis header
         steps.push({
           title: `Step ${stepNum}: Sub-Structure Analysis — Cut at ${solvingStep.hingeNode.label}`,
           description: `The structure has ${unknowns.length} unknowns but only 3 global equilibrium equations. ` +
             `Cut the structure at internal hinge ${solvingStep.hingeNode.label} and analyze the ${solvingStep.side.description} sub-structure separately. ` +
             `Since the bending moment at a hinge is zero, taking ΣM about ${solvingStep.hingeNode.label} eliminates the internal forces at the cut.`,
-          latex: null
+          latex: null,
+          fbd: subFBD
         });
         stepNum++;
 
@@ -79,18 +95,25 @@ export function generateSolutionSteps(solverResults) {
             title: `Step ${stepNum}: Global Equilibrium — Remaining Unknowns`,
             description: `With ${solvingStep.solvedValues.length} unknowns remaining, ` +
               `apply the 3 global equilibrium equations to the entire structure.`,
-            latex: null
+            latex: null,
+            fbd: buildGlobalFBD(solverResults, null)
           });
           stepNum++;
         }
 
-        // Global equations
+        // Global equations — attach appropriate FBD for each equation type
         for (const eq of solvingStep.equations) {
           const solved = solvingStep.solvedValues || [];
+          const eqFBD = eq.type === 'force-x' ? buildGlobalFBD(solverResults, 'fx')
+            : eq.type === 'force-y' ? buildGlobalFBD(solverResults, 'fy')
+            : eq.type === 'moment' ? buildMomentFBD(solverResults, solvingStep.momentPoint)
+            : null;
+
           steps.push({
             title: `Step ${stepNum}: ${getEquationTitle(eq, solvingStep.momentPoint)}`,
             description: getEquationDescription(eq, solvingStep.momentPoint),
             latex: buildSymbolicEquation(eq, unknowns, solved, solvingStep.momentPoint, nodes),
+            fbd: eqFBD,
           });
           stepNum++;
         }
@@ -99,7 +122,7 @@ export function generateSolutionSteps(solverResults) {
   } else {
     // LEGACY PATH: For backwards compatibility with old results (no solvingSteps)
     const equations = solverResults.equations || [];
-    const eqSteps = generateEquationSteps(equations, unknowns, knownForces, momentPoint, reactions, nodes);
+    const eqSteps = generateEquationSteps(equations, unknowns, knownForces, momentPoint, reactions, nodes, solverResults);
     steps.push(...eqSteps);
   }
 
@@ -113,6 +136,11 @@ export function generateSolutionSteps(solverResults) {
   // ═══════════════════════════════════════════════════════════
   if (trussForces && trussForces.length > 0) {
     const trussSteps = generateTrussSteps(trussForces, nodes, members);
+    // Attach joint FBDs to the truss introduction step
+    const jointFBDs = buildTrussJointFBDs(solverResults);
+    if (trussSteps.length > 0 && jointFBDs.length > 0) {
+      trussSteps[0].jointFBDs = jointFBDs;
+    }
     steps.push(...trussSteps);
   }
 
@@ -245,7 +273,7 @@ function generateStep2_DistributedLoads(members, knownForces) {
 // ═══════════════════════════════════════════════════════════
 // EQUILIBRIUM EQUATIONS
 // ═══════════════════════════════════════════════════════════
-function generateEquationSteps(equations, unknowns, knownForces, momentPoint, reactions, nodes) {
+function generateEquationSteps(equations, unknowns, knownForces, momentPoint, reactions, nodes, solverResults) {
   const steps = [];
   let stepNum = knownForces.some(f => f.source && f.source.includes('DL')) ? 3 : 2;
 
@@ -269,11 +297,21 @@ function generateEquationSteps(equations, unknowns, knownForces, momentPoint, re
       }
     }
 
+    // Attach appropriate FBD for each equation type (legacy path)
+    let eqFBD = null;
+    if (solverResults) {
+      if (eq.type === 'force-x') eqFBD = buildGlobalFBD(solverResults, 'fx');
+      else if (eq.type === 'force-y') eqFBD = buildGlobalFBD(solverResults, 'fy');
+      else if (eq.type === 'moment') eqFBD = buildMomentFBD(solverResults, momentPoint);
+      else if (eq.type === 'hinge-moment') eqFBD = buildMomentFBD(solverResults, eq.hingeNode || momentPoint);
+    }
+
     const eqTitle = getEquationTitle(eq, momentPoint);
     steps.push({
       title: `Step ${stepNum}: ${eqTitle}`,
       description: getEquationDescription(eq, momentPoint),
-      latex: lines.join(' \\\\ ')
+      latex: lines.join(' \\\\ '),
+      fbd: eqFBD,
     });
     stepNum++;
   }
