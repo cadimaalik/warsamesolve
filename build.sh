@@ -36,6 +36,7 @@ cp contribution.html dist/
 cp logo.svg dist/
 cp -r hydro dist/
 cp _redirects dist/
+cp -r contributors dist/
 
 # Copy built Vite apps into dist/
 cp -r structsolve/dist dist/structsolve
