@@ -96,34 +96,57 @@ function solveWithHinges(nodes, members, unknowns, PPM) {
 
   // Find all internal hinge nodes
   const hingeNodes = findInternalHinges(nodes, members);
+  const processedHinges = new Set();
 
-  // For each hinge, find sub-structures and solve the easier side first
-  for (const hinge of hingeNodes) {
-    const { sideA, sideB } = partitionAtHinge(hinge, nodes, members);
+  // Greedy loop: always pick the hinge whose easier side has the
+  // FEWEST unsolved reaction unknowns.  This ensures we partition at
+  // the hinge that yields the most tractable sub-structure first
+  // (e.g. hinge C with 1 unknown before hinge E with 3 unknowns).
+  let madeProgress = true;
+  while (madeProgress) {
+    madeProgress = false;
 
-    // Count unsolved unknowns on each side
-    const unsolvedA = countUnsolved(sideA.nodeIds, unknowns, solvedValues);
-    const unsolvedB = countUnsolved(sideB.nodeIds, unknowns, solvedValues);
+    let bestHinge = null;
+    let bestSide = null;
+    let bestCount = Infinity;
 
-    // Pick the side with fewer unsolved unknowns
-    const easierSide = unsolvedA <= unsolvedB ? sideA : sideB;
-    const easierCount = Math.min(unsolvedA, unsolvedB);
+    for (const hinge of hingeNodes) {
+      if (processedHinges.has(hinge.id)) continue;
 
-    if (easierCount === 0) continue; // already fully solved
+      const { sideA, sideB } = partitionAtHinge(hinge, nodes, members);
+      const unsolvedA = countUnsolved(sideA.nodeIds, unknowns, solvedValues);
+      const unsolvedB = countUnsolved(sideB.nodeIds, unknowns, solvedValues);
+
+      const easierCount = Math.min(unsolvedA, unsolvedB);
+
+      if (easierCount === 0) {
+        processedHinges.add(hinge.id);
+        continue;
+      }
+
+      if (easierCount < bestCount) {
+        bestCount = easierCount;
+        bestHinge = hinge;
+        bestSide = unsolvedA <= unsolvedB ? sideA : sideB;
+      }
+    }
+
+    if (!bestHinge) break;
+    processedHinges.add(bestHinge.id);
 
     // Get the unknowns on the easier side that are still unsolved
     const sideUnknownIndices = unknowns.map((u, i) =>
-      easierSide.nodeIds.has(u.nodeId) && solvedValues[i] === undefined ? i : null
+      bestSide.nodeIds.has(u.nodeId) && solvedValues[i] === undefined ? i : null
     ).filter(i => i !== null);
 
     // Gather known forces on this side only
     const sideKnownForces = gatherSideForces(
-      easierSide.nodeIds, nodes, members, unknowns, solvedValues
+      bestSide.nodeIds, nodes, members, unknowns, solvedValues
     );
 
     // Build equations for the sub-structure
     const subEquations = buildSubStructureEquations(
-      hinge, easierSide, nodes, members,
+      bestHinge, bestSide, nodes, members,
       unknowns, sideUnknownIndices, solvedValues, sideKnownForces
     );
 
@@ -151,20 +174,23 @@ function solveWithHinges(nodes, members, unknowns, PPM) {
 
       solvingSteps.push({
         type: 'sub-structure',
-        hingeNode: hinge,
-        side: easierSide,
-        sideLabel: Array.from(easierSide.nodeIds).map(id =>
+        hingeNode: bestHinge,
+        side: bestSide,
+        sideLabel: Array.from(bestSide.nodeIds).map(id =>
           nodes.find(n => n.id === id)?.label || id
         ).sort().join(''),
-        description: `Cut at hinge ${hinge.label}, solve ${easierSide.description} side`,
+        description: `Cut at hinge ${bestHinge.label}, solve ${bestSide.description} side`,
         equations: subEquations,
-        momentPoint: hinge,
+        knownForces: sideKnownForces,
+        momentPoint: bestHinge,
         solvedIndices: sideUnknownIndices,
         solvedValues: sideUnknownIndices.map((idx, j) => ({
           ...unknowns[idx],
           value: solution[j]
         }))
       });
+
+      madeProgress = true;
     }
   }
 
@@ -201,10 +227,14 @@ function solveWithHinges(nodes, members, unknowns, PPM) {
       solvedValues[remainingIndices[j]] = roundTo(solution[j], 4);
     }
 
+    // Pass all 3 global equations (ΣFx, ΣFy, ΣM) for pedagogical display,
+    // even if fewer were needed for the solve — user sees full derivation
+    // with substitution of previously-solved values.
+    const displayEquations = allEquations.slice(0, Math.max(useCount, 3));
     solvingSteps.push({
       type: 'global',
       description: `Global equilibrium — ${remainingIndices.length} remaining unknowns`,
-      equations: allEquations.slice(0, useCount),
+      equations: displayEquations,
       momentPoint,
       knownForces,
       solvedIndices: remainingIndices,
@@ -387,7 +417,8 @@ function buildSubStructureEquations(hinge, side, nodes, members, unknowns, sideU
     coefficients: new Array(n).fill(0),
     rhs: 0,
     description: `\\sum M_{${hinge.label}} = 0 \\text{ (sub-structure)}`,
-    type: 'sub-moment'
+    type: 'sub-moment',
+    hingeNode: hinge,
   };
 
   for (const idx of sideUnknownIndices) {
@@ -423,8 +454,8 @@ function buildSubStructureEquations(hinge, side, nodes, members, unknowns, sideU
   equations.push(eqM);
 
   if (sideUnknownIndices.length >= 2) {
-    const sideSupports = nodes.filter(n =>
-      side.nodeIds.has(n.id) && n.support && n.id !== hinge.id
+    const sideSupports = nodes.filter(nd =>
+      side.nodeIds.has(nd.id) && nd.support && nd.id !== hinge.id
     );
 
     for (let s = 0; s < sideSupports.length && equations.length < sideUnknownIndices.length; s++) {
@@ -433,7 +464,8 @@ function buildSubStructureEquations(hinge, side, nodes, members, unknowns, sideU
         coefficients: new Array(n).fill(0),
         rhs: 0,
         description: `\\sum M_{${mp.label}} = 0 \\text{ (sub-structure)}`,
-        type: 'sub-moment'
+        type: 'sub-moment',
+        momentPoint: mp,
       };
 
       for (const idx of sideUnknownIndices) {
