@@ -369,12 +369,14 @@ function PointLoadArrow({ sx, sy, fx, fy, scale, color, label }) {
     const ty = sy; // arrow HEAD is at the node
     const tailY = ty - dir * ARROW_LEN;
     const angle = dir > 0 ? 90 : -90; // 90 = pointing down, -90 = pointing up
+    // Label at tail (top of arrow body), not at head
+    const lblY = dir > 0 ? tailY - 8 : tailY + 12;
     elements.push(
       <g key="fy">
         <line x1={tx} y1={tailY} x2={tx} y2={ty} stroke={color} strokeWidth={2} />
         <polygon points={`0,0 ${-HEAD_L},${-HEAD_W} ${-HEAD_L},${HEAD_W}`}
           fill={color} transform={`translate(${tx},${ty}) rotate(${angle})`} />
-        <text x={tx + 7} y={ty + dir * 14} fill={color} fontSize={11}
+        <text x={tx + 7} y={lblY} fill={color} fontSize={11}
           fontFamily="'JetBrains Mono', monospace">
           {Math.abs(fy)} kN
         </text>
@@ -388,13 +390,16 @@ function PointLoadArrow({ sx, sy, fx, fy, scale, color, label }) {
     const tx = sx; // HEAD at node
     const tailX = tx - dir * ARROW_LEN;
     const angle = fx > 0 ? 0 : 180;
+    // Label at tail (start of arrow body)
+    const lblX = dir > 0 ? tailX - 4 : tailX + 4;
     elements.push(
       <g key="fx">
         <line x1={tailX} y1={sy} x2={tx} y2={sy} stroke={color} strokeWidth={2} />
         <polygon points={`0,0 ${-HEAD_L},${-HEAD_W} ${-HEAD_L},${HEAD_W}`}
           fill={color} transform={`translate(${tx},${sy}) rotate(${angle})`} />
-        <text x={tailX + (dir > 0 ? -60 : 6)} y={sy - 6} fill={color} fontSize={11}
-          fontFamily="'JetBrains Mono', monospace">
+        <text x={lblX} y={sy - 6} fill={color} fontSize={11}
+          fontFamily="'JetBrains Mono', monospace"
+          textAnchor={dir > 0 ? 'end' : 'start'}>
           {Math.abs(fx)} kN
         </text>
       </g>
