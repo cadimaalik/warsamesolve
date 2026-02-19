@@ -424,7 +424,7 @@ function ReactionArrow({ nodeId, type, label, value, mode, nodes, t }) {
   if (!node) return null;
   const { x: sx, y: sy } = toSVG(node.x, node.y, t);
 
-  const ARROW_LEN = Math.max(30, Math.min(50, t.scale * 0.5));
+  const ARROW_LEN = Math.max(60, Math.min(90, t.scale * 0.75));
   const color = mode === 'solved' ? COLORS.reactionSolved : COLORS.reaction;
 
   // For solved reactions, reverse direction if negative
@@ -509,7 +509,7 @@ function MemberForceArrow({ nodeId, otherNodeId, label, nodes, t }) {
   const ux = dx / L;
   const uy = -dy / L; // flip y for SVG
 
-  const ARROW_LEN = Math.max(28, Math.min(60, t.scale * 0.7));
+  const ARROW_LEN = Math.max(60, Math.min(95, t.scale * 0.8));
   const headX = sx + ux * ARROW_LEN;
   const headY = sy + uy * ARROW_LEN;
 
