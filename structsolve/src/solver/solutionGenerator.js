@@ -299,21 +299,33 @@ function buildEquationLatex(eq, unknowns, reactions, solvedSoFar, knownForces) {
 // ── Step builders ──────────────────────────────────────────────────
 
 /**
- * Step 0: Global Free Body Diagram — ALWAYS variable names only (Fix 8).
+ * Step 0: Global Free Body Diagram — ALWAYS variable names only.
+ * For N > 3 unknowns, adds a note explaining the partitioning strategy.
  */
 function buildGlobalFBDStep(nodes, members, unknowns, reactions) {
-  // Always mode='unknown' so only variable names shown (Fix 8)
   const reactionItems = buildReactionItems(unknowns, reactions, null);
+  const unknownLabels = unknowns.map(u => getReactionLabel(u.label, u.type)).join(', ');
+  const n = unknowns.length;
 
-  const unknownLabels = unknowns
-    .map(u => getReactionLabel(u.label, u.type))
-    .join(', ');
+  let notes;
+  if (n <= 3) {
+    notes = `${n} unknown${n !== 1 ? 's' : ''} (${unknownLabels}), 3 global equations → direct solution.`;
+  } else {
+    const hingeCount = countInternalHinges(nodes, members);
+    const hingeLabels = getHingeLabels(nodes, members);
+    const availableEqs = 3 + hingeCount;
+    notes =
+      `${n} unknowns (${unknownLabels}), 3 global equations — NOT directly solvable. ` +
+      `Internal hinge${hingeCount > 1 ? 's' : ''} at ${hingeLabels} provide${hingeCount > 1 ? '' : 's'} ` +
+      `${hingeCount} additional equation${hingeCount > 1 ? 's' : ''} → ${availableEqs} total. ` +
+      `Partition the structure at the hinge.`;
+  }
 
   return {
     title: 'Free Body Diagram',
     fbd: { nodes, members, reactionItems, cutNodeIds: [], highlightNodeIds: null },
     equations: [],
-    notes: `Support reactions to determine: ${unknownLabels} (${unknowns.length} unknown${unknowns.length !== 1 ? 's' : ''})`,
+    notes,
   };
 }
 
@@ -367,35 +379,76 @@ function buildDirectSolveSteps(solvingStep, unknowns, reactions) {
 
 /**
  * Sub-structure solve path (> 3 unknowns).
+ * Follows the exact methodology:
+ *   Step 1 — sub-structure FBD with internal forces V_{B,x}/V_{B,y} at hinge cut
+ *   Step 2 — sub-structure equations (ΣM about hinge eliminates internal forces)
+ *   Step 3 — global FBD with already-solved values shown as numbers
+ *   Step 4 — global equations with substitution
  */
 function buildSubStructureSteps(solvingSteps, unknowns, reactions, nodes, members) {
   const steps = [];
-  const solvedSoFar = {};
+  const solvedSoFar = {};       // index → solved value (accumulated as we go)
+  const allSolvedSoFar = [];    // human-readable solved labels for global-step note
 
   for (const solvingStep of solvingSteps) {
+
+    // ── Sub-structure step ──────────────────────────────────────────
     if (solvingStep.type === 'sub-structure') {
-      const hingeId = solvingStep.hingeNode?.id;
+      const hingeId   = solvingStep.hingeNode?.id;
+      const hingeNode = solvingStep.hingeNode;
       const sideNodeIds = solvingStep.side?.nodeIds || new Set();
+      const targetIndices = solvingStep.solvedIndices || [];
+
+      // Count reaction unknowns that are still unsolved on this sub-structure side
+      const sideUnsolvedCount = unknowns.filter(
+        (u, i) => sideNodeIds.has(u.nodeId) && solvedSoFar[i] === undefined
+      ).length;
+      // Total sub-structure unknowns: side reactions + 2 internal forces at cut
+      const totalSubUnknowns = sideUnsolvedCount + (hingeId ? 2 : 0);
+
+      // Internal force arrows at the hinge cut (V_{B,x} and V_{B,y})
+      const cutForceItems = hingeId ? [
+        {
+          nodeId: hingeId,
+          type: 'Rx',
+          label: `V_{${hingeNode.label}x}`,
+          value: 0,
+          mode: 'unknown',
+        },
+        {
+          nodeId: hingeId,
+          type: 'Ry',
+          label: `V_{${hingeNode.label}y}`,
+          value: 0,
+          mode: 'unknown',
+        },
+      ] : [];
 
       const subFBD = {
         nodes,
         members,
-        reactionItems: buildReactionItems(unknowns, reactions, solvedSoFar),
+        reactionItems: [
+          ...buildReactionItems(unknowns, reactions, solvedSoFar),
+          ...cutForceItems,
+        ],
         cutNodeIds: hingeId ? [hingeId] : [],
         highlightNodeIds: sideNodeIds.size > 0 ? sideNodeIds : null,
       };
 
-      const targetIndices = solvingStep.solvedIndices || [];
+      const subNote = hingeId
+        ? `Sub-structure ${solvingStep.sideLabel || ''}: ${totalSubUnknowns} unknowns, 3 equations. ` +
+          `Internal forces V_{${hingeNode.label}x} and V_{${hingeNode.label}y} at the hinge cut. ` +
+          `Taking ΣM about ${hingeNode.label} eliminates both internal forces → independent equation for the support reactions on this side.`
+        : null;
 
       steps.push({
         title: `Sub-structure ${solvingStep.sideLabel || ''} — FBD`,
         fbd: subFBD,
         equations: [],
-        notes: hingeId
-          ? `Cut at hinge ${solvingStep.hingeNode.label}. Taking moment about the hinge eliminates internal forces at the cut.`
-          : null,
+        notes: subNote,
       });
 
+      // ── Sub-structure equations ───────────────────────────────────
       if (solvingStep.equations && solvingStep.equations.length > 0) {
         const ordered = reorderEquations(solvingStep.equations);
         const eqLines = [];
@@ -406,9 +459,15 @@ function buildSubStructureSteps(solvingSteps, unknowns, reactions, nodes, member
         }
         while (eqLines.length > 0 && eqLines[eqLines.length - 1] === '') eqLines.pop();
 
+        // Mark newly-solved unknowns (AFTER building LaTeX so derivation shows unsolved form)
         for (const idx of targetIndices) {
           const rxn = reactions.find(r => r.nodeId === unknowns[idx].nodeId && r.type === unknowns[idx].type);
-          if (rxn) solvedSoFar[idx] = rxn.value;
+          if (rxn) {
+            solvedSoFar[idx] = rxn.value;
+            allSolvedSoFar.push(
+              `${getReactionLabel(unknowns[idx].label, unknowns[idx].type)} = ${fmt(Math.abs(rxn.value))} kN`
+            );
+          }
         }
 
         steps.push({
@@ -420,10 +479,16 @@ function buildSubStructureSteps(solvingSteps, unknowns, reactions, nodes, member
       } else {
         for (const idx of targetIndices) {
           const rxn = reactions.find(r => r.nodeId === unknowns[idx].nodeId && r.type === unknowns[idx].type);
-          if (rxn) solvedSoFar[idx] = rxn.value;
+          if (rxn) {
+            solvedSoFar[idx] = rxn.value;
+            allSolvedSoFar.push(
+              `${getReactionLabel(unknowns[idx].label, unknowns[idx].type)} = ${fmt(Math.abs(rxn.value))} kN`
+            );
+          }
         }
       }
 
+    // ── Global equilibrium step ─────────────────────────────────────
     } else if (solvingStep.type === 'global') {
       const globalFBD = {
         nodes,
@@ -433,11 +498,21 @@ function buildSubStructureSteps(solvingSteps, unknowns, reactions, nodes, member
         highlightNodeIds: null,
       };
 
+      // Count how many are still unsolved
+      const remainingCount = unknowns.filter((_, i) => solvedSoFar[i] === undefined).length;
+      const solvedStr = allSolvedSoFar.length > 0
+        ? allSolvedSoFar.join(', ') + ' found from sub-structure analysis. '
+        : '';
+      const globalNote =
+        `${solvedStr}` +
+        `${remainingCount} remaining unknown${remainingCount !== 1 ? 's' : ''}, ` +
+        `3 global equations — solvable. Already-solved reactions shown as numbers.`;
+
       steps.push({
         title: 'Global Equilibrium — FBD',
         fbd: globalFBD,
         equations: [],
-        notes: 'Already-solved reactions are shown with their computed values.',
+        notes: globalNote,
       });
 
       if (solvingStep.equations && solvingStep.equations.length > 0) {
