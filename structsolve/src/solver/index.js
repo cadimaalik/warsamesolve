@@ -144,54 +144,78 @@ function solveWithHinges(nodes, members, unknowns, PPM) {
       bestSide.nodeIds, nodes, members, unknowns, solvedValues
     );
 
-    // Build equations for the sub-structure
+    // Build equations for the sub-structure (ΣM about hinge + additional moment eqs)
     const subEquations = buildSubStructureEquations(
       bestHinge, bestSide, nodes, members,
       unknowns, sideUnknownIndices, solvedValues, sideKnownForces
     );
 
-    // Solve the sub-system
-    if (sideUnknownIndices.length <= subEquations.length && sideUnknownIndices.length > 0) {
-      const A = subEquations.map(eq => {
-        const row = new Array(sideUnknownIndices.length).fill(0);
-        for (let j = 0; j < sideUnknownIndices.length; j++) {
-          row[j] = eq.coefficients[sideUnknownIndices[j]] || 0;
-        }
-        return row;
-      });
-      const b = subEquations.map(eq => eq.rhs);
+    if (subEquations.length === 0 || sideUnknownIndices.length === 0) continue;
 
-      const useCount = sideUnknownIndices.length;
-      const solution = gaussianElimination(
-        A.slice(0, useCount),
-        b.slice(0, useCount)
-      );
+    // KEY FIX: Taking ΣM about the hinge eliminates internal forces V_hinge,x / V_hinge,y.
+    // However, some side unknowns may have ZERO moment arm about the hinge (e.g. B_x on a
+    // horizontal beam where B and hinge C share the same y-coordinate).  Including those
+    // zero-coefficient unknowns in the Gaussian solve creates a singular matrix and causes
+    // the solver to throw.
+    //
+    // Strategy: only solve the unknowns that ACTUALLY appear (non-zero coefficient) in the
+    // sub-structure equations.  The remaining side unknowns are left for the global step.
+    const firstEq = subEquations[0];
+    const solvableIndices = sideUnknownIndices.filter(
+      i => Math.abs(firstEq.coefficients[i]) > 1e-10
+    );
 
-      // Store solved values
-      for (let j = 0; j < sideUnknownIndices.length; j++) {
-        solvedValues[sideUnknownIndices[j]] = roundTo(solution[j], 4);
+    // If nothing is solvable from this sub-structure (e.g. all moment arms are zero),
+    // mark as processed and continue — the global step will handle everything.
+    if (solvableIndices.length === 0) continue;
+
+    // Build the reduced coefficient matrix using only solvableIndices columns.
+    // Use as many equations as there are solvable unknowns (no more).
+    const useCount = Math.min(solvableIndices.length, subEquations.length);
+    const A = subEquations.slice(0, useCount).map(eq => {
+      const row = new Array(solvableIndices.length).fill(0);
+      for (let j = 0; j < solvableIndices.length; j++) {
+        row[j] = eq.coefficients[solvableIndices[j]] || 0;
       }
+      return row;
+    });
+    const b = subEquations.slice(0, useCount).map(eq => eq.rhs);
 
-      solvingSteps.push({
-        type: 'sub-structure',
-        hingeNode: bestHinge,
-        side: bestSide,
-        sideLabel: Array.from(bestSide.nodeIds).map(id =>
-          nodes.find(n => n.id === id)?.label || id
-        ).sort().join(''),
-        description: `Cut at hinge ${bestHinge.label}, solve ${bestSide.description} side`,
-        equations: subEquations,
-        knownForces: sideKnownForces,
-        momentPoint: bestHinge,
-        solvedIndices: sideUnknownIndices,
-        solvedValues: sideUnknownIndices.map((idx, j) => ({
-          ...unknowns[idx],
-          value: solution[j]
-        }))
-      });
+    // Only attempt the solve when the system is square and non-trivially solvable.
+    if (useCount !== solvableIndices.length) continue;
 
-      madeProgress = true;
+    let solution;
+    try {
+      solution = gaussianElimination(A, b);
+    } catch {
+      // Singular sub-structure system (e.g. redundant moment equations) — skip.
+      continue;
     }
+
+    // Store solved values
+    for (let j = 0; j < solvableIndices.length; j++) {
+      solvedValues[solvableIndices[j]] = roundTo(solution[j], 4);
+    }
+
+    solvingSteps.push({
+      type: 'sub-structure',
+      hingeNode: bestHinge,
+      side: bestSide,
+      sideLabel: Array.from(bestSide.nodeIds).map(id =>
+        nodes.find(n => n.id === id)?.label || id
+      ).sort().join(''),
+      description: `Cut at hinge ${bestHinge.label}, solve ${bestSide.description} side`,
+      equations: subEquations,
+      knownForces: sideKnownForces,
+      momentPoint: bestHinge,
+      solvedIndices: solvableIndices,
+      solvedValues: solvableIndices.map((idx, j) => ({
+        ...unknowns[idx],
+        value: solution[j]
+      }))
+    });
+
+    madeProgress = true;
   }
 
   // After all hinges processed, solve remaining unknowns with global equations
