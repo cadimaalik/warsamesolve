@@ -33,7 +33,9 @@ export default function EquationBlock({ equations }) {
     <div ref={ref} className="equation-block">
       {groups.map((group, gi) => (
         <div key={gi} style={{ marginBottom: gi < groups.length - 1 ? 8 : 0 }}>
-          {'\\[' + group.join(' \\\\ ') + '\\]'}
+          {group.length === 1
+            ? '\\[' + group[0] + '\\]'
+            : '\\[\\begin{gathered}' + group.join(' \\\\ ') + '\\end{gathered}\\]'}
         </div>
       ))}
     </div>

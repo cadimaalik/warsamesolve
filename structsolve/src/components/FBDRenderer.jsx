@@ -357,29 +357,29 @@ function DistributedLoadShape({ member, dl, nodes, t }) {
 }
 
 // ── Point load arrow in SVG coords ───────────────────────────────
-// Convention: tail starts near node, head extends in force direction
-// (matching the main canvas LoadArrows convention so everything stays inside the box)
+// Tail at node, head extends in force direction.
+// Label is centered DIRECTLY BELOW the arrowhead (not beside it).
 function PointLoadArrow({ sx, sy, fx, fy, scale, color, label }) {
-  const ARROW_LEN = Math.max(28, Math.min(50, scale * 0.6));
-  const GAP = 6; // gap between node centre and arrow tail
+  const ARROW_LEN = Math.max(44, Math.min(70, scale * 0.85)); // longer = fewer collisions
+  const GAP = 6;
   const HEAD_W = 4, HEAD_L = 9;
   const elements = [];
 
   if (Math.abs(fy) > 1e-10) {
-    // fy > 0 = upward force → up in SVG = -y direction
-    const dirSVG = fy > 0 ? -1 : 1; // -1 up, +1 down in SVG
+    // fy > 0 upward → -y SVG; fy < 0 downward → +y SVG
+    const dirSVG = fy > 0 ? -1 : 1;
     const tailY = sy + dirSVG * GAP;
     const headY = tailY + dirSVG * ARROW_LEN;
     const angle = dirSVG > 0 ? 90 : -90;
-    // Label beyond arrowhead (further from node)
-    const lblY = dirSVG > 0 ? headY + 12 : headY - 4;
+    // Label centred directly below arrowhead
+    const lblY = dirSVG > 0 ? headY + 14 : headY - 5;
     elements.push(
       <g key="fy">
         <line x1={sx} y1={tailY} x2={sx} y2={headY} stroke={color} strokeWidth={2} />
         <polygon points={`0,0 ${-HEAD_L},${-HEAD_W} ${-HEAD_L},${HEAD_W}`}
           fill={color} transform={`translate(${sx},${headY}) rotate(${angle})`} />
-        <text x={sx + 7} y={lblY} fill={color} fontSize={11}
-          fontFamily="'JetBrains Mono', monospace">
+        <text x={sx} y={lblY} fill={color} fontSize={11}
+          fontFamily="'JetBrains Mono', monospace" textAnchor="middle">
           {Math.abs(fy)} kN
         </text>
       </g>
@@ -387,21 +387,19 @@ function PointLoadArrow({ sx, sy, fx, fy, scale, color, label }) {
   }
 
   if (Math.abs(fx) > 1e-10) {
-    // fx > 0 → right in SVG (+x)
+    // fx > 0 rightward; fx < 0 leftward
     const dirSVG = fx > 0 ? 1 : -1;
     const tailX = sx + dirSVG * GAP;
     const headX = tailX + dirSVG * ARROW_LEN;
     const angle = fx > 0 ? 0 : 180;
-    // Label beyond arrowhead
-    const lblX = dirSVG > 0 ? headX + 4 : headX - 4;
+    // Label centred directly below arrowhead
     elements.push(
       <g key="fx">
         <line x1={tailX} y1={sy} x2={headX} y2={sy} stroke={color} strokeWidth={2} />
         <polygon points={`0,0 ${-HEAD_L},${-HEAD_W} ${-HEAD_L},${HEAD_W}`}
           fill={color} transform={`translate(${headX},${sy}) rotate(${angle})`} />
-        <text x={lblX} y={sy - 6} fill={color} fontSize={11}
-          fontFamily="'JetBrains Mono', monospace"
-          textAnchor={dirSVG > 0 ? 'start' : 'end'}>
+        <text x={headX} y={sy + 14} fill={color} fontSize={11}
+          fontFamily="'JetBrains Mono', monospace" textAnchor="middle">
           {Math.abs(fx)} kN
         </text>
       </g>
@@ -538,7 +536,7 @@ export default function FBDRenderer({
 }) {
   const SVG_W = 600;
   const SVG_H = maxHeight;
-  const PAD = 90; // generous padding so arrows, labels, and support symbols stay inside the box
+  const PAD = 100; // padding to contain longer arrows, labels, and support symbols
 
   if (!nodes || nodes.length === 0) return null;
 
