@@ -398,12 +398,37 @@ function buildTrussJointFBD(jointId, nodes, members, reactions) {
     m => m.type === 'truss' && (m.startNodeId === jointId || m.endNodeId === jointId)
   );
 
-  // Include far-end nodes for direction computation and member line drawing
-  const jointNodes = [joint];
+  // Issue 2: Create virtual stub nodes at a fixed distance so the FBD always
+  // has a consistent, readable scale regardless of actual truss dimensions.
+  const STUB_DIST = 0.5; // units — chosen so the joint fills the SVG nicely
+  const fbdNodes = [{ ...joint }];
+  const memberForceArrows = [];
+
   for (const m of connTruss) {
     const otherId = m.startNodeId === jointId ? m.endNodeId : m.startNodeId;
     const other = nodes.find(n => n.id === otherId);
-    if (other && !jointNodes.find(n => n.id === other.id)) jointNodes.push(other);
+    if (!other) continue;
+    const dx = other.x - joint.x;
+    const dy = other.y - joint.y;
+    const L = Math.sqrt(dx * dx + dy * dy);
+    if (L < 1e-12) continue;
+
+    // Virtual stub at fixed distance in the member direction
+    const stubId = `stub-${m.id}-${jointId}`;
+    fbdNodes.push({
+      id: stubId,
+      x: joint.x + (dx / L) * STUB_DIST,
+      y: joint.y + (dy / L) * STUB_DIST,
+      label: '',
+      loads: { fx: 0, fy: 0, moment: 0 },
+      support: null,
+    });
+
+    memberForceArrows.push({
+      nodeId: jointId,
+      otherNodeId: stubId,
+      label: `F_${m.startLabel}${m.endLabel}`,
+    });
   }
 
   const isSupport = !!joint.support;
@@ -417,25 +442,13 @@ function buildTrussJointFBD(jointId, nodes, members, reactions) {
       type: r.type,
       label: getReactionLabel(r.label, r.type),
       value: 0,
-      mode: 'unknown', // always variable names in joint FBD (Fix 10)
+      mode: 'unknown',
     }));
   }
 
-  // Fix 10: member forces as arrows with variable names (tension = away from joint)
-  const memberForceArrows = connTruss.map(m => {
-    const otherId = m.startNodeId === jointId ? m.endNodeId : m.startNodeId;
-    // Plain text label for SVG rendering
-    return {
-      nodeId: jointId,
-      otherNodeId: otherId,
-      label: `F_${m.startLabel}${m.endLabel}`,
-    };
-  });
-
   return {
-    nodes: jointNodes,
-    // Fix 10: support nodes isolated — no member lines
-    members: isSupport ? [] : connTruss,
+    nodes: fbdNodes,
+    members: [], // no member lines — force arrows show the directions
     reactionItems,
     memberForceArrows,
     cutNodeIds: [],
@@ -639,10 +652,13 @@ function buildTrussSteps(nodes, members, trussForces, reactions) {
 
       const xSign = dx > 0 ? '' : '-';
       const ySign = dy > 0 ? '' : '-';
-      const lbl = `F_{${m.startLabel}${m.endLabel}}`;
-      eqLines.push(`${lbl}_{,x} = ${xSign}${geoFracStr(dx, L)}\\, ${lbl}`);
+      const baseLabel = `${m.startLabel}${m.endLabel}`;
+      const xLbl = `F_{${baseLabel},x}`;
+      const yLbl = `F_{${baseLabel},y}`;
+      const forceLbl = `F_{${baseLabel}}`;
+      eqLines.push(`${xLbl} = ${xSign}${geoFracStr(dx, L)}\\, ${forceLbl}`);
       eqLines.push('');
-      eqLines.push(`${lbl}_{,y} = ${ySign}${geoFracStr(dy, L)}\\, ${lbl}`);
+      eqLines.push(`${yLbl} = ${ySign}${geoFracStr(dy, L)}\\, ${forceLbl}`);
       eqLines.push('');
     }
 
@@ -895,18 +911,29 @@ export function generateSolution(solverResults) {
     // Fix 8: Step 0 always shows variable names only
     steps.push(buildGlobalFBDStep(nodes, members, unknowns, reactions));
 
-    // Support reactions summary — Issue 5: each on its own display block
-    steps.push({
-      title: 'Support Reactions',
-      fbd: null,
-      equations: reactions.flatMap((r, i) => {
-        const label = getReactionLabel(r.label, r.type);
-        const dir = getDirectionArrow(r.value, r.type);
-        const line = `${label} = ${fmt(Math.abs(r.value))} \\text{ kN} \\; ${dir}`;
-        return i < reactions.length - 1 ? [line, ''] : [line];
-      }),
-      notes: 'Reactions solved from the full joint equilibrium system.',
-    });
+    // Issue 1: Show HOW reactions were derived — write the equilibrium equations
+    if (!solvingSteps || solvingSteps.length === 0) {
+      // Fallback: just list results
+      steps.push({
+        title: 'Support Reactions',
+        fbd: null,
+        equations: reactions.flatMap((r, i) => {
+          const label = getReactionLabel(r.label, r.type);
+          const dir = getDirectionArrow(r.value, r.type);
+          const line = `${label} = ${fmt(Math.abs(r.value))} \\text{ kN} \\; ${dir}`;
+          return i < reactions.length - 1 ? [line, ''] : [line];
+        }),
+        notes: 'Reactions solved from the full joint equilibrium system.',
+      });
+    } else if (unknowns.length <= 3 && solvingSteps[0]?.type === 'global') {
+      // Direct solve: one step per equilibrium equation showing full derivation
+      const directSteps = buildDirectSolveSteps(solvingSteps[0], unknowns, reactions);
+      steps.push(...directSteps);
+    } else {
+      // Sub-structure or complex solve path
+      const subSteps = buildSubStructureSteps(solvingSteps, unknowns, reactions, nodes, members);
+      steps.push(...subSteps);
+    }
 
     const trussSteps = buildTrussSteps(nodes, members, trussForces || [], reactions);
     steps.push(...trussSteps);
