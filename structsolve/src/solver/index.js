@@ -623,14 +623,33 @@ function solveTrussSystem(nodes, members, PPM) {
 
   const verification = verifyResults(equations, solution);
 
+  // --- Build global equilibrium equations for pedagogical display ---
+  // The joint system above solves correctly, but for the solution page we want
+  // to show the 3 global equations (ΣFx, ΣFy, ΣM) used to find support reactions.
+  const {
+    equations: globalEqs,
+    knownForces,
+    momentPoint,
+  } = buildEquations(nodes, members, reactionUnknowns);
+
+  const solvingSteps = [{
+    type: 'global',
+    description: 'Global equilibrium for support reactions',
+    equations: globalEqs,
+    knownForces,
+    momentPoint,
+    solvedReactions: reactions,
+  }];
+
   return {
     success: true,
     reactions,
     trussForces,
     equations,
     unknowns: reactionUnknowns,
-    knownForces: [],
-    momentPoint: null,
+    knownForces,
+    momentPoint,
+    solvingSteps,
     nodes,
     members,
     PPM,
