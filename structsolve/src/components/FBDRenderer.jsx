@@ -479,13 +479,52 @@ function InternalHingeDot({ nodeId, nodes, t }) {
   return <circle cx={sx} cy={sy} r={4} fill={COLORS.hinge} stroke="#374151" strokeWidth={1.5} />;
 }
 
+// ── Member force arrow (for truss joint FBDs — variable name labels) ─
+function MemberForceArrow({ nodeId, otherNodeId, label, nodes, t }) {
+  const node = nodes.find(n => n.id === nodeId);
+  const other = nodes.find(n => n.id === otherNodeId);
+  if (!node || !other) return null;
+
+  const { x: sx, y: sy } = toSVG(node.x, node.y, t);
+
+  const dx = other.x - node.x;
+  const dy = other.y - node.y;
+  const L = Math.sqrt(dx * dx + dy * dy);
+  if (L < 1e-12) return null;
+
+  // Unit direction in SVG coords (y-flipped)
+  const ux = dx / L;
+  const uy = -dy / L; // flip y for SVG
+
+  const ARROW_LEN = Math.max(36, t.scale * 0.55);
+  const headX = sx + ux * ARROW_LEN;
+  const headY = sy + uy * ARROW_LEN;
+
+  // Place label beyond arrowhead
+  const lblX = headX + ux * 14;
+  const lblY = headY + uy * 14;
+
+  return (
+    <g>
+      <Arrow x1={sx} y1={sy} x2={headX} y2={headY} color={COLORS.reaction} strokeWidth={2} />
+      <text x={lblX} y={lblY + 4}
+        fill={COLORS.reaction} fontSize={11}
+        fontFamily="'JetBrains Mono', monospace"
+        textAnchor="middle">
+        {label}
+      </text>
+    </g>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────
 export default function FBDRenderer({
-  nodes,          // solver nodes (meters, y-up)
-  members,        // solver members
-  reactionItems,  // [{nodeId, type, label, value?, mode:'unknown'|'solved'}]
-  cutNodeIds,     // Set or array of nodeIds to show as hinge cuts (open ⊘)
-  highlightNodeIds, // if non-null/Set, only draw members/nodes in this set (subset mode)
+  nodes,              // solver nodes (meters, y-up)
+  members,            // solver members
+  reactionItems,      // [{nodeId, type, label, value?, mode:'unknown'|'solved'}]
+  memberForceArrows,  // [{nodeId, otherNodeId, label}] — truss joint force arrows
+  cutNodeIds,         // Set or array of nodeIds to show as hinge cuts (open ⊘)
+  highlightNodeIds,   // if non-null/Set, only draw members/nodes in this set (subset mode)
   maxHeight = 300,
 }) {
   const SVG_W = 600;
@@ -598,6 +637,11 @@ export default function FBDRenderer({
       {/* Layer 6: Reaction arrows */}
       {(reactionItems || []).map((r, i) => (
         <ReactionArrow key={`rxn-${i}`} {...r} nodes={nodes} t={t} />
+      ))}
+
+      {/* Layer 6b: Member force arrows (truss joint FBDs) */}
+      {(memberForceArrows || []).map((mfa, i) => (
+        <MemberForceArrow key={`mfa-${i}`} {...mfa} nodes={nodes} t={t} />
       ))}
 
       {/* Layer 7: Node dots */}
