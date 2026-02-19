@@ -434,16 +434,18 @@ function ReactionArrow({ nodeId, type, label, value, mode, nodes, t }) {
     : label;
 
   if (type === 'Rx') {
-    // Horizontal reaction. Assumed → right (positive). If solved & negative → actual is left.
+    // HEAD AT NODE: arrowhead lands AT the node; shaft extends from outside.
+    // Rightward (positive): tail to the LEFT, head at node.
+    // Leftward (negative, solved): tail to the RIGHT, head at node.
     const dir = (mode === 'solved' && actualValue < 0) ? -1 : 1;
-    // Arrow pointing in the force direction, HEAD at arrowhead
-    const headX = sx + dir * ARROW_LEN;
+    const tailX = sx - dir * ARROW_LEN; // tail on opposite side from force direction
+    const headX = sx;                    // head AT node
     return (
       <g>
-        <Arrow x1={sx} y1={sy} x2={headX} y2={sy} color={color} />
-        <text x={headX + dir * 6} y={sy + 4} fill={color} fontSize={11}
+        <Arrow x1={tailX} y1={sy} x2={headX} y2={sy} color={color} />
+        <text x={tailX - dir * 6} y={sy + 14} fill={color} fontSize={11}
           fontFamily="'JetBrains Mono', monospace"
-          textAnchor={dir > 0 ? 'start' : 'end'}>
+          textAnchor={dir > 0 ? 'end' : 'start'}>
           {displayLabel}
         </text>
       </g>
@@ -451,13 +453,16 @@ function ReactionArrow({ nodeId, type, label, value, mode, nodes, t }) {
   }
 
   if (type === 'Ry') {
-    // Vertical reaction. Assumed → up (positive). In SVG: up = negative y.
-    const dir = (mode === 'solved' && actualValue < 0) ? 1 : -1; // -1 = up in SVG
-    const headY = sy + dir * ARROW_LEN;
+    // HEAD AT NODE: arrowhead lands AT the node; shaft comes from outside (support side).
+    // Upward (positive, dir=-1 SVG): tail BELOW node, head at node → "comes from below".
+    // Downward (negative, dir=+1 SVG): tail ABOVE node, head at node.
+    const dir = (mode === 'solved' && actualValue < 0) ? 1 : -1; // -1 = upward in SVG
+    const tailY = sy - dir * ARROW_LEN; // tail on opposite side from head
+    const headY = sy;                    // head AT node
     return (
       <g>
-        <Arrow x1={sx} y1={sy} x2={sx} y2={headY} color={color} />
-        <text x={sx + 7} y={headY + (dir < 0 ? -4 : 16)} fill={color} fontSize={11}
+        <Arrow x1={sx} y1={tailY} x2={sx} y2={headY} color={color} />
+        <text x={sx + 7} y={tailY + (dir < 0 ? 14 : -4)} fill={color} fontSize={11}
           fontFamily="'JetBrains Mono', monospace">
           {displayLabel}
         </text>
@@ -599,7 +604,7 @@ export default function FBDRenderer({
         const isTruss = m.type === 'truss';
         const cls = memberClassifications?.[m.id];
         const color = cls === 'Tension (T)'    ? '#4ade80'
-                    : cls === 'Compression (C)' ? '#60a5fa'
+                    : cls === 'Compression (C)' ? '#ef4444'
                     : cls === 'Zero Force'       ? '#6b7280'
                     : COLORS.member;
         return (
@@ -620,7 +625,7 @@ export default function FBDRenderer({
           <rect x={0} y={4}  width={12} height={12} rx={2} fill="#4ade80" />
           <text x={16} y={14} fill="#e5e5e5" fontSize={10}
             fontFamily="'JetBrains Mono', monospace">Tension</text>
-          <rect x={0} y={22} width={12} height={12} rx={2} fill="#60a5fa" />
+          <rect x={0} y={22} width={12} height={12} rx={2} fill="#ef4444" />
           <text x={16} y={32} fill="#e5e5e5" fontSize={10}
             fontFamily="'JetBrains Mono', monospace">Compression</text>
           <rect x={0} y={40} width={12} height={12} rx={2} fill="#6b7280" />
