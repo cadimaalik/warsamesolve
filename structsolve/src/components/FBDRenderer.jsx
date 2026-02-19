@@ -496,7 +496,7 @@ function MemberForceArrow({ nodeId, otherNodeId, label, nodes, t }) {
   const ux = dx / L;
   const uy = -dy / L; // flip y for SVG
 
-  const ARROW_LEN = Math.max(36, t.scale * 0.55);
+  const ARROW_LEN = Math.max(28, Math.min(60, t.scale * 0.7));
   const headX = sx + ux * ARROW_LEN;
   const headY = sy + uy * ARROW_LEN;
 
@@ -519,12 +519,14 @@ function MemberForceArrow({ nodeId, otherNodeId, label, nodes, t }) {
 
 // ── Main component ────────────────────────────────────────────────
 export default function FBDRenderer({
-  nodes,              // solver nodes (meters, y-up)
-  members,            // solver members
-  reactionItems,      // [{nodeId, type, label, value?, mode:'unknown'|'solved'}]
-  memberForceArrows,  // [{nodeId, otherNodeId, label}] — truss joint force arrows
-  cutNodeIds,         // Set or array of nodeIds to show as hinge cuts (open ⊘)
-  highlightNodeIds,   // if non-null/Set, only draw members/nodes in this set (subset mode)
+  nodes,                  // solver nodes (meters, y-up)
+  members,                // solver members
+  reactionItems,          // [{nodeId, type, label, value?, mode:'unknown'|'solved'}]
+  memberForceArrows,      // [{nodeId, otherNodeId, label}] — truss joint force arrows
+  memberClassifications,  // {[memberId]: 'Tension (T)'|'Compression (C)'|'Zero Force'} — for coloring
+  showLegend,             // boolean — show T/C/zero legend
+  cutNodeIds,             // Set or array of nodeIds to show as hinge cuts (open ⊘)
+  highlightNodeIds,       // if non-null/Set, only draw members/nodes in this set (subset mode)
   maxHeight = 300,
 }) {
   const SVG_W = 600;
@@ -533,12 +535,13 @@ export default function FBDRenderer({
 
   if (!nodes || nodes.length === 0) return null;
 
-  // Compute transform
+  // Compute transform always from full nodes array so joint FBDs get proper scale
+  const t = computeTransform(nodes, SVG_W, SVG_H, PAD);
+
+  // Visible nodes/members for rendering (subset mode for joint FBDs)
   const visibleNodes = highlightNodeIds
     ? nodes.filter(n => highlightNodeIds.has(n.id))
     : nodes;
-
-  const t = computeTransform(visibleNodes, SVG_W, SVG_H, PAD);
 
   // Filter members if subset
   const visibleMembers = highlightNodeIds
@@ -573,7 +576,7 @@ export default function FBDRenderer({
         ));
       })}
 
-      {/* Layer 2: Members */}
+      {/* Layer 2: Members — colored by T/C classification if provided */}
       {visibleMembers.map(m => {
         const sn = nodes.find(n => n.id === m.startNodeId);
         const en = nodes.find(n => n.id === m.endNodeId);
@@ -581,15 +584,37 @@ export default function FBDRenderer({
         const p1 = toSVG(sn.x, sn.y, t);
         const p2 = toSVG(en.x, en.y, t);
         const isTruss = m.type === 'truss';
+        const cls = memberClassifications?.[m.id];
+        const color = cls === 'Tension (T)'    ? '#4ade80'
+                    : cls === 'Compression (C)' ? '#60a5fa'
+                    : cls === 'Zero Force'       ? '#6b7280'
+                    : COLORS.member;
         return (
           <line key={m.id}
             x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y}
-            stroke={COLORS.member}
-            strokeWidth={isTruss ? 2 : 3}
-            strokeDasharray={isTruss ? '8 3' : 'none'}
+            stroke={color}
+            strokeWidth={isTruss ? 2.5 : 3}
+            strokeDasharray={isTruss ? 'none' : 'none'}
           />
         );
       })}
+
+      {/* Legend — shown when memberClassifications is provided */}
+      {showLegend && (
+        <g transform="translate(12, 12)">
+          <rect x={-4} y={-4} width={110} height={64} rx={4}
+            fill="#0a0a0a" stroke="#2a2a2a" strokeWidth={1} />
+          <rect x={0} y={4}  width={12} height={12} rx={2} fill="#4ade80" />
+          <text x={16} y={14} fill="#e5e5e5" fontSize={10}
+            fontFamily="'JetBrains Mono', monospace">Tension</text>
+          <rect x={0} y={22} width={12} height={12} rx={2} fill="#60a5fa" />
+          <text x={16} y={32} fill="#e5e5e5" fontSize={10}
+            fontFamily="'JetBrains Mono', monospace">Compression</text>
+          <rect x={0} y={40} width={12} height={12} rx={2} fill="#6b7280" />
+          <text x={16} y={50} fill="#e5e5e5" fontSize={10}
+            fontFamily="'JetBrains Mono', monospace">Zero force</text>
+        </g>
+      )}
 
       {/* Layer 3: Hinge cut markers (open circle at cut) */}
       {Array.from(cutSet).map(nid => (

@@ -585,46 +585,46 @@ function buildTrussSteps(nodes, members, trussForces, reactions) {
 
     const eqLines = [];
 
-    // Fix 11: state knowns (with source reference) and unknowns before equations
-    const knownMemberLines = [];
+    // Issue 2: Known forces — each on its own line (separate display blocks)
+    const allKnownItems = [];
+    for (const r of reactions) {
+      if (r.nodeId !== jointId) continue;
+      allKnownItems.push(
+        `${getReactionLabel(r.label, r.type)} = ${fmt(Math.abs(r.value))} \\text{ kN (from reactions)}`
+      );
+    }
     for (const m of connTruss) {
       if (!solvedMemberIds.has(m.id)) continue;
       const tf = trussForces.find(tf => tf.memberId === m.id);
       if (!tf) continue;
       const typeStr = tf.force > 0.001 ? 'T' : tf.force < -0.001 ? 'C' : 'zero';
       const src = memberSolvedAtLabel.get(m.id) || 'previous';
-      knownMemberLines.push(
-        `F_{${tf.startLabel}${tf.endLabel}} = ${fmt(Math.abs(tf.force))} \\text{ kN (${typeStr}, ${src})}`
-      );
-    }
-    // Known reactions at this joint
-    const knownRxnLines = [];
-    for (const r of reactions) {
-      if (r.nodeId !== jointId) continue;
-      knownRxnLines.push(
-        `${getReactionLabel(r.label, r.type)} = ${fmt(Math.abs(r.value))} \\text{ kN (from reactions)}`
+      allKnownItems.push(
+        `F_{${tf.startLabel}${tf.endLabel}} = ${fmt(Math.abs(tf.force))} \\text{ kN } (${typeStr},\\; ${src})`
       );
     }
 
-    const allKnownLines = [...knownRxnLines, ...knownMemberLines];
-
-    if (allKnownLines.length > 0) {
-      eqLines.push(`\\text{Known: } ${allKnownLines.join(',\\; ')}`);
+    if (allKnownItems.length > 0) {
+      eqLines.push('\\text{Known:}');
+      eqLines.push('');
+      for (const item of allKnownItems) {
+        eqLines.push(item);
+        eqLines.push('');
+      }
     }
 
-    // Unknown member forces
+    // Unknowns — own block
     const unknownLabels = unknownMembers.map(m => `F_{${m.startLabel}${m.endLabel}}`).join(',\\; ');
     if (unknownLabels) {
       eqLines.push(`\\text{Unknowns: } ${unknownLabels}`);
+      eqLines.push('');
     }
 
-    // Fix 6: solvability note (no DOF formula)
+    // Solvability note — own block (no DOF formula)
     eqLines.push(`\\text{${unknownCount} unknown${unknownCount !== 1 ? 's' : ''}, 2 equations — solvable}`);
     eqLines.push('');
 
-    // Fix 4+5: define component fractions for inclined members, then build equations
-    // First pass: collect component definitions
-    const componentDefs = [];
+    // Issue 6: component definitions — each on its own block
     for (const m of connTruss) {
       const otherId = m.startNodeId === jointId ? m.endNodeId : m.startNodeId;
       const other = nodes.find(n => n.id === otherId);
@@ -637,27 +637,23 @@ function buildTrussSteps(nodes, members, trussForces, reactions) {
       const isInclined = Math.abs(dx) > 1e-10 && Math.abs(dy) > 1e-10;
       if (!isInclined) continue;
 
-      // Fix 4: define x and y components using geometric fraction
       const xSign = dx > 0 ? '' : '-';
       const ySign = dy > 0 ? '' : '-';
       const lbl = `F_{${m.startLabel}${m.endLabel}}`;
-      componentDefs.push(`${lbl},x = ${xSign}${geoFracStr(dx, L)} ${lbl}`);
-      componentDefs.push(`${lbl},y = ${ySign}${geoFracStr(dy, L)} ${lbl}`);
-    }
-
-    if (componentDefs.length > 0) {
-      eqLines.push('\\text{Component definitions:}');
-      for (const def of componentDefs) eqLines.push(def);
+      eqLines.push(`${lbl}_{,x} = ${xSign}${geoFracStr(dx, L)}\\, ${lbl}`);
+      eqLines.push('');
+      eqLines.push(`${lbl}_{,y} = ${ySign}${geoFracStr(dy, L)}\\, ${lbl}`);
       eqLines.push('');
     }
 
-    // Fix 5: ΣFx = 0 — name on its own line, then equation, then result
+    // Issue 5: ΣFx = 0 — name, equation, solve step each as own block
     let fxTerms = [];
     let fxRhs = -(joint.loads?.fx || 0);
     for (const r of reactions) {
       if (r.nodeId !== jointId) continue;
       if (r.type === 'Rx') fxRhs -= r.value;
     }
+    // Collect unknown F terms; known forces go to RHS
     for (const m of connTruss) {
       const otherId = m.startNodeId === jointId ? m.endNodeId : m.startNodeId;
       const other = nodes.find(n => n.id === otherId);
@@ -667,32 +663,39 @@ function buildTrussSteps(nodes, members, trussForces, reactions) {
       const L = Math.sqrt(dx * dx + dy * dy);
       const cosA = dx / L;
       if (Math.abs(cosA) < 1e-10) continue;
-
       const lbl = `F_{${m.startLabel}${m.endLabel}}`;
       const isInclined = Math.abs(dx) > 1e-10 && Math.abs(dy) > 1e-10;
-
       if (solvedMemberIds.has(m.id)) {
-        // Known force — move to RHS
         const tf = trussForces.find(tf => tf.memberId === m.id);
         if (tf) fxRhs -= tf.force * cosA;
       } else if (isInclined) {
-        // Fix 4: use component variable name
         const sign = cosA > 0 ? (fxTerms.length > 0 ? '+' : '') : '-';
-        fxTerms.push(`${sign} ${geoFracStr(dx, L)} ${lbl}`);
+        fxTerms.push(`${sign} ${geoFracStr(dx, L)}\\, ${lbl}`);
       } else {
-        // Horizontal or already fractional
         const sign = cosA > 0 ? (fxTerms.length > 0 ? '+' : '') : '-';
         fxTerms.push(`${sign} ${lbl}`);
       }
     }
     if (fxTerms.length > 0) {
-      // Fix 5: separate lines
       eqLines.push('\\sum F_x = 0:');
+      eqLines.push('');
       eqLines.push(`${fxTerms.join(' ')} = ${fmt(fxRhs)}`);
       eqLines.push('');
+      // Solve step: if 1 unknown, show the solved value
+      if (unknownMembers.length === 1) {
+        const m = unknownMembers[0];
+        if (fxTerms.length === 1) {
+          const tf = trussForces.find(tf => tf.memberId === m.id);
+          if (tf) {
+            const sign = tf.force > 0.001 ? '\\text{(T)}' : tf.force < -0.001 ? '\\text{(C)}' : '\\text{(zero)}';
+            eqLines.push(`F_{${tf.startLabel}${tf.endLabel}} = ${fmt(Math.abs(tf.force))} \\text{ kN} \\; ${sign}`);
+            eqLines.push('');
+          }
+        }
+      }
     }
 
-    // Fix 5: ΣFy = 0
+    // Issue 5: ΣFy = 0 — same pattern
     let fyTerms = [];
     let fyRhs = -(joint.loads?.fy || 0);
     for (const r of reactions) {
@@ -708,17 +711,14 @@ function buildTrussSteps(nodes, members, trussForces, reactions) {
       const L = Math.sqrt(dx * dx + dy * dy);
       const sinA = dy / L;
       if (Math.abs(sinA) < 1e-10) continue;
-
       const lbl = `F_{${m.startLabel}${m.endLabel}}`;
       const isInclined = Math.abs(dx) > 1e-10 && Math.abs(dy) > 1e-10;
-
       if (solvedMemberIds.has(m.id)) {
         const tf = trussForces.find(tf => tf.memberId === m.id);
         if (tf) fyRhs -= tf.force * sinA;
       } else if (isInclined) {
-        // Fix 4: use fraction
         const sign = sinA > 0 ? (fyTerms.length > 0 ? '+' : '') : '-';
-        fyTerms.push(`${sign} ${geoFracStr(dy, L)} ${lbl}`);
+        fyTerms.push(`${sign} ${geoFracStr(dy, L)}\\, ${lbl}`);
       } else {
         const sign = sinA > 0 ? (fyTerms.length > 0 ? '+' : '') : '-';
         fyTerms.push(`${sign} ${lbl}`);
@@ -726,19 +726,36 @@ function buildTrussSteps(nodes, members, trussForces, reactions) {
     }
     if (fyTerms.length > 0) {
       eqLines.push('\\sum F_y = 0:');
+      eqLines.push('');
       eqLines.push(`${fyTerms.join(' ')} = ${fmt(fyRhs)}`);
       eqLines.push('');
+      // Solve step for remaining unknown
+      const stillUnknown = unknownMembers.filter(m => {
+        const dx = (nodes.find(n => n.id === (m.startNodeId === jointId ? m.endNodeId : m.startNodeId))?.x || 0) - joint.x;
+        const dy2 = (nodes.find(n => n.id === (m.startNodeId === jointId ? m.endNodeId : m.startNodeId))?.y || 0) - joint.y;
+        const L2 = Math.sqrt(dx*dx + dy2*dy2);
+        return L2 > 1e-12 && Math.abs(dy2 / L2) > 1e-10;
+      });
+      if (stillUnknown.length === 1 && fyTerms.length === 1) {
+        const m = stillUnknown[0];
+        const tf = trussForces.find(tf => tf.memberId === m.id);
+        if (tf) {
+          const sign = tf.force > 0.001 ? '\\text{(T)}' : tf.force < -0.001 ? '\\text{(C)}' : '\\text{(zero)}';
+          eqLines.push(`F_{${tf.startLabel}${tf.endLabel}} = ${fmt(Math.abs(tf.force))} \\text{ kN} \\; ${sign}`);
+          eqLines.push('');
+        }
+      }
     }
 
-    // Results for unknown members at this joint
-    if (unknownMembers.length > 0) {
-      eqLines.push('\\text{Results:}');
-      for (const m of unknownMembers) {
-        const tf = trussForces.find(tf => tf.memberId === m.id);
-        if (!tf) continue;
-        const sign = tf.force > 0.001 ? '\\text{(T)}' : tf.force < -0.001 ? '\\text{(C)}' : '\\text{(zero)}';
-        eqLines.push(`F_{${tf.startLabel}${tf.endLabel}} = ${fmt(Math.abs(tf.force))} \\text{ kN} \\; ${sign}`);
-      }
+    // Results summary for all unknowns at this joint
+    eqLines.push('\\text{Results:}');
+    eqLines.push('');
+    for (const m of unknownMembers) {
+      const tf = trussForces.find(tf => tf.memberId === m.id);
+      if (!tf) continue;
+      const sign = tf.force > 0.001 ? '\\text{(T)}' : tf.force < -0.001 ? '\\text{(C)}' : '\\text{(zero)}';
+      eqLines.push(`F_{${tf.startLabel}${tf.endLabel}} = ${fmt(Math.abs(tf.force))} \\text{ kN} \\; ${sign}`);
+      eqLines.push('');
     }
 
     // Clean trailing empty lines
@@ -788,47 +805,64 @@ function buildTrussSteps(nodes, members, trussForces, reactions) {
 }
 
 /**
- * Fix 7: Resultant Support Reactions step — last step, full FBD with solved values.
+ * Fix 7: Resultant Support Reactions step — second-to-last, full FBD with solved values.
+ * For truss structures, passes memberClassifications so members are colored T/C.
  */
-function buildResultantReactionsStep(nodes, members, unknowns, reactions) {
-  // All reactions shown as solved (with numerical values + correct directions)
+function buildResultantReactionsStep(nodes, members, unknowns, reactions, trussForces) {
   const solvedAll = Object.fromEntries(unknowns.map((_, i) => [i, reactions[i]?.value ?? 0]));
   const reactionItems = buildReactionItems(unknowns, reactions, solvedAll);
 
-  const eqLines = reactions.map(r => {
+  // Issue 3: build member color map from truss forces
+  const hasTruss = members.some(m => m.type === 'truss');
+  let memberClassifications = null;
+  let showLegend = false;
+  if (hasTruss && trussForces && trussForces.length > 0) {
+    memberClassifications = {};
+    for (const tf of trussForces) {
+      memberClassifications[tf.memberId] = tf.classification;
+    }
+    showLegend = true;
+  }
+
+  // Issue 1/5: each reaction on its own display block (separated by '')
+  const eqLines = reactions.flatMap((r, i) => {
     const label = getReactionLabel(r.label, r.type);
     const dir = getDirectionArrow(r.value, r.type);
     const unit = r.type === 'M' ? '\\text{ kN·m}' : '\\text{ kN}';
-    return `${label} = ${fmt(Math.abs(r.value))} ${unit} \\; ${dir}`;
+    const line = `${label} = ${fmt(Math.abs(r.value))} ${unit} \\; ${dir}`;
+    return i < reactions.length - 1 ? [line, ''] : [line];
   });
 
   return {
     title: 'Resultant Support Reactions',
-    fbd: { nodes, members, reactionItems, cutNodeIds: [], highlightNodeIds: null },
+    fbd: { nodes, members, reactionItems, memberClassifications, showLegend, cutNodeIds: [], highlightNodeIds: null },
     equations: eqLines,
     notes: null,
   };
 }
 
-/** Verification step */
+/** Verification step — Issue 1: each check on its own display block */
 function buildVerificationStep(verification, reactions) {
   if (!verification || verification.length === 0) {
     return {
       title: 'Verification',
       fbd: null,
-      equations: reactions.map(r => {
+      equations: reactions.flatMap((r, i) => {
         const label = getReactionLabel(r.label, r.type);
         const dir = getDirectionArrow(r.value, r.type);
-        return `${label} = ${fmt(Math.abs(r.value))} \\text{ kN} \\; ${dir}`;
+        const line = `${label} = ${fmt(Math.abs(r.value))} \\text{ kN} \\; ${dir}`;
+        return i < reactions.length - 1 ? [line, ''] : [line];
       }),
       notes: 'All support reactions solved.',
     };
   }
 
   const allPass = verification.every(v => v.pass);
-  const eqLines = verification.map(v =>
-    `${v.equation} \\quad \\Rightarrow \\quad ${fmt(v.residual)} \\approx 0 \\; ${v.pass ? '\\checkmark' : '\\times'}`
-  );
+  // Issue 1: each verification line separated by '' → its own display block
+  const eqLines = verification.flatMap((v, i) => {
+    const line = `${v.equation} \\quad \\Rightarrow \\quad ${fmt(v.residual)} \\approx 0 \\; ${v.pass ? '\\checkmark' : '\\times'}`;
+    return i < verification.length - 1 ? [line, ''] : [line];
+  });
 
   return {
     title: 'Verification',
@@ -861,14 +895,15 @@ export function generateSolution(solverResults) {
     // Fix 8: Step 0 always shows variable names only
     steps.push(buildGlobalFBDStep(nodes, members, unknowns, reactions));
 
-    // Support reactions summary (no DOF formula — Fix 6)
+    // Support reactions summary — Issue 5: each on its own display block
     steps.push({
       title: 'Support Reactions',
       fbd: null,
-      equations: reactions.map(r => {
+      equations: reactions.flatMap((r, i) => {
         const label = getReactionLabel(r.label, r.type);
         const dir = getDirectionArrow(r.value, r.type);
-        return `${label} = ${fmt(Math.abs(r.value))} \\text{ kN} \\; ${dir}`;
+        const line = `${label} = ${fmt(Math.abs(r.value))} \\text{ kN} \\; ${dir}`;
+        return i < reactions.length - 1 ? [line, ''] : [line];
       }),
       notes: 'Reactions solved from the full joint equilibrium system.',
     });
@@ -917,7 +952,7 @@ export function generateSolution(solverResults) {
   }
 
   // Fix 7: Resultant Support Reactions — second-to-last step (before verification)
-  steps.push(buildResultantReactionsStep(nodes, members, unknowns, reactions));
+  steps.push(buildResultantReactionsStep(nodes, members, unknowns, reactions, trussForces));
 
   // Verification always last
   steps.push(buildVerificationStep(verification, reactions));
