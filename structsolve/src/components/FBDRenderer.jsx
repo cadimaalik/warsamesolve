@@ -357,26 +357,28 @@ function DistributedLoadShape({ member, dl, nodes, t }) {
 }
 
 // ── Point load arrow in SVG coords ───────────────────────────────
+// Convention: tail starts near node, head extends in force direction
+// (matching the main canvas LoadArrows convention so everything stays inside the box)
 function PointLoadArrow({ sx, sy, fx, fy, scale, color, label }) {
-  const ARROW_LEN = Math.max(28, Math.min(60, scale * 0.7));
+  const ARROW_LEN = Math.max(28, Math.min(50, scale * 0.6));
+  const GAP = 6; // gap between node centre and arrow tail
   const HEAD_W = 4, HEAD_L = 9;
   const elements = [];
 
   if (Math.abs(fy) > 1e-10) {
-    // SVG y is flipped: fy > 0 (upward eng) → arrow pointing up (negative SVG y)
-    const dir = fy > 0 ? -1 : 1; // -1 = up in SVG, +1 = down in SVG
-    const tx = sx;
-    const ty = sy; // arrow HEAD is at the node
-    const tailY = ty - dir * ARROW_LEN;
-    const angle = dir > 0 ? 90 : -90; // 90 = pointing down, -90 = pointing up
-    // Label at tail (top of arrow body), not at head
-    const lblY = dir > 0 ? tailY - 8 : tailY + 12;
+    // fy > 0 = upward force → up in SVG = -y direction
+    const dirSVG = fy > 0 ? -1 : 1; // -1 up, +1 down in SVG
+    const tailY = sy + dirSVG * GAP;
+    const headY = tailY + dirSVG * ARROW_LEN;
+    const angle = dirSVG > 0 ? 90 : -90;
+    // Label beyond arrowhead (further from node)
+    const lblY = dirSVG > 0 ? headY + 12 : headY - 4;
     elements.push(
       <g key="fy">
-        <line x1={tx} y1={tailY} x2={tx} y2={ty} stroke={color} strokeWidth={2} />
+        <line x1={sx} y1={tailY} x2={sx} y2={headY} stroke={color} strokeWidth={2} />
         <polygon points={`0,0 ${-HEAD_L},${-HEAD_W} ${-HEAD_L},${HEAD_W}`}
-          fill={color} transform={`translate(${tx},${ty}) rotate(${angle})`} />
-        <text x={tx + 7} y={lblY} fill={color} fontSize={11}
+          fill={color} transform={`translate(${sx},${headY}) rotate(${angle})`} />
+        <text x={sx + 7} y={lblY} fill={color} fontSize={11}
           fontFamily="'JetBrains Mono', monospace">
           {Math.abs(fy)} kN
         </text>
@@ -385,21 +387,21 @@ function PointLoadArrow({ sx, sy, fx, fy, scale, color, label }) {
   }
 
   if (Math.abs(fx) > 1e-10) {
-    // fx > 0 → pointing right (positive SVG x)
-    const dir = fx > 0 ? 1 : -1;
-    const tx = sx; // HEAD at node
-    const tailX = tx - dir * ARROW_LEN;
+    // fx > 0 → right in SVG (+x)
+    const dirSVG = fx > 0 ? 1 : -1;
+    const tailX = sx + dirSVG * GAP;
+    const headX = tailX + dirSVG * ARROW_LEN;
     const angle = fx > 0 ? 0 : 180;
-    // Label at tail (start of arrow body)
-    const lblX = dir > 0 ? tailX - 4 : tailX + 4;
+    // Label beyond arrowhead
+    const lblX = dirSVG > 0 ? headX + 4 : headX - 4;
     elements.push(
       <g key="fx">
-        <line x1={tailX} y1={sy} x2={tx} y2={sy} stroke={color} strokeWidth={2} />
+        <line x1={tailX} y1={sy} x2={headX} y2={sy} stroke={color} strokeWidth={2} />
         <polygon points={`0,0 ${-HEAD_L},${-HEAD_W} ${-HEAD_L},${HEAD_W}`}
-          fill={color} transform={`translate(${tx},${sy}) rotate(${angle})`} />
+          fill={color} transform={`translate(${headX},${sy}) rotate(${angle})`} />
         <text x={lblX} y={sy - 6} fill={color} fontSize={11}
           fontFamily="'JetBrains Mono', monospace"
-          textAnchor={dir > 0 ? 'end' : 'start'}>
+          textAnchor={dirSVG > 0 ? 'start' : 'end'}>
           {Math.abs(fx)} kN
         </text>
       </g>
@@ -416,7 +418,7 @@ function ReactionArrow({ nodeId, type, label, value, mode, nodes, t }) {
   if (!node) return null;
   const { x: sx, y: sy } = toSVG(node.x, node.y, t);
 
-  const ARROW_LEN = Math.max(30, t.scale * 0.5);
+  const ARROW_LEN = Math.max(30, Math.min(50, t.scale * 0.5));
   const color = mode === 'solved' ? COLORS.reactionSolved : COLORS.reaction;
 
   // For solved reactions, reverse direction if negative
@@ -536,7 +538,7 @@ export default function FBDRenderer({
 }) {
   const SVG_W = 600;
   const SVG_H = maxHeight;
-  const PAD = 60;
+  const PAD = 90; // generous padding so arrows, labels, and support symbols stay inside the box
 
   if (!nodes || nodes.length === 0) return null;
 

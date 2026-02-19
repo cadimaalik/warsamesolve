@@ -93,52 +93,110 @@ function geoFracStr(component, L) {
   return `\\frac{${fmt(abs)}}{${fmt(L)}}`;
 }
 
-// ── Fix 5: Equation layout helpers ────────────────────────────────
+// ── Equation layout helpers ────────────────────────────────────────
 
 /**
- * Build LaTeX lines for a single equilibrium equation.
- * Each part (name, symbolic, result) is its own line — Fix 5.
- * Inclined forces use geometric fractions — Fix 4.
+ * Build LaTeX string for the LOAD terms in an equation (from knownForces).
+ * Returns a string like " - 20 \times 3 + 5" ready to append to the unknown terms.
+ * Falls back to showing the net RHS if knownForces is unavailable.
  */
-function buildEquationLatex(eq, unknowns, reactions, solvedSoFar) {
+function buildLoadTermsStr(eq, knownForces) {
+  if (!knownForces || knownForces.length === 0) return null; // signal: no data
+
+  const terms = [];
+
+  // Note: load terms always follow unknown terms in the equation string,
+  // so every load term needs an explicit sign regardless of position.
+  if (eq.type === 'force-x') {
+    for (const f of knownForces) {
+      if (Math.abs(f.fx) < 1e-10) continue;
+      const sign = f.fx > 0 ? ' +' : ' -';
+      terms.push(`${sign} ${fmt(Math.abs(f.fx))}`);
+    }
+  } else if (eq.type === 'force-y') {
+    for (const f of knownForces) {
+      if (Math.abs(f.fy) < 1e-10) continue;
+      const sign = f.fy > 0 ? ' +' : ' -';
+      terms.push(`${sign} ${fmt(Math.abs(f.fy))}`);
+    }
+  } else if (['moment', 'hinge-moment', 'sub-moment'].includes(eq.type)) {
+    const mp = eq.momentPoint || eq.hingeNode;
+    if (!mp) return null;
+    for (const f of knownForces) {
+      const dx = f.x - mp.x;
+      const dy = f.y - mp.y;
+      // Vertical force creates moment: f.fy * dx
+      if (Math.abs(f.fy) > 1e-10 && Math.abs(dx) > 1e-10) {
+        const val = f.fy * dx;
+        const sign = val > 0 ? ' +' : ' -';
+        terms.push(`${sign} ${fmt(Math.abs(f.fy))} \\times ${fmt(Math.abs(dx))}`);
+      }
+      // Horizontal force creates moment: -f.fx * dy
+      if (Math.abs(f.fx) > 1e-10 && Math.abs(dy) > 1e-10) {
+        const val = -(f.fx * dy);
+        const sign = val > 0 ? ' +' : ' -';
+        terms.push(`${sign} ${fmt(Math.abs(f.fx))} \\times ${fmt(Math.abs(dy))}`);
+      }
+      // Direct moment
+      if (Math.abs(f.m || 0) > 1e-10) {
+        const val = f.m;
+        const sign = val > 0 ? ' +' : ' -';
+        terms.push(`${sign} ${fmt(Math.abs(val))}`);
+      }
+    }
+  }
+
+  return terms.length > 0 ? terms.join('') : null;
+}
+
+/**
+ * Build LaTeX lines for a single equilibrium equation showing the full derivation:
+ *   Line 1: "ΣM_A = 0: C_y × 6 - 20 × 3 = 0"   (header + full equation)
+ *   Line 2: "A_y + 10 - 20 = 0"                   (substitution, if some solved)
+ *   Line 3: "C_y = 60/6 = 10 kN ↑"               (result)
+ *
+ * knownForces is optional — if absent we fall back to "lhs = rhs" form.
+ */
+function buildEquationLatex(eq, unknowns, reactions, solvedSoFar, knownForces) {
   const lines = [];
   const n = unknowns.length;
 
-  const activeIndices = [];
+  // All indices with non-zero coefficients in this equation
+  const allActiveIndices = [];
   for (let i = 0; i < n; i++) {
-    if (Math.abs(eq.coefficients[i]) < 1e-10) continue;
-    if (solvedSoFar && solvedSoFar[i] !== undefined) continue;
-    activeIndices.push(i);
+    if (Math.abs(eq.coefficients[i]) > 1e-10) allActiveIndices.push(i);
   }
 
-  // Fix 5: equation name on its own line
+  // Unsolved subset
+  const unsolvedIndices = allActiveIndices.filter(
+    i => !solvedSoFar || solvedSoFar[i] === undefined
+  );
+
   const header = eq.description || '\\text{Equation}';
 
-  if (activeIndices.length === 0) {
+  if (unsolvedIndices.length === 0) {
     lines.push(`${header} \\checkmark`);
     return lines;
   }
 
-  // Line 1 — equation name (Fix 5)
-  lines.push(header + ':');
-
-  // Build LHS terms
-  const lhsTerms = [];
-  for (const i of activeIndices) {
+  // ── Build unknown terms (variable names for ALL active indices) ──
+  let unknownTermsFull = '';
+  for (const i of allActiveIndices) {
     const coeff = eq.coefficients[i];
     const label = getReactionLabel(unknowns[i].label, unknowns[i].type);
-    const sign = (coeff > 0) ? (lhsTerms.length > 0 ? '+' : '') : '-';
+    const sign = coeff > 0
+      ? (unknownTermsFull.length > 0 ? ' +' : '')
+      : ' -';
     const absC = Math.abs(coeff);
-
     if (Math.abs(absC - 1) < 1e-6) {
-      lhsTerms.push(`${sign} ${label}`);
+      unknownTermsFull += `${sign} ${label}`;
     } else {
-      lhsTerms.push(`${sign} ${label} \\times ${fmt(absC)}`);
+      unknownTermsFull += `${sign} ${label} \\times ${fmt(absC)}`;
     }
   }
-  const lhsStr = lhsTerms.join(' ');
+  unknownTermsFull = unknownTermsFull.trim();
 
-  // Build RHS
+  // ── Adjusted RHS (subtract already-solved unknowns) ──
   let adjustedRhs = eq.rhs;
   if (solvedSoFar) {
     for (let i = 0; i < n; i++) {
@@ -147,28 +205,91 @@ function buildEquationLatex(eq, unknowns, reactions, solvedSoFar) {
       }
     }
   }
-  const rhsStr = fmt(adjustedRhs);
 
-  // Line 2 — symbolic equation (Fix 5)
-  lines.push(`${lhsStr} = ${rhsStr}`);
+  // ── Line 1: header + full equation ──
+  const loadTerms = buildLoadTermsStr(eq, knownForces);
+  if (loadTerms !== null) {
+    // Full "all terms = 0" form with individual load terms
+    lines.push(`${header}: \\quad ${unknownTermsFull}${loadTerms} = 0`);
+  } else {
+    // Fallback: combine header with "lhs = rhs" (still better than two separate lines)
+    const rhsStr = fmt(adjustedRhs);
+    if (allActiveIndices.length === unsolvedIndices.length) {
+      // No solved values yet — show lhs = rhs
+      lines.push(`${header}: \\quad ${unknownTermsFull} = ${rhsStr}`);
+    } else {
+      // Some solved — build lhs with only unsolved variables
+      let unsolvedLhs = '';
+      for (const i of unsolvedIndices) {
+        const coeff = eq.coefficients[i];
+        const label = getReactionLabel(unknowns[i].label, unknowns[i].type);
+        const sign = coeff > 0 ? (unsolvedLhs.length > 0 ? ' +' : '') : ' -';
+        const absC = Math.abs(coeff);
+        if (Math.abs(absC - 1) < 1e-6) {
+          unsolvedLhs += `${sign} ${label}`;
+        } else {
+          unsolvedLhs += `${sign} ${label} \\times ${fmt(absC)}`;
+        }
+      }
+      lines.push(`${header}: \\quad ${unsolvedLhs.trim()} = ${rhsStr}`);
+    }
+  }
 
-  // Line 3 — result (Fix 5)
-  for (const i of activeIndices) {
+  // ── Line 2: substitution (if some unknowns already solved AND loadTerms available) ──
+  const solvedInEq = allActiveIndices.filter(
+    i => solvedSoFar && solvedSoFar[i] !== undefined
+  );
+  if (loadTerms !== null && solvedInEq.length > 0 && unsolvedIndices.length > 0) {
+    let substStr = '';
+    for (const i of allActiveIndices) {
+      const coeff = eq.coefficients[i];
+      let termStr;
+      if (solvedSoFar && solvedSoFar[i] !== undefined) {
+        const rxn = reactions.find(r => r.nodeId === unknowns[i].nodeId && r.type === unknowns[i].type);
+        const val = rxn ? rxn.value : solvedSoFar[i];
+        const effVal = coeff * val;
+        const sign = effVal >= 0
+          ? (substStr.length > 0 ? ' +' : '')
+          : ' -';
+        const absC = Math.abs(coeff);
+        if (Math.abs(absC - 1) < 1e-6) {
+          termStr = `${sign} ${fmt(Math.abs(val))}`;
+        } else {
+          termStr = `${sign} ${fmt(Math.abs(val))} \\times ${fmt(absC)}`;
+        }
+      } else {
+        const label = getReactionLabel(unknowns[i].label, unknowns[i].type);
+        const sign = coeff > 0 ? (substStr.length > 0 ? ' +' : '') : ' -';
+        const absC = Math.abs(coeff);
+        if (Math.abs(absC - 1) < 1e-6) {
+          termStr = `${sign} ${label}`;
+        } else {
+          termStr = `${sign} ${label} \\times ${fmt(absC)}`;
+        }
+      }
+      substStr += termStr;
+    }
+    lines.push(`${substStr.trim()}${loadTerms} = 0`);
+  }
+
+  // ── Line 3: result ──
+  for (const i of unsolvedIndices) {
     const u = unknowns[i];
     const rxn = reactions.find(r => r.nodeId === u.nodeId && r.type === u.type);
     const value = rxn ? rxn.value : 0;
     const label = getReactionLabel(u.label, u.type);
     const dir = getDirectionArrow(value, u.type);
+    const unit = u.type === 'M' ? '\\text{ kN·m}' : '\\text{ kN}';
 
-    if (activeIndices.length === 1) {
+    if (unsolvedIndices.length === 1) {
       const coeff = eq.coefficients[i];
       if (Math.abs(Math.abs(coeff) - 1) > 1e-6) {
-        lines.push(`${label} = \\dfrac{${rhsStr}}{${fmt(coeff)}} = ${fmt(value)} \\text{ kN} \\; ${dir}`);
+        lines.push(`${label} = \\dfrac{${fmt(adjustedRhs)}}{${fmt(coeff)}} = ${fmt(value)} ${unit} \\; ${dir}`);
       } else {
-        lines.push(`${label} = ${fmt(value)} \\text{ kN} \\; ${dir}`);
+        lines.push(`${label} = ${fmt(value)} ${unit} \\; ${dir}`);
       }
     } else {
-      lines.push(`${label} = ${fmt(Math.abs(value))} \\text{ kN} \\; ${dir}`);
+      lines.push(`${label} = ${fmt(Math.abs(value))} ${unit} \\; ${dir}`);
     }
   }
 
@@ -206,18 +327,18 @@ function reorderEquations(equations) {
 }
 
 /**
- * Direct solve path (≤ 3 unknowns): one step per equation (Fix 5 layout).
+ * Direct solve path (≤ 3 unknowns): one step per equation with full derivation.
  */
 function buildDirectSolveSteps(solvingStep, unknowns, reactions) {
   if (!solvingStep || !solvingStep.equations) return [];
   const steps = [];
   const solvedSoFar = {};
   const ordered = reorderEquations(solvingStep.equations);
+  const knownForces = solvingStep.knownForces || null;
 
   for (let i = 0; i < ordered.length; i++) {
     const eq = ordered[i];
-    // Fix 5: each equation name, symbolic, result on separate lines
-    const eqLines = buildEquationLatex(eq, unknowns, reactions, solvedSoFar);
+    const eqLines = buildEquationLatex(eq, unknowns, reactions, solvedSoFar, knownForces);
 
     for (let j = 0; j < unknowns.length; j++) {
       if (Math.abs(eq.coefficients[j]) < 1e-10) continue;
@@ -278,9 +399,9 @@ function buildSubStructureSteps(solvingSteps, unknowns, reactions, nodes, member
       if (solvingStep.equations && solvingStep.equations.length > 0) {
         const ordered = reorderEquations(solvingStep.equations);
         const eqLines = [];
+        const stepKnownForces = solvingStep.knownForces || null;
         for (const eq of ordered) {
-          // Fix 5: separate lines
-          eqLines.push(...buildEquationLatex(eq, unknowns, reactions, solvedSoFar));
+          eqLines.push(...buildEquationLatex(eq, unknowns, reactions, solvedSoFar, stepKnownForces));
           eqLines.push('');
         }
         while (eqLines.length > 0 && eqLines[eqLines.length - 1] === '') eqLines.pop();
@@ -322,8 +443,9 @@ function buildSubStructureSteps(solvingSteps, unknowns, reactions, nodes, member
       if (solvingStep.equations && solvingStep.equations.length > 0) {
         const ordered = reorderEquations(solvingStep.equations);
         const eqLines = [];
+        const stepKnownForces = solvingStep.knownForces || null;
         for (const eq of ordered) {
-          eqLines.push(...buildEquationLatex(eq, unknowns, reactions, solvedSoFar));
+          eqLines.push(...buildEquationLatex(eq, unknowns, reactions, solvedSoFar, stepKnownForces));
           eqLines.push('');
         }
         while (eqLines.length > 0 && eqLines[eqLines.length - 1] === '') eqLines.pop();
@@ -348,7 +470,7 @@ function buildSubStructureSteps(solvingSteps, unknowns, reactions, nodes, member
 }
 
 function buildMixedFrameEquationSteps(solverResults, unknowns, reactions) {
-  const { equations } = solverResults;
+  const { equations, knownForces } = solverResults;
   if (!equations || equations.length === 0) return [];
 
   const globalEqs = equations.filter(e =>
@@ -361,7 +483,7 @@ function buildMixedFrameEquationSteps(solverResults, unknowns, reactions) {
   const eqLines = [];
 
   for (const eq of ordered) {
-    const lines = buildEquationLatex(eq, unknowns, reactions, solvedSoFar);
+    const lines = buildEquationLatex(eq, unknowns, reactions, solvedSoFar, knownForces || null);
     for (let i = 0; i < unknowns.length; i++) {
       if (Math.abs(eq.coefficients[i]) > 1e-10 && solvedSoFar[i] === undefined) {
         const rxn = reactions.find(r => r.nodeId === unknowns[i].nodeId && r.type === unknowns[i].type);
