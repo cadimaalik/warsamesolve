@@ -357,22 +357,29 @@ function DistributedLoadShape({ member, dl, nodes, t }) {
 }
 
 // ── Point load arrow in SVG coords ───────────────────────────────
-// Tail at node, head extends in force direction.
-// Label is centered DIRECTLY BELOW the arrowhead (not beside it).
+// HEAD AT NODE convention: arrowhead IS at the application node.
+// The shaft extends AWAY from the node in the direction OPPOSITE to the force,
+// so the arrow appears to come from outside and land at the node.
+// This prevents collisions with ReactionArrows (which use tail-at-node).
+//   Downward force → shaft above node, arrowhead at node pointing down.
+//   Upward force   → shaft below node, arrowhead at node pointing up.
+//   Rightward      → shaft left of node, arrowhead at node pointing right.
+//   Leftward       → shaft right of node, arrowhead at node pointing left.
+// Label is at the TAIL end (furthest from node) to avoid clutter at the node.
 function PointLoadArrow({ sx, sy, fx, fy, scale, color, label }) {
-  const ARROW_LEN = Math.max(44, Math.min(70, scale * 0.85)); // longer = fewer collisions
-  const GAP = 6;
+  const ARROW_LEN = Math.max(50, Math.min(70, scale * 0.85));
   const HEAD_W = 4, HEAD_L = 9;
   const elements = [];
 
   if (Math.abs(fy) > 1e-10) {
-    // fy > 0 upward → -y SVG; fy < 0 downward → +y SVG
-    const dirSVG = fy > 0 ? -1 : 1;
-    const tailY = sy + dirSVG * GAP;
-    const headY = tailY + dirSVG * ARROW_LEN;
+    // fy > 0 = upward force → arrowhead points up (SVG -y) → tail BELOW node (+y SVG)
+    // fy < 0 = downward force → arrowhead points down (SVG +y) → tail ABOVE node (-y SVG)
+    const dirSVG = fy > 0 ? -1 : 1; // SVG direction of the force (+1=down, -1=up)
+    const headY = sy;                // arrowhead AT node
+    const tailY = sy - dirSVG * ARROW_LEN; // tail on OPPOSITE side
     const angle = dirSVG > 0 ? 90 : -90;
-    // Label centred directly below arrowhead
-    const lblY = dirSVG > 0 ? headY + 14 : headY - 5;
+    // Label at tail (away from node): if tail is above (dirSVG=+1) → label above tail
+    const lblY = dirSVG > 0 ? tailY - 4 : tailY + 13;
     elements.push(
       <g key="fy">
         <line x1={sx} y1={tailY} x2={sx} y2={headY} stroke={color} strokeWidth={2} />
@@ -387,18 +394,19 @@ function PointLoadArrow({ sx, sy, fx, fy, scale, color, label }) {
   }
 
   if (Math.abs(fx) > 1e-10) {
-    // fx > 0 rightward; fx < 0 leftward
+    // fx > 0 = rightward → arrowhead points right (SVG +x) → tail LEFT of node (-x SVG)
+    // fx < 0 = leftward  → arrowhead points left (SVG -x) → tail RIGHT of node (+x SVG)
     const dirSVG = fx > 0 ? 1 : -1;
-    const tailX = sx + dirSVG * GAP;
-    const headX = tailX + dirSVG * ARROW_LEN;
+    const headX = sx;                // arrowhead AT node
+    const tailX = sx - dirSVG * ARROW_LEN; // tail on OPPOSITE side
     const angle = fx > 0 ? 0 : 180;
-    // Label centred directly below arrowhead
+    // Label at tail (away from node), below the tail tip
     elements.push(
       <g key="fx">
         <line x1={tailX} y1={sy} x2={headX} y2={sy} stroke={color} strokeWidth={2} />
         <polygon points={`0,0 ${-HEAD_L},${-HEAD_W} ${-HEAD_L},${HEAD_W}`}
           fill={color} transform={`translate(${headX},${sy}) rotate(${angle})`} />
-        <text x={headX} y={sy + 14} fill={color} fontSize={11}
+        <text x={tailX} y={sy + 14} fill={color} fontSize={11}
           fontFamily="'JetBrains Mono', monospace" textAnchor="middle">
           {Math.abs(fx)} kN
         </text>
