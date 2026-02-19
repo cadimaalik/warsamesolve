@@ -136,13 +136,10 @@ function StrategyCard({ strategy }) {
   );
 }
 
-// ── Truss joint 2-column grid ─────────────────────────────────────
+// ── Truss joint list — single vertical column (Fix 1) ────────────
 function TrussJointGrid({ jointSteps }) {
   return (
-    <div style={{
-      display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)',
-      gap: 20, margin: '20px 0',
-    }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24, margin: '20px 0' }}>
       {jointSteps.map((step, i) => (
         <SolutionStep key={i} step={step} stepNumber={null} inTrussGrid />
       ))}
@@ -196,9 +193,11 @@ export default function SolverPage({ nodes, members, methodName, solverResults, 
         <button className="solver-nav-btn" onClick={onBack}>
           &larr; Back to Methods
         </button>
-        <span style={{ color: '#4ade80', fontWeight: 700, fontSize: 15, fontFamily: FONTS.mono }}>
-          StructSOLVE
-        </span>
+        <a href="/" style={{ textDecoration: 'none' }}>
+          <span style={{ color: '#4ade80', fontWeight: 700, fontSize: 15, fontFamily: FONTS.mono }}>
+            StructSOLVE
+          </span>
+        </a>
         <button className="solver-nav-btn" onClick={onEdit}>
           &#9998; Edit Structure
         </button>

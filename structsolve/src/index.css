@@ -136,11 +136,11 @@ input[type="number"] {
   font-style: italic;
 }
 
-/* Equations — clean, centered */
+/* Equations — clean, centered, no scrollbars */
 .equation-block {
   margin: 12px 0;
   padding: 16px 0;
-  overflow-x: auto;
+  overflow: visible;
 }
 
 /* Truss results table */
@@ -173,10 +173,10 @@ input[type="number"] {
   .solver-top-bar { padding: 10px 16px; }
 }
 
-/* Constrain MathJax equations to fit within containers — no horizontal scroll */
+/* MathJax — no scrollbars, allow natural overflow */
 mjx-container {
   max-width: 100% !important;
-  overflow-x: hidden !important;
+  overflow: visible !important;
   display: block !important;
   text-align: center !important;
 }
@@ -187,4 +187,5 @@ mjx-container[jax="CHTML"] {
 
 mjx-math {
   max-width: 100% !important;
+  overflow-wrap: break-word !important;
 }
