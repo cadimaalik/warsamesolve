@@ -545,11 +545,13 @@ export default function FBDRenderer({
   showLegend,             // boolean — show T/C/zero legend
   cutNodeIds,             // Set or array of nodeIds to show as hinge cuts (open ⊘)
   highlightNodeIds,       // if non-null/Set, only draw members/nodes in this set (subset mode)
-  maxHeight = 300,
+  maxHeight = 340,
 }) {
   const SVG_W = 600;
   const SVG_H = maxHeight;
-  const PAD = 100; // padding to contain longer arrows, labels, and support symbols
+  // PAD must be > (ARROW_LEN_max + LABEL_HEIGHT) = 90 + 14 = 104 px
+  // so arrows + labels at the edge of the drawing area never clip.
+  const PAD = 115;
 
   if (!nodes || nodes.length === 0) return null;
 
@@ -583,8 +585,15 @@ export default function FBDRenderer({
   }
 
   return (
+    <div style={{
+      background: COLORS.bg,
+      borderRadius: 8,
+      border: '1px solid #2a2a2a',
+      overflow: 'hidden',
+      lineHeight: 0,
+    }}>
     <svg width="100%" viewBox={`0 0 ${SVG_W} ${SVG_H}`}
-      style={{ background: COLORS.bg, borderRadius: 8, border: '1px solid #2a2a2a', display: 'block' }}>
+      style={{ display: 'block', overflow: 'visible' }}>
 
       {/* Layer 1: Distributed load shapes */}
       {visibleMembers.map(m => {
@@ -734,5 +743,6 @@ export default function FBDRenderer({
         );
       })}
     </svg>
+    </div>
   );
 }
