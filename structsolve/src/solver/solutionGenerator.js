@@ -313,13 +313,14 @@ function buildGlobalFBDStep(nodes, members, unknowns, reactions) {
   if (n <= 3) {
     notes = `${n} unknown${n !== 1 ? 's' : ''} (${unknownLabels}), 3 global equations → direct solution.`;
   } else if (isPureTruss) {
-    // For a pure truss with > 3 unknowns (e.g. two pin supports), the joint
-    // equilibrium system provides enough equations.  For the support reactions
-    // specifically, taking moments about each support gives one independent
-    // equation per support, reaching n equations total.
+    // For a truss with >3 unknowns (two pin supports): ΣM gives vertical reactions;
+    // horizontal reactions require joint equilibrium. Show as sub-structure step.
+    const horzCount = unknowns.filter(u => u.type === 'Rx').length;
     notes =
-      `${n} unknowns (${unknownLabels}). ` +
-      `Taking ΣM about each support gives ${n} equations total → direct solution.`;
+      `${n} unknowns (${unknownLabels}), 3 global equations — NOT directly solvable. ` +
+      `ΣM about each support determines the vertical reactions. ` +
+      `The ${horzCount > 1 ? 'horizontal reactions' : 'horizontal reaction'} ` +
+      `require joint equilibrium: isolate a support pin as a sub-structure to determine ${horzCount > 1 ? 'them' : 'it'}.`;
   } else {
     const hingeCount = countInternalHinges(nodes, members);
     const hingeLabels = getHingeLabels(nodes, members);
@@ -599,7 +600,7 @@ function buildMixedFrameEquationSteps(solverResults, unknowns, reactions) {
  * - For support nodes: reactions shown with variable labels; member lines hidden
  * - For non-support nodes: members drawn as lines; no reactions
  */
-function buildTrussJointFBD(jointId, nodes, members, reactions) {
+function buildTrussJointFBD(jointId, nodes, members, reactions, unknowns, solvedSoFar) {
   const joint = nodes.find(n => n.id === jointId);
   if (!joint) return null;
 
@@ -642,17 +643,29 @@ function buildTrussJointFBD(jointId, nodes, members, reactions) {
 
   const isSupport = !!joint.support;
 
-  // Fix 10: reactions always shown as VARIABLE NAMES (mode='unknown')
+  // Reactions: if unknowns/solvedSoFar provided, show solved ones as numbers (green),
+  // otherwise show all as variable names (white).
   let reactionItems = [];
   if (isSupport) {
     const nodeReactions = reactions.filter(r => r.nodeId === jointId);
-    reactionItems = nodeReactions.map(r => ({
-      nodeId: r.nodeId,
-      type: r.type,
-      label: getReactionLabel(r.label, r.type),
-      value: 0,
-      mode: 'unknown',
-    }));
+    reactionItems = nodeReactions.map(r => {
+      let isSolved = false;
+      let value = 0;
+      if (unknowns && solvedSoFar) {
+        const idx = unknowns.findIndex(u => u.nodeId === r.nodeId && u.type === r.type);
+        if (idx >= 0 && solvedSoFar[idx] !== undefined) {
+          isSolved = true;
+          value = r.value;
+        }
+      }
+      return {
+        nodeId: r.nodeId,
+        type: r.type,
+        label: getReactionLabel(r.label, r.type),
+        value,
+        mode: isSolved ? 'solved' : 'unknown',
+      };
+    });
   }
 
   return {
@@ -664,6 +677,94 @@ function buildTrussJointFBD(jointId, nodes, members, reactions) {
     highlightNodeIds: new Set([jointId]),
     maxHeight: 280,
   };
+}
+
+// ── Truss >3 unknowns: phased reaction determination ───────────────
+
+/**
+ * Build the ΣFx equation display for a support joint where the horizontal
+ * reaction is the sole unknown (all member forces already solved by the
+ * Method of Joints).  Treats Rx as LHS unknown, all member forces as RHS knowns.
+ */
+function buildJointHorzEquationLatex(jointId, nodes, members, reactions, trussForces) {
+  const joint = nodes.find(n => n.id === jointId);
+  if (!joint) return [];
+
+  const connTruss = members.filter(
+    m => m.type === 'truss' && (m.startNodeId === jointId || m.endNodeId === jointId)
+  );
+
+  const rxnAtJoint = reactions.filter(r => r.nodeId === jointId);
+  const rxn_x = rxnAtJoint.find(r => r.type === 'Rx');
+  const rxn_y = rxnAtJoint.find(r => r.type === 'Ry');
+
+  const rxLabel = rxn_x ? getReactionLabel(rxn_x.label, rxn_x.type) : 'R_x';
+  const ryLabel = rxn_y ? getReactionLabel(rxn_y.label, rxn_y.type) : 'R_y';
+  const ryVal   = rxn_y ? rxn_y.value : 0;
+  const rxVal   = rxn_x ? rxn_x.value : 0;
+
+  const eqLines = [];
+
+  // Known values header
+  eqLines.push('\\text{Known at this joint:}');
+  eqLines.push('');
+  const ryDir = getDirectionArrow(ryVal, 'Ry');
+  eqLines.push(
+    `${ryLabel} = ${fmt(Math.abs(ryVal))} \\text{ kN} \\; ${ryDir} \\text{ (from global } \\sum M\\text{)}`
+  );
+  eqLines.push('');
+
+  // Member force contributions to ΣFx
+  let memberXSum = 0;
+  const memberContribLines = [];
+  for (const m of connTruss) {
+    const otherId = m.startNodeId === jointId ? m.endNodeId : m.startNodeId;
+    const other = nodes.find(n => n.id === otherId);
+    if (!other) continue;
+    const dx = other.x - joint.x;
+    const dy = other.y - joint.y;
+    const L = Math.sqrt(dx * dx + dy * dy);
+    const cosA = dx / L;
+    if (Math.abs(cosA) < 1e-10) continue;
+
+    const tf = trussForces.find(tf => tf.memberId === m.id);
+    if (!tf) continue;
+    const xContrib = tf.force * cosA;
+    memberXSum += xContrib;
+    const typeStr = tf.force > 1e-4 ? 'T' : tf.force < -1e-4 ? 'C' : '0';
+    const contribDir = xContrib >= 0 ? '\\rightarrow' : '\\leftarrow';
+    const fLabel = `F_{${m.startLabel}${m.endLabel}}`;
+    memberContribLines.push(
+      `${fLabel} = ${fmt(Math.abs(tf.force))} \\text{ kN }(${typeStr}) \\Rightarrow` +
+      ` ${fmt(Math.abs(xContrib))} \\text{ kN} \\; ${contribDir}`
+    );
+  }
+  for (const line of memberContribLines) {
+    eqLines.push(line);
+    eqLines.push('');
+  }
+
+  // ΣFx equation
+  const loadX = joint.loads?.fx || 0;
+  const rhs = -(memberXSum + loadX);
+  const rhsStr = fmt(Math.abs(rhs));
+  const rxDir  = getDirectionArrow(rxVal, 'Rx');
+
+  // Show equation: B_x + member contributions + load = 0
+  const memberSignStr = memberXSum >= 0
+    ? `+ ${fmt(Math.abs(memberXSum))}`
+    : `- ${fmt(Math.abs(memberXSum))}`;
+  const loadStr = Math.abs(loadX) > 1e-10
+    ? (loadX > 0 ? ` + ${fmt(loadX)}` : ` - ${fmt(Math.abs(loadX))}`)
+    : '';
+
+  eqLines.push(`\\sum F_x = 0 \\text{ at joint ${joint.label}}:`);
+  eqLines.push('');
+  eqLines.push(`\\quad ${rxLabel} ${memberSignStr}${loadStr} = 0`);
+  eqLines.push('');
+  eqLines.push(`\\quad ${rxLabel} = ${rhsStr} \\text{ kN} \\; ${rxDir}`);
+
+  return eqLines;
 }
 
 /**
@@ -1120,14 +1221,12 @@ export function generateSolution(solverResults) {
     // Fix 8: Step 0 always shows variable names only
     steps.push(buildGlobalFBDStep(nodes, members, unknowns, reactions));
 
-    // Show HOW reactions were derived — write the equilibrium equations.
-    // For pure truss, solveTrussSystem uses joint equilibrium to find reactions,
-    // then stores global equations (with extra moment equations for n>3 supports)
-    // for pedagogical display.  We ALWAYS use buildDirectSolveSteps here —
-    // never buildSubStructureSteps — because trusses don't have frame hinges
-    // to partition at; the moment equations about each support are sufficient.
+    // Show HOW reactions were derived.
+    // For trusses with >3 unknowns (two pin supports), vertical reactions come
+    // from global ΣM equations, then a support pin is isolated as a sub-structure
+    // to determine horizontal reaction(s) via joint ΣFx, and finally global ΣFx
+    // gives the last horizontal reaction.  For ≤3 unknowns, direct solve.
     if (!solvingSteps || solvingSteps.length === 0) {
-      // Fallback: just list results
       steps.push({
         title: 'Support Reactions',
         fbd: null,
@@ -1139,19 +1238,157 @@ export function generateSolution(solverResults) {
         }),
         notes: 'Reactions solved from the full joint equilibrium system.',
       });
+      const trussSteps = buildTrussSteps(nodes, members, trussForces || [], reactions);
+      steps.push(...trussSteps);
+
+    } else if (unknowns.length > 3 && solvingSteps[0]?.type === 'global') {
+      // ── Phased approach for truss with >3 unknowns ──────────────────
+      const globalStep = solvingSteps[0];
+      const kf = globalStep.knownForces || null;
+      const ordered = reorderEquations(globalStep.equations);
+
+      // Split equations: phase-1 = those with ≤1 unsolved unknown at that stage
+      //                  phase-2 = ΣFx that has >1 unsolved (horizontal reactions)
+      const tempSolvedForSplit = {};
+      const phase1Eqs = [];
+      const phase2Eqs = [];
+      for (const eq of ordered) {
+        const unsolvedNow = unknowns.filter((u, i) =>
+          Math.abs(eq.coefficients[i]) > 1e-10 && tempSolvedForSplit[i] === undefined
+        ).length;
+        if (unsolvedNow <= 1) {
+          phase1Eqs.push(eq);
+          unknowns.forEach((u, i) => {
+            if (Math.abs(eq.coefficients[i]) > 1e-10 && tempSolvedForSplit[i] === undefined) {
+              const rxn = reactions.find(r => r.nodeId === u.nodeId && r.type === u.type);
+              if (rxn) tempSolvedForSplit[i] = rxn.value;
+            }
+          });
+        } else {
+          phase2Eqs.push(eq);
+        }
+      }
+
+      // Phase-1 steps: ΣM equations → vertical reactions, ΣFy → verification
+      const p1Solved = {};
+      for (const eq of phase1Eqs) {
+        const eqLines = buildEquationLatex(eq, unknowns, reactions, p1Solved, kf);
+        unknowns.forEach((u, i) => {
+          if (Math.abs(eq.coefficients[i]) > 1e-10 && p1Solved[i] === undefined) {
+            const rxn = reactions.find(r => r.nodeId === u.nodeId && r.type === u.type);
+            if (rxn) p1Solved[i] = rxn.value;
+          }
+        });
+        let title;
+        if (eq.type === 'moment' || eq.type === 'hinge-moment') {
+          const mp = eq.momentPoint || eq.hingeNode;
+          title = `Moment Equation${mp ? ` about ${mp.label}` : ''}`;
+        } else if (eq.type === 'force-y') {
+          title = 'Vertical Force Equation';
+        } else {
+          title = 'Equilibrium Equation';
+        }
+        if (eqLines.length > 0) steps.push({ title, fbd: null, equations: eqLines, notes: null });
+      }
+
+      // Identify horizontal unknowns (need joint equilibrium)
+      const horzUnknownIndices = unknowns
+        .map((u, i) => ({ u, i }))
+        .filter(({ u }) => u.type === 'Rx')
+        .map(({ i }) => i);
+
+      // Primary pin: first horizontal unknown → its joint will be shown as sub-structure
+      const primaryIdx = horzUnknownIndices[0];
+      const primaryPinNodeId = primaryIdx !== undefined ? unknowns[primaryIdx].nodeId : null;
+      const primaryPinNode = primaryPinNodeId ? nodes.find(n => n.id === primaryPinNodeId) : null;
+
+      // Method of Joints — for member forces.
+      // The primary support pin is EXCLUDED from the grid here; it is shown
+      // separately as a sub-structure step after the joint grid but BEFORE the summary.
+      const trussStepsRaw = buildTrussSteps(nodes, members, trussForces || [], reactions);
+      if (primaryPinNode && trussStepsRaw.length > 0) {
+        const mojStep = trussStepsRaw.find(s => s.trussJointGrid);
+        if (mojStep) {
+          const filtered = mojStep.trussJointGrid.filter(
+            j => j.title !== `Joint ${primaryPinNode.label}`
+          );
+          mojStep.trussJointGrid = filtered.length > 0 ? filtered : mojStep.trussJointGrid;
+        }
+      }
+      // Push everything EXCEPT the member forces summary (pushed later, after sub-structure)
+      const summaryStp = trussStepsRaw.find(s => s.trussTable);
+      const preJointSteps = trussStepsRaw.filter(s => !s.trussTable);
+      steps.push(...preJointSteps);
+
+      // Sub-structure step: joint at primary pin
+      if (primaryPinNodeId) {
+        // FBD: B_y shown as solved (green), B_x as unknown (white), all members shown
+        const subFBD = buildTrussJointFBD(
+          primaryPinNodeId, nodes, members, reactions, unknowns, p1Solved
+        );
+        const byRxn = reactions.find(r => r.nodeId === primaryPinNodeId && r.type === 'Ry');
+        const byLabel = unknowns.find(u => u.nodeId === primaryPinNodeId && u.type === 'Ry');
+        const bxLabel = unknowns.find(u => u.nodeId === primaryPinNodeId && u.type === 'Rx');
+        const byValStr = byRxn ? `${fmt(Math.abs(byRxn.value))} kN` : '';
+        const byDir = byRxn ? (byRxn.value >= 0 ? '↑' : '↓') : '';
+
+        steps.push({
+          title: `Sub-structure: Joint ${primaryPinNode?.label || ''} — FBD`,
+          fbd: subFBD,
+          equations: [],
+          notes:
+            `${byLabel?.label || ''}_y = ${byValStr} ${byDir} (from global ΣM). ` +
+            `All member forces at ${primaryPinNode?.label || ''} are now known from the joint analysis above. ` +
+            `Joint ΣF_x = 0 determines ${bxLabel?.label || ''}_x directly.`,
+        });
+
+        const jointHorzLines = buildJointHorzEquationLatex(
+          primaryPinNodeId, nodes, members, reactions, trussForces || []
+        );
+        if (jointHorzLines.length > 0) {
+          steps.push({
+            title: `Joint ${primaryPinNode?.label || ''} — Horizontal Equilibrium`,
+            fbd: null,
+            equations: jointHorzLines,
+            notes: null,
+          });
+        }
+      }
+
+      // Phase-2: global ΣFx — with primary pin's B_x now solved → derives F_x
+      if (phase2Eqs.length > 0) {
+        const p2Solved = { ...p1Solved };
+        // Mark all horizontal unknowns as solved EXCEPT the last one (F_x at second pin)
+        for (let k = 0; k < horzUnknownIndices.length - 1; k++) {
+          const i = horzUnknownIndices[k];
+          const rxn = reactions.find(r => r.nodeId === unknowns[i].nodeId && r.type === unknowns[i].type);
+          if (rxn) p2Solved[i] = rxn.value;
+        }
+        for (const eq of phase2Eqs) {
+          const eqLines = buildEquationLatex(eq, unknowns, reactions, p2Solved, kf);
+          if (eqLines.length > 0) {
+            steps.push({ title: 'Horizontal Force Equation', fbd: null, equations: eqLines, notes: null });
+          }
+        }
+      }
+
+      // Member forces summary — shown last, after reaction determination is complete
+      if (summaryStp) steps.push(summaryStp);
+
     } else if (solvingSteps[0]?.type === 'global') {
-      // Direct solve using global equilibrium equations (ΣM about each support,
-      // ΣFy, ΣFx) — works for any number of unknowns on a pure truss.
+      // ≤3 unknowns: direct solve from global equations
       const directSteps = buildDirectSolveSteps(solvingSteps[0], unknowns, reactions);
       steps.push(...directSteps);
+      const trussSteps = buildTrussSteps(nodes, members, trussForces || [], reactions);
+      steps.push(...trussSteps);
+
     } else {
-      // Fallback for unexpected step types
+      // Fallback
       const subSteps = buildSubStructureSteps(solvingSteps, unknowns, reactions, nodes, members);
       steps.push(...subSteps);
+      const trussSteps = buildTrussSteps(nodes, members, trussForces || [], reactions);
+      steps.push(...trussSteps);
     }
-
-    const trussSteps = buildTrussSteps(nodes, members, trussForces || [], reactions);
-    steps.push(...trussSteps);
 
   } else if (hasTruss && hasFrame) {
     // ── Mixed frame + truss ─────────────────────────────────────────
