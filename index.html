@@ -179,6 +179,32 @@
             margin-top: calc(var(--grid) * 4);
         }
 
+        .calculator-grid-2col {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: calc(var(--grid) * 4);
+        }
+
+        .category-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-top: calc(var(--grid) * 6);
+            margin-bottom: calc(var(--grid) * 2);
+            padding-bottom: calc(var(--grid) * 1);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .category-subtitle {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: calc(var(--grid) * 3);
+            font-style: italic;
+        }
+
         .calc-card {
             background: var(--surface);
             border: 2px solid var(--border);
@@ -344,6 +370,10 @@
                 grid-template-columns: 1fr;
             }
 
+            .calculator-grid-2col {
+                grid-template-columns: 1fr;
+            }
+
             .calc-card {
                 aspect-ratio: auto;
             }
@@ -440,7 +470,13 @@
                 <div class="button-text">Hesapla →</div>
                 <div class="contributor-name">by Ali Warsame</div>
             </a>
+        </div>
 
+        <!-- Numerical Analysis Category -->
+        <div class="category-label">Numerical Analysis — CE 305</div>
+        <div class="category-subtitle">Sayısal yöntemler, adım adım</div>
+
+        <div class="calculator-grid-2col">
             <!-- RootFinder - Featured -->
             <a href="rootfinder/index.html" class="calc-card featured">
                 <h3>RootFinder</h3>
@@ -468,7 +504,7 @@
             </a>
         </div>
 
-        <!-- 4th card, centered -->
+        <!-- Soil Mechanics, centered -->
         <div class="calculator-grid-centered">
             <div class="calc-card featured" style="width: calc((100% - var(--grid) * 8) / 3);">
                 <div class="coming-soon-badge">Coming Soon</div>
