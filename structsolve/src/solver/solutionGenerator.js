@@ -434,13 +434,15 @@ function buildSubStructureSteps(solvingSteps, unknowns, reactions, nodes, member
         },
       ] : [];
 
+      // Only show reactions for nodes ON this sub-structure side.
+      // The other side's reactions must not appear in the sub-structure FBD.
+      const sideReactionItems = buildReactionItems(unknowns, reactions, solvedSoFar)
+        .filter(r => sideNodeIds.has(r.nodeId));
+
       const subFBD = {
         nodes,
         members,
-        reactionItems: [
-          ...buildReactionItems(unknowns, reactions, solvedSoFar),
-          ...cutForceItems,
-        ],
+        reactionItems: [...sideReactionItems, ...cutForceItems],
         cutNodeIds: hingeId ? [hingeId] : [],
         highlightNodeIds: sideNodeIds.size > 0 ? sideNodeIds : null,
       };
@@ -660,7 +662,7 @@ function buildTrussJointFBD(jointId, nodes, members, reactions) {
     memberForceArrows,
     cutNodeIds: [],
     highlightNodeIds: new Set([jointId]),
-    maxHeight: 220,
+    maxHeight: 280,
   };
 }
 
