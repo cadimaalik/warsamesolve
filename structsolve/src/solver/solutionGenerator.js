@@ -300,16 +300,26 @@ function buildEquationLatex(eq, unknowns, reactions, solvedSoFar, knownForces) {
 
 /**
  * Step 0: Global Free Body Diagram — ALWAYS variable names only.
- * For N > 3 unknowns, adds a note explaining the partitioning strategy.
+ * For N > 3 unknowns, adds a note explaining the solving strategy.
  */
 function buildGlobalFBDStep(nodes, members, unknowns, reactions) {
   const reactionItems = buildReactionItems(unknowns, reactions, null);
   const unknownLabels = unknowns.map(u => getReactionLabel(u.label, u.type)).join(', ');
   const n = unknowns.length;
 
+  const isPureTruss = members.length > 0 && members.every(m => m.type === 'truss');
+
   let notes;
   if (n <= 3) {
     notes = `${n} unknown${n !== 1 ? 's' : ''} (${unknownLabels}), 3 global equations → direct solution.`;
+  } else if (isPureTruss) {
+    // For a pure truss with > 3 unknowns (e.g. two pin supports), the joint
+    // equilibrium system provides enough equations.  For the support reactions
+    // specifically, taking moments about each support gives one independent
+    // equation per support, reaching n equations total.
+    notes =
+      `${n} unknowns (${unknownLabels}). ` +
+      `Taking ΣM about each support gives ${n} equations total → direct solution.`;
   } else {
     const hingeCount = countInternalHinges(nodes, members);
     const hingeLabels = getHingeLabels(nodes, members);
@@ -1108,7 +1118,12 @@ export function generateSolution(solverResults) {
     // Fix 8: Step 0 always shows variable names only
     steps.push(buildGlobalFBDStep(nodes, members, unknowns, reactions));
 
-    // Issue 1: Show HOW reactions were derived — write the equilibrium equations
+    // Show HOW reactions were derived — write the equilibrium equations.
+    // For pure truss, solveTrussSystem uses joint equilibrium to find reactions,
+    // then stores global equations (with extra moment equations for n>3 supports)
+    // for pedagogical display.  We ALWAYS use buildDirectSolveSteps here —
+    // never buildSubStructureSteps — because trusses don't have frame hinges
+    // to partition at; the moment equations about each support are sufficient.
     if (!solvingSteps || solvingSteps.length === 0) {
       // Fallback: just list results
       steps.push({
@@ -1122,12 +1137,13 @@ export function generateSolution(solverResults) {
         }),
         notes: 'Reactions solved from the full joint equilibrium system.',
       });
-    } else if (unknowns.length <= 3 && solvingSteps[0]?.type === 'global') {
-      // Direct solve: one step per equilibrium equation showing full derivation
+    } else if (solvingSteps[0]?.type === 'global') {
+      // Direct solve using global equilibrium equations (ΣM about each support,
+      // ΣFy, ΣFx) — works for any number of unknowns on a pure truss.
       const directSteps = buildDirectSolveSteps(solvingSteps[0], unknowns, reactions);
       steps.push(...directSteps);
     } else {
-      // Sub-structure or complex solve path
+      // Fallback for unexpected step types
       const subSteps = buildSubStructureSteps(solvingSteps, unknowns, reactions, nodes, members);
       steps.push(...subSteps);
     }
