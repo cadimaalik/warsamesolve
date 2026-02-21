@@ -93,6 +93,149 @@ function geoFracStr(component, L) {
   return `\\frac{${fmt(abs)}}{${fmt(L)}}`;
 }
 
+// ── Sub-structure partition helpers (pure truss >3 unknowns) ──────
+
+/**
+ * Find connected components in the truss graph after removing a node.
+ * Returns an array of Sets, each containing node IDs in one component.
+ */
+function getGraphComponents(excludeNodeId, nodes, members) {
+  const adj = {};
+  for (const n of nodes) {
+    if (n.id === excludeNodeId) continue;
+    adj[n.id] = [];
+  }
+  for (const m of members) {
+    if (m.startNodeId === excludeNodeId || m.endNodeId === excludeNodeId) continue;
+    if (adj[m.startNodeId]) adj[m.startNodeId].push(m.endNodeId);
+    if (adj[m.endNodeId]) adj[m.endNodeId].push(m.startNodeId);
+  }
+
+  const visited = new Set();
+  const components = [];
+
+  for (const nodeId of Object.keys(adj)) {
+    if (visited.has(nodeId)) continue;
+    const component = new Set();
+    const queue = [nodeId];
+    while (queue.length > 0) {
+      const current = queue.shift();
+      if (visited.has(current)) continue;
+      visited.add(current);
+      component.add(current);
+      for (const neighbor of (adj[current] || [])) {
+        if (!visited.has(neighbor)) queue.push(neighbor);
+      }
+    }
+    components.push(component);
+  }
+
+  return components;
+}
+
+/**
+ * Find the optimal joint to partition a pure truss for sub-structure analysis.
+ * Only non-support nodes are candidates. The best candidate splits the graph
+ * into two sides with the most balanced reaction-unknown counts.
+ */
+function findOptimalPartitionJoint(nodes, members, unknowns) {
+  const candidates = nodes.filter(n => !n.support);
+
+  let bestJoint = null;
+  let bestScore = Infinity;
+  let bestBalance = Infinity;
+
+  for (const candidate of candidates) {
+    const sides = getGraphComponents(candidate.id, nodes, members);
+    if (sides.length < 2) continue;
+
+    const sideCounts = sides.map(sideNodeIds =>
+      unknowns.filter(u => sideNodeIds.has(u.nodeId)).length
+    );
+
+    const maxCount = Math.max(...sideCounts);
+    const balance = Math.abs(sideCounts[0] - (sideCounts[1] || 0));
+
+    if (maxCount < bestScore || (maxCount === bestScore && balance < bestBalance)) {
+      bestScore = maxCount;
+      bestBalance = balance;
+      bestJoint = candidate;
+    }
+  }
+
+  return bestJoint;
+}
+
+/**
+ * Build a human-readable label for a sub-structure side.
+ * Lists sorted node labels including the cut joint.
+ */
+function buildSideLabel(sideNodeIds, cutJoint, nodes) {
+  const labels = [];
+  for (const nodeId of sideNodeIds) {
+    const node = nodes.find(n => n.id === nodeId);
+    if (node) labels.push(node.label);
+  }
+  labels.push(cutJoint.label);
+  labels.sort();
+  return labels.join('');
+}
+
+/**
+ * Filter knownForces to only include loads on a given sub-structure side.
+ * Loads at the cut joint are assigned to the first (primary) side only.
+ */
+function filterKnownForcesToSide(knownForces, sideNodeIds, cutJointId, nodes, isFirstSide) {
+  return knownForces.filter(f => {
+    const atNode = nodes.find(n =>
+      Math.abs(n.x - f.x) < 0.01 && Math.abs(n.y - f.y) < 0.01
+    );
+    if (!atNode) return false;
+    if (atNode.id === cutJointId) return isFirstSide;
+    return sideNodeIds.has(atNode.id);
+  });
+}
+
+/**
+ * Build ΣM equation about a cut joint for a sub-structure side.
+ * The internal forces at the cut pass through the moment point and vanish.
+ * Returns an equation object compatible with buildEquationLatex.
+ */
+function buildSubMomentEquation(cutJoint, sideNodeIds, nodes, unknowns, sideKnownForces) {
+  const P = cutJoint;
+  const n = unknowns.length;
+  const eq = {
+    coefficients: new Array(n).fill(0),
+    rhs: 0,
+    description: `\\sum M_{${P.label}} = 0`,
+    type: 'sub-moment',
+    momentPoint: P,
+  };
+
+  // Reaction unknowns on this side
+  for (let i = 0; i < n; i++) {
+    const u = unknowns[i];
+    if (!sideNodeIds.has(u.nodeId)) continue;
+
+    const dx = u.node.x - P.x;
+    const dy = u.node.y - P.y;
+
+    if (u.type === 'Ry') eq.coefficients[i] = dx;
+    else if (u.type === 'Rx') eq.coefficients[i] = -dy;
+    else if (u.type === 'M') eq.coefficients[i] = 1;
+  }
+
+  // Known forces (external loads) on this side → move to RHS
+  for (const f of sideKnownForces) {
+    const dx = f.x - P.x;
+    const dy = f.y - P.y;
+    const moment = dx * f.fy - dy * f.fx + (f.m || 0);
+    eq.rhs -= moment;
+  }
+
+  return eq;
+}
+
 // ── Equation layout helpers ────────────────────────────────────────
 
 /**
@@ -302,7 +445,7 @@ function buildEquationLatex(eq, unknowns, reactions, solvedSoFar, knownForces) {
  * Step 0: Global Free Body Diagram — ALWAYS variable names only.
  * For N > 3 unknowns, adds a note explaining the solving strategy.
  */
-function buildGlobalFBDStep(nodes, members, unknowns, reactions) {
+function buildGlobalFBDStep(nodes, members, unknowns, reactions, cutJointLabel) {
   const reactionItems = buildReactionItems(unknowns, reactions, null);
   const unknownLabels = unknowns.map(u => getReactionLabel(u.label, u.type)).join(', ');
   const n = unknowns.length;
@@ -313,14 +456,9 @@ function buildGlobalFBDStep(nodes, members, unknowns, reactions) {
   if (n <= 3) {
     notes = `${n} unknown${n !== 1 ? 's' : ''} (${unknownLabels}), 3 global equations → direct solution.`;
   } else if (isPureTruss) {
-    // For a truss with >3 unknowns (two pin supports): ΣM gives vertical reactions;
-    // horizontal reactions require joint equilibrium. Show as sub-structure step.
-    const horzCount = unknowns.filter(u => u.type === 'Rx').length;
     notes =
       `${n} unknowns (${unknownLabels}), 3 global equations — NOT directly solvable. ` +
-      `ΣM about each support determines the vertical reactions. ` +
-      `The ${horzCount > 1 ? 'horizontal reactions' : 'horizontal reaction'} ` +
-      `require joint equilibrium: isolate a support pin as a sub-structure to determine ${horzCount > 1 ? 'them' : 'it'}.`;
+      `Partition the structure at joint ${cutJointLabel || '?'} for the additional equation.`;
   } else {
     const hingeCount = countInternalHinges(nodes, members);
     const hingeLabels = getHingeLabels(nodes, members);
@@ -1286,25 +1424,10 @@ export function generateSolution(solverResults) {
 
   if (isPureTruss) {
     // ── Pure truss ──────────────────────────────────────────────────
-    // Fix 8: Step 0 always shows variable names only
-    steps.push(buildGlobalFBDStep(nodes, members, unknowns, reactions));
 
-    // Show HOW reactions were derived.
-    // For trusses with >3 unknowns (two pin supports), vertical reactions come
-    // from global ΣM equations, then a support pin is isolated as a sub-structure
-    // to determine horizontal reaction(s) via joint ΣFx, and finally global ΣFx
-    // gives the last horizontal reaction.  For ≤3 unknowns, direct solve.
-    // DIAG: expose branch selector to browser console for debugging
-    /* eslint-disable no-console */
-    const _diag = {
-      solvingStepsLen: solvingSteps ? solvingSteps.length : 'MISSING',
-      step0type: solvingSteps?.[0]?.type ?? 'NONE',
-      unknownsLen: unknowns.length,
-      enterPhased: unknowns.length > 3 && solvingSteps?.[0]?.type === 'global',
-    };
-    console.log('[STRUCTSOLVE DIAG]', JSON.stringify(_diag));
-    /* eslint-enable no-console */
     if (!solvingSteps || solvingSteps.length === 0) {
+      // No solving steps available — show reactions directly
+      steps.push(buildGlobalFBDStep(nodes, members, unknowns, reactions));
       steps.push({
         title: 'Support Reactions',
         fbd: null,
@@ -1320,193 +1443,232 @@ export function generateSolution(solverResults) {
       steps.push(...trussSteps);
 
     } else if (unknowns.length > 3 && solvingSteps[0]?.type === 'global') {
-      // ── Phased approach for truss with >3 unknowns ──────────────────
+      // ═══ PURE TRUSS WITH >3 UNKNOWNS — SUB-STRUCTURE PARTITION METHOD ═══
+
       const globalStep = solvingSteps[0];
       const kf = globalStep.knownForces || null;
-      const ordered = reorderEquations(globalStep.equations);
 
-      // Split equations: phase-1 = those with ≤1 unsolved unknown at that stage
-      //                  phase-2 = ΣFx that has >1 unsolved (horizontal reactions)
-      const tempSolvedForSplit = {};
-      const phase1Eqs = [];
-      const phase2Eqs = [];
-      for (const eq of ordered) {
-        const unsolvedNow = unknowns.filter((u, i) =>
-          Math.abs(eq.coefficients[i]) > 1e-10 && tempSolvedForSplit[i] === undefined
-        ).length;
-        if (unsolvedNow <= 1) {
-          phase1Eqs.push(eq);
-          unknowns.forEach((u, i) => {
-            if (Math.abs(eq.coefficients[i]) > 1e-10 && tempSolvedForSplit[i] === undefined) {
-              const rxn = reactions.find(r => r.nodeId === u.nodeId && r.type === u.type);
-              if (rxn) tempSolvedForSplit[i] = rxn.value;
-            }
-          });
-        } else {
-          phase2Eqs.push(eq);
-        }
-      }
+      // 1. Find optimal partition joint
+      const cutJoint = findOptimalPartitionJoint(nodes, members, unknowns);
 
-      // Primary pin: first Rx unknown → its joint is the sub-structure
-      const horzUnknownIndices = unknowns
-        .map((u, i) => ({ u, i }))
-        .filter(({ u }) => u.type === 'Rx')
-        .map(({ i }) => i);
-      const primaryIdx       = horzUnknownIndices[0];
-      const primaryPinNodeId = primaryIdx !== undefined ? unknowns[primaryIdx].nodeId : null;
-      const primaryPinNode   = primaryPinNodeId ? nodes.find(n => n.id === primaryPinNodeId) : null;
+      // Step 1: Global FBD with partition note
+      steps.push(buildGlobalFBDStep(nodes, members, unknowns, reactions, cutJoint?.label));
 
-      // ── Helper: build trussStepsRaw with primary pin excluded from grid ──
-      const trussStepsRaw = buildTrussSteps(nodes, members, trussForces || [], reactions);
-      if (primaryPinNode && trussStepsRaw.length > 0) {
-        const mojStep = trussStepsRaw.find(s => s.trussJointGrid);
-        if (mojStep) {
-          const filtered = mojStep.trussJointGrid.filter(
-            j => j.title !== `Joint ${primaryPinNode.label}`
-          );
-          mojStep.trussJointGrid = filtered.length > 0 ? filtered : mojStep.trussJointGrid;
-        }
-      }
-      const summaryStp    = trussStepsRaw.find(s => s.trussTable);
-      const preJointSteps = trussStepsRaw.filter(s => !s.trussTable);
+      if (cutJoint) {
+        // 2. Partition the graph at the cut joint
+        const sides = getGraphComponents(cutJoint.id, nodes, members);
 
-      if (phase1Eqs.length > 0) {
-        // ── HORIZONTAL SPAN: moment equations isolate vertical reactions ──────
-        // Phase-1: ΣM → vertical reactions, ΣFy → verification
-        const p1Solved = {};
-        for (const eq of phase1Eqs) {
-          const eqLines = buildEquationLatex(eq, unknowns, reactions, p1Solved, kf);
-          unknowns.forEach((u, i) => {
-            if (Math.abs(eq.coefficients[i]) > 1e-10 && p1Solved[i] === undefined) {
-              const rxn = reactions.find(r => r.nodeId === u.nodeId && r.type === u.type);
-              if (rxn) p1Solved[i] = rxn.value;
-            }
-          });
-          let title;
-          if (eq.type === 'moment' || eq.type === 'hinge-moment') {
-            const mp = eq.momentPoint || eq.hingeNode;
-            title = `Moment Equation${mp ? ` about ${mp.label}` : ''}`;
-          } else if (eq.type === 'force-y') {
-            title = 'Vertical Force Equation';
+        // Determine which side is "primary" (fewer support reaction unknowns)
+        let sideAIds, sideBIds;
+        if (sides.length >= 2) {
+          const count0 = unknowns.filter(u => sides[0].has(u.nodeId)).length;
+          const count1 = unknowns.filter(u => sides[1].has(u.nodeId)).length;
+          if (count0 <= count1) {
+            sideAIds = sides[0];
+            sideBIds = sides[1];
           } else {
-            title = 'Equilibrium Equation';
+            sideAIds = sides[1];
+            sideBIds = sides[0];
           }
-          if (eqLines.length > 0) steps.push({ title, fbd: null, equations: eqLines, notes: null });
+        } else {
+          // Fallback: if removing the node doesn't split the graph
+          sideAIds = sides[0] || new Set();
+          sideBIds = new Set();
         }
 
-        // Method of Joints (primary pin excluded — shown as sub-structure below)
-        steps.push(...preJointSteps);
+        const sideALabel = buildSideLabel(sideAIds, cutJoint, nodes);
+        const sideBLabel = buildSideLabel(sideBIds, cutJoint, nodes);
 
-        // Sub-structure: primary pin — B_y green (solved), B_x white (unknown)
-        if (primaryPinNodeId) {
-          const subFBD  = buildTrussJointFBD(primaryPinNodeId, nodes, members, reactions, unknowns, p1Solved);
-          const byRxn   = reactions.find(r => r.nodeId === primaryPinNodeId && r.type === 'Ry');
-          const byLabel = unknowns.find(u => u.nodeId === primaryPinNodeId && u.type === 'Ry');
-          const bxLabel = unknowns.find(u => u.nodeId === primaryPinNodeId && u.type === 'Rx');
-          const byValStr = byRxn ? `${fmt(Math.abs(byRxn.value))} kN` : '';
-          const byDir    = byRxn ? (byRxn.value >= 0 ? '↑' : '↓') : '';
-          steps.push({
-            title: `Sub-structure: Joint ${primaryPinNode?.label || ''} — FBD`,
-            fbd: subFBD,
-            equations: [],
-            notes: `${byLabel?.label || ''}_y = ${byValStr} ${byDir} (from global ΣM). ` +
-                   `All member forces at ${primaryPinNode?.label || ''} now known. ` +
-                   `Joint ΣF_x = 0 determines ${bxLabel?.label || ''}_x directly.`,
-          });
-          const horzLines = buildJointHorzEquationLatex(primaryPinNodeId, nodes, members, reactions, trussForces || []);
-          if (horzLines.length > 0) steps.push({ title: `Joint ${primaryPinNode?.label || ''} — Horizontal Equilibrium`, fbd: null, equations: horzLines, notes: null });
-        }
+        const sideAReactionCount = unknowns.filter(u => sideAIds.has(u.nodeId)).length;
+        const sideBReactionCount = unknowns.filter(u => sideBIds.has(u.nodeId)).length;
 
-        // Phase-2: global ΣFx — B_x now known → derives F_x
-        if (phase2Eqs.length > 0) {
-          const p2Solved = { ...p1Solved };
-          for (let k = 0; k < horzUnknownIndices.length - 1; k++) {
-            const i   = horzUnknownIndices[k];
-            const rxn = reactions.find(r => r.nodeId === unknowns[i].nodeId && r.type === unknowns[i].type);
-            if (rxn) p2Solved[i] = rxn.value;
-          }
-          for (const eq of phase2Eqs) {
-            const eqLines = buildEquationLatex(eq, unknowns, reactions, p2Solved, kf);
-            if (eqLines.length > 0) steps.push({ title: 'Horizontal Force Equation', fbd: null, equations: eqLines, notes: null });
-          }
-        }
+        const sideAReactionLabels = unknowns
+          .filter(u => sideAIds.has(u.nodeId))
+          .map(u => getReactionLabel(u.label, u.type))
+          .join(', ');
+        const sideBReactionLabels = unknowns
+          .filter(u => sideBIds.has(u.nodeId))
+          .map(u => getReactionLabel(u.label, u.type))
+          .join(', ');
 
-      } else {
-        // ── INCLINED SPAN: no equation isolates a single reaction globally ────
-        // Show all 4 global equations as an unsolved system, then method of joints,
-        // then sub-structure at primary pin (both reactions unknown), then global
-        // ΣFy and ΣFx to derive the second support's reactions.
+        // Filter known forces for each side
+        const sideAKnownForces = filterKnownForcesToSide(kf || [], sideAIds, cutJoint.id, nodes, true);
+        const sideBKnownForces = filterKnownForcesToSide(kf || [], sideBIds, cutJoint.id, nodes, false);
 
-        // Global system step (all unknowns unsolved)
-        const systemLines = [];
-        for (const eq of ordered) {
-          const lines = buildEquationLatex(eq, unknowns, reactions, {}, kf);
-          systemLines.push(...lines, '');
-        }
-        while (systemLines.length > 0 && systemLines[systemLines.length - 1] === '') systemLines.pop();
-        if (systemLines.length > 0) {
-          steps.push({
-            title: 'Global Equilibrium — System',
-            fbd: null,
-            equations: systemLines,
-            notes: 'The supports are at different heights: each moment equation contains 2 unknowns. ' +
-                   'The reactions cannot be found one-at-a-time from global equations. ' +
-                   'Isolate joint ' + (primaryPinNode?.label || '') + ' as a sub-structure ' +
-                   'after the member forces are known.',
-          });
-        }
+        // Include cut joint node IDs for FBD highlighting
+        const sideAHighlight = new Set([...sideAIds, cutJoint.id]);
+        const sideBHighlight = new Set([...sideBIds, cutJoint.id]);
 
-        // Method of Joints (primary pin excluded)
-        steps.push(...preJointSteps);
+        // ── Step 2: Sub-structure A — FBD ──
+        const sideAReactionItems = buildReactionItems(unknowns, reactions, null)
+          .filter(r => sideAIds.has(r.nodeId));
+        const cutForceItemsA = [
+          {
+            nodeId: cutJoint.id,
+            type: 'Rx',
+            label: `C_{${cutJoint.label},x}`,
+            value: 0,
+            mode: 'unknown',
+          },
+          {
+            nodeId: cutJoint.id,
+            type: 'Ry',
+            label: `C_{${cutJoint.label},y}`,
+            value: 0,
+            mode: 'unknown',
+          },
+        ];
 
-        // Sub-structure: primary pin — BOTH reactions unknown
-        if (primaryPinNodeId) {
-          const emptyP1 = {}; // neither reaction solved yet
-          const subFBD  = buildTrussJointFBD(primaryPinNodeId, nodes, members, reactions, unknowns, emptyP1);
-          const bxLabel = unknowns.find(u => u.nodeId === primaryPinNodeId && u.type === 'Rx');
-          const byLabel = unknowns.find(u => u.nodeId === primaryPinNodeId && u.type === 'Ry');
-          steps.push({
-            title: `Sub-structure: Joint ${primaryPinNode?.label || ''} — FBD`,
-            fbd: subFBD,
-            equations: [],
-            notes: `All member forces at ${primaryPinNode?.label || ''} are now known from the joint analysis above. ` +
-                   `ΣF_y = 0 gives ${byLabel?.label || ''}_y; ΣF_x = 0 gives ${bxLabel?.label || ''}_x.`,
-          });
-
-          const bothLines = buildJointBothReactionsLatex(primaryPinNodeId, nodes, members, reactions, trussForces || []);
-          if (bothLines.length > 0) steps.push({ title: `Joint ${primaryPinNode?.label || ''} — Full Equilibrium`, fbd: null, equations: bothLines, notes: null });
-        }
-
-        // Global ΣFy and ΣFx — primary pin's reactions now known → derive second support
-        // Mark primary pin's reactions as solved for display
-        const afterPrimaryPin = {};
-        unknowns.forEach((u, i) => {
-          if (u.nodeId === primaryPinNodeId) {
-            const rxn = reactions.find(r => r.nodeId === u.nodeId && r.type === u.type);
-            if (rxn) afterPrimaryPin[i] = rxn.value;
-          }
+        steps.push({
+          title: `Sub-structure: ${sideALabel} — FBD`,
+          fbd: {
+            nodes, members,
+            reactionItems: [...sideAReactionItems, ...cutForceItemsA],
+            cutNodeIds: [cutJoint.id],
+            highlightNodeIds: sideAHighlight,
+          },
+          equations: [],
+          notes: `Sub-structure has ${sideAReactionCount + 2} unknowns ` +
+                 `(${sideAReactionLabels}, C_{${cutJoint.label},x}, C_{${cutJoint.label},y}), ` +
+                 `3 equations. Taking ΣM about ${cutJoint.label} eliminates the internal forces ` +
+                 `C_{${cutJoint.label},x} and C_{${cutJoint.label},y} (zero moment arm) — ` +
+                 `leaving ${sideAReactionCount} unknown${sideAReactionCount !== 1 ? 's' : ''} in 1 equation.`,
         });
-        for (const eq of ordered) {
-          // Only show ΣFx and ΣFy (force equations), not moment equations (already shown)
-          if (eq.type !== 'force-x' && eq.type !== 'force-y') continue;
-          const eqLines = buildEquationLatex(eq, unknowns, reactions, afterPrimaryPin, kf);
-          const title   = eq.type === 'force-y' ? 'Vertical Force Equation' : 'Horizontal Force Equation';
-          if (eqLines.length > 0) steps.push({ title, fbd: null, equations: eqLines, notes: null });
-          // Mark newly solved unknowns for subsequent equations
-          unknowns.forEach((u, i) => {
-            if (Math.abs(eq.coefficients[i]) > 1e-10 && afterPrimaryPin[i] === undefined) {
-              const rxn = reactions.find(r => r.nodeId === u.nodeId && r.type === u.type);
-              if (rxn) afterPrimaryPin[i] = rxn.value;
-            }
-          });
+
+        // ── Step 3: Sub-structure A — Equation ──
+        const solvedSoFar = {};
+        const subMomentEqA = buildSubMomentEquation(cutJoint, sideAIds, nodes, unknowns, sideAKnownForces);
+        const eqLinesA = buildEquationLatex(subMomentEqA, unknowns, reactions, solvedSoFar, sideAKnownForces);
+
+        // Mark side A's unknowns as solved
+        for (let i = 0; i < unknowns.length; i++) {
+          if (!sideAIds.has(unknowns[i].nodeId)) continue;
+          if (Math.abs(subMomentEqA.coefficients[i]) < 1e-10) continue;
+          const rxn = reactions.find(r => r.nodeId === unknowns[i].nodeId && r.type === unknowns[i].type);
+          if (rxn) solvedSoFar[i] = rxn.value;
         }
+
+        steps.push({
+          title: `Sub-structure: ${sideALabel} — ΣM about ${cutJoint.label}`,
+          fbd: null,
+          equations: eqLinesA,
+          notes: null,
+        });
+
+        // ── Step 4: Sub-structure B — FBD ──
+        const sideBReactionItems = buildReactionItems(unknowns, reactions, null)
+          .filter(r => sideBIds.has(r.nodeId));
+        const cutForceItemsB = [
+          {
+            nodeId: cutJoint.id,
+            type: 'Rx',
+            label: `C_{${cutJoint.label},x}`,
+            value: 0,
+            mode: 'unknown',
+          },
+          {
+            nodeId: cutJoint.id,
+            type: 'Ry',
+            label: `C_{${cutJoint.label},y}`,
+            value: 0,
+            mode: 'unknown',
+          },
+        ];
+
+        steps.push({
+          title: `Sub-structure: ${sideBLabel} — FBD`,
+          fbd: {
+            nodes, members,
+            reactionItems: [...sideBReactionItems, ...cutForceItemsB],
+            cutNodeIds: [cutJoint.id],
+            highlightNodeIds: sideBHighlight,
+          },
+          equations: [],
+          notes: `Internal forces at ${cutJoint.label} act in opposite direction (Newton's 3rd law). ` +
+                 `Taking ΣM about ${cutJoint.label} → equation for the remaining reactions. ` +
+                 `This serves as verification.`,
+        });
+
+        // ── Step 5: Sub-structure B — Equation (Verification) ──
+        const subMomentEqB = buildSubMomentEquation(cutJoint, sideBIds, nodes, unknowns, sideBKnownForces);
+        const eqLinesB = buildEquationLatex(subMomentEqB, unknowns, reactions, solvedSoFar, sideBKnownForces);
+
+        // Mark side B's unknowns as solved
+        for (let i = 0; i < unknowns.length; i++) {
+          if (!sideBIds.has(unknowns[i].nodeId)) continue;
+          if (Math.abs(subMomentEqB.coefficients[i]) < 1e-10) continue;
+          const rxn = reactions.find(r => r.nodeId === unknowns[i].nodeId && r.type === unknowns[i].type);
+          if (rxn) solvedSoFar[i] = rxn.value;
+        }
+
+        steps.push({
+          title: `Sub-structure: ${sideBLabel} — ΣM about ${cutJoint.label} (Verification)`,
+          fbd: null,
+          equations: eqLinesB,
+          notes: null,
+        });
+
+        // ── Step 6: Global Equilibrium with Substitution ──
+        const solvedLabels = unknowns
+          .filter((_, i) => solvedSoFar[i] !== undefined)
+          .map(u => getReactionLabel(u.label, u.type))
+          .join(', ');
+        const remainingCount = unknowns.filter((_, i) => solvedSoFar[i] === undefined).length;
+
+        steps.push({
+          title: 'Global Equilibrium — Remaining Unknowns',
+          fbd: {
+            nodes, members,
+            reactionItems: buildReactionItems(unknowns, reactions, solvedSoFar),
+            cutNodeIds: [],
+            highlightNodeIds: null,
+          },
+          equations: [],
+          notes: `${solvedLabels} found from sub-structure analysis. ` +
+                 `${remainingCount} remaining unknown${remainingCount !== 1 ? 's' : ''}, ` +
+                 `3 global equations — solvable. Already-solved reactions shown as numbers.`,
+        });
+
+        // Build global equations with substitution
+        const globalEqOrdered = reorderEquations(globalStep.equations);
+        const globalEqLines = [];
+        const globalSolved = { ...solvedSoFar };
+        for (const eq of globalEqOrdered) {
+          const lines = buildEquationLatex(eq, unknowns, reactions, globalSolved, kf);
+          globalEqLines.push(...lines, '');
+          // Mark newly solved unknowns for subsequent equations
+          for (let i = 0; i < unknowns.length; i++) {
+            if (Math.abs(eq.coefficients[i]) > 1e-10 && globalSolved[i] === undefined) {
+              const rxn = reactions.find(r => r.nodeId === unknowns[i].nodeId && r.type === unknowns[i].type);
+              if (rxn) globalSolved[i] = rxn.value;
+            }
+          }
+        }
+        while (globalEqLines.length > 0 && globalEqLines[globalEqLines.length - 1] === '') globalEqLines.pop();
+
+        steps.push({
+          title: 'Global Equilibrium — Equations',
+          fbd: null,
+          equations: globalEqLines,
+          notes: null,
+        });
+      } else {
+        // Fallback if no valid partition joint found — show global FBD only
+        steps.push(buildGlobalFBDStep(nodes, members, unknowns, reactions));
       }
+
+      // Method of Joints steps
+      const trussStepsRaw = buildTrussSteps(nodes, members, trussForces || [], reactions);
+      const summaryStp = trussStepsRaw.find(s => s.trussTable);
+      const preJointSteps = trussStepsRaw.filter(s => !s.trussTable);
+      steps.push(...preJointSteps);
 
       // Member forces summary — after all reaction steps
       if (summaryStp) steps.push(summaryStp);
 
     } else if (solvingSteps[0]?.type === 'global') {
       // ≤3 unknowns: direct solve from global equations
+      steps.push(buildGlobalFBDStep(nodes, members, unknowns, reactions));
       const directSteps = buildDirectSolveSteps(solvingSteps[0], unknowns, reactions);
       steps.push(...directSteps);
       const trussSteps = buildTrussSteps(nodes, members, trussForces || [], reactions);
@@ -1514,6 +1676,7 @@ export function generateSolution(solverResults) {
 
     } else {
       // Fallback
+      steps.push(buildGlobalFBDStep(nodes, members, unknowns, reactions));
       const subSteps = buildSubStructureSteps(solvingSteps, unknowns, reactions, nodes, members);
       steps.push(...subSteps);
       const trussSteps = buildTrussSteps(nodes, members, trussForces || [], reactions);
