@@ -1226,6 +1226,16 @@ export function generateSolution(solverResults) {
     // from global ΣM equations, then a support pin is isolated as a sub-structure
     // to determine horizontal reaction(s) via joint ΣFx, and finally global ΣFx
     // gives the last horizontal reaction.  For ≤3 unknowns, direct solve.
+    // DIAG: expose branch selector to browser console for debugging
+    /* eslint-disable no-console */
+    const _diag = {
+      solvingStepsLen: solvingSteps ? solvingSteps.length : 'MISSING',
+      step0type: solvingSteps?.[0]?.type ?? 'NONE',
+      unknownsLen: unknowns.length,
+      enterPhased: unknowns.length > 3 && solvingSteps?.[0]?.type === 'global',
+    };
+    console.log('[STRUCTSOLVE DIAG]', JSON.stringify(_diag));
+    /* eslint-enable no-console */
     if (!solvingSteps || solvingSteps.length === 0) {
       steps.push({
         title: 'Support Reactions',
