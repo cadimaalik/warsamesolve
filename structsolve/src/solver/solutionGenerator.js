@@ -768,7 +768,75 @@ function buildJointHorzEquationLatex(jointId, nodes, members, reactions, trussFo
 }
 
 /**
- * Fix 9: Determine the order in which to solve truss joints.
+ * For an inclined-span truss: show BOTH ΣFy and ΣFx at the primary support
+ * joint, treating both reactions as unknowns (all member forces are known from
+ * the preceding method-of-joints analysis).
+ */
+function buildJointBothReactionsLatex(jointId, nodes, members, reactions, trussForces) {
+  const joint = nodes.find(n => n.id === jointId);
+  if (!joint) return [];
+
+  const connTruss = members.filter(
+    m => m.type === 'truss' && (m.startNodeId === jointId || m.endNodeId === jointId)
+  );
+
+  const rxnAtJoint = reactions.filter(r => r.nodeId === jointId);
+  const rxn_x = rxnAtJoint.find(r => r.type === 'Rx');
+  const rxn_y = rxnAtJoint.find(r => r.type === 'Ry');
+  const rxLabel = rxn_x ? getReactionLabel(rxn_x.label, rxn_x.type) : 'R_x';
+  const ryLabel = rxn_y ? getReactionLabel(rxn_y.label, rxn_y.type) : 'R_y';
+  const rxVal   = rxn_x ? rxn_x.value : 0;
+  const ryVal   = rxn_y ? rxn_y.value : 0;
+
+  const eqLines = [];
+  eqLines.push('\\text{All member forces at this joint now known. Applying joint equilibrium:}');
+  eqLines.push('');
+
+  // Compute member x and y contributions
+  let memberXSum = 0, memberYSum = 0;
+  for (const m of connTruss) {
+    const otherId = m.startNodeId === jointId ? m.endNodeId : m.startNodeId;
+    const other = nodes.find(n => n.id === otherId);
+    if (!other) continue;
+    const dx = other.x - joint.x;
+    const dy = other.y - joint.y;
+    const L = Math.sqrt(dx * dx + dy * dy);
+    const tf = trussForces.find(tf => tf.memberId === m.id);
+    if (!tf) continue;
+    memberXSum += tf.force * (dx / L);
+    memberYSum += tf.force * (dy / L);
+  }
+
+  const loadX = joint.loads?.fx || 0;
+  const loadY = joint.loads?.fy || 0;
+
+  // ΣFy → R_y
+  const rhsY   = -(memberYSum + loadY);
+  const ryDir  = getDirectionArrow(ryVal, 'Ry');
+  const mYSign = memberYSum >= 0 ? `+ ${fmt(Math.abs(memberYSum))}` : `- ${fmt(Math.abs(memberYSum))}`;
+  const lYStr  = Math.abs(loadY) > 1e-10 ? (loadY > 0 ? ` + ${fmt(loadY)}` : ` - ${fmt(Math.abs(loadY))}`) : '';
+  eqLines.push(`\\sum F_y = 0 \\text{ at joint ${joint.label}}:`);
+  eqLines.push('');
+  eqLines.push(`\\quad ${ryLabel} ${mYSign}${lYStr} = 0`);
+  eqLines.push('');
+  eqLines.push(`\\quad ${ryLabel} = ${fmt(Math.abs(rhsY))} \\text{ kN} \\; ${ryDir}`);
+  eqLines.push('');
+
+  // ΣFx → R_x
+  const rhsX   = -(memberXSum + loadX);
+  const rxDir  = getDirectionArrow(rxVal, 'Rx');
+  const mXSign = memberXSum >= 0 ? `+ ${fmt(Math.abs(memberXSum))}` : `- ${fmt(Math.abs(memberXSum))}`;
+  const lXStr  = Math.abs(loadX) > 1e-10 ? (loadX > 0 ? ` + ${fmt(loadX)}` : ` - ${fmt(Math.abs(loadX))}`) : '';
+  eqLines.push(`\\sum F_x = 0 \\text{ at joint ${joint.label}}:`);
+  eqLines.push('');
+  eqLines.push(`\\quad ${rxLabel} ${mXSign}${lXStr} = 0`);
+  eqLines.push('');
+  eqLines.push(`\\quad ${rxLabel} = ${fmt(Math.abs(rhsX))} \\text{ kN} \\; ${rxDir}`);
+
+  return eqLines;
+}
+
+/**
  * Start with the joint that has the fewest unknown member forces (≤ 2),
  * cascade as forces become known, stop when all done.
  */
@@ -1279,44 +1347,16 @@ export function generateSolution(solverResults) {
         }
       }
 
-      // Phase-1 steps: ΣM equations → vertical reactions, ΣFy → verification
-      const p1Solved = {};
-      console.log('[STRUCTSOLVE DIAG2] phase1Eqs:', phase1Eqs.length, 'phase2Eqs:', phase2Eqs.length);
-      for (const eq of phase1Eqs) {
-        const eqLines = buildEquationLatex(eq, unknowns, reactions, p1Solved, kf);
-        console.log('[STRUCTSOLVE DIAG2] eq.type=', eq.type, 'eqLines.length=', eqLines.length, 'first=', eqLines[0]?.substring(0, 60));
-        unknowns.forEach((u, i) => {
-          if (Math.abs(eq.coefficients[i]) > 1e-10 && p1Solved[i] === undefined) {
-            const rxn = reactions.find(r => r.nodeId === u.nodeId && r.type === u.type);
-            if (rxn) p1Solved[i] = rxn.value;
-          }
-        });
-        let title;
-        if (eq.type === 'moment' || eq.type === 'hinge-moment') {
-          const mp = eq.momentPoint || eq.hingeNode;
-          title = `Moment Equation${mp ? ` about ${mp.label}` : ''}`;
-        } else if (eq.type === 'force-y') {
-          title = 'Vertical Force Equation';
-        } else {
-          title = 'Equilibrium Equation';
-        }
-        if (eqLines.length > 0) steps.push({ title, fbd: null, equations: eqLines, notes: null });
-      }
-
-      // Identify horizontal unknowns (need joint equilibrium)
+      // Primary pin: first Rx unknown → its joint is the sub-structure
       const horzUnknownIndices = unknowns
         .map((u, i) => ({ u, i }))
         .filter(({ u }) => u.type === 'Rx')
         .map(({ i }) => i);
-
-      // Primary pin: first horizontal unknown → its joint will be shown as sub-structure
-      const primaryIdx = horzUnknownIndices[0];
+      const primaryIdx       = horzUnknownIndices[0];
       const primaryPinNodeId = primaryIdx !== undefined ? unknowns[primaryIdx].nodeId : null;
-      const primaryPinNode = primaryPinNodeId ? nodes.find(n => n.id === primaryPinNodeId) : null;
+      const primaryPinNode   = primaryPinNodeId ? nodes.find(n => n.id === primaryPinNodeId) : null;
 
-      // Method of Joints — for member forces.
-      // The primary support pin is EXCLUDED from the grid here; it is shown
-      // separately as a sub-structure step after the joint grid but BEFORE the summary.
+      // ── Helper: build trussStepsRaw with primary pin excluded from grid ──
       const trussStepsRaw = buildTrussSteps(nodes, members, trussForces || [], reactions);
       if (primaryPinNode && trussStepsRaw.length > 0) {
         const mojStep = trussStepsRaw.find(s => s.trussJointGrid);
@@ -1327,64 +1367,142 @@ export function generateSolution(solverResults) {
           mojStep.trussJointGrid = filtered.length > 0 ? filtered : mojStep.trussJointGrid;
         }
       }
-      // Push everything EXCEPT the member forces summary (pushed later, after sub-structure)
-      const summaryStp = trussStepsRaw.find(s => s.trussTable);
+      const summaryStp    = trussStepsRaw.find(s => s.trussTable);
       const preJointSteps = trussStepsRaw.filter(s => !s.trussTable);
-      steps.push(...preJointSteps);
 
-      // Sub-structure step: joint at primary pin
-      if (primaryPinNodeId) {
-        // FBD: B_y shown as solved (green), B_x as unknown (white), all members shown
-        const subFBD = buildTrussJointFBD(
-          primaryPinNodeId, nodes, members, reactions, unknowns, p1Solved
-        );
-        const byRxn = reactions.find(r => r.nodeId === primaryPinNodeId && r.type === 'Ry');
-        const byLabel = unknowns.find(u => u.nodeId === primaryPinNodeId && u.type === 'Ry');
-        const bxLabel = unknowns.find(u => u.nodeId === primaryPinNodeId && u.type === 'Rx');
-        const byValStr = byRxn ? `${fmt(Math.abs(byRxn.value))} kN` : '';
-        const byDir = byRxn ? (byRxn.value >= 0 ? '↑' : '↓') : '';
+      if (phase1Eqs.length > 0) {
+        // ── HORIZONTAL SPAN: moment equations isolate vertical reactions ──────
+        // Phase-1: ΣM → vertical reactions, ΣFy → verification
+        const p1Solved = {};
+        for (const eq of phase1Eqs) {
+          const eqLines = buildEquationLatex(eq, unknowns, reactions, p1Solved, kf);
+          unknowns.forEach((u, i) => {
+            if (Math.abs(eq.coefficients[i]) > 1e-10 && p1Solved[i] === undefined) {
+              const rxn = reactions.find(r => r.nodeId === u.nodeId && r.type === u.type);
+              if (rxn) p1Solved[i] = rxn.value;
+            }
+          });
+          let title;
+          if (eq.type === 'moment' || eq.type === 'hinge-moment') {
+            const mp = eq.momentPoint || eq.hingeNode;
+            title = `Moment Equation${mp ? ` about ${mp.label}` : ''}`;
+          } else if (eq.type === 'force-y') {
+            title = 'Vertical Force Equation';
+          } else {
+            title = 'Equilibrium Equation';
+          }
+          if (eqLines.length > 0) steps.push({ title, fbd: null, equations: eqLines, notes: null });
+        }
 
-        steps.push({
-          title: `Sub-structure: Joint ${primaryPinNode?.label || ''} — FBD`,
-          fbd: subFBD,
-          equations: [],
-          notes:
-            `${byLabel?.label || ''}_y = ${byValStr} ${byDir} (from global ΣM). ` +
-            `All member forces at ${primaryPinNode?.label || ''} are now known from the joint analysis above. ` +
-            `Joint ΣF_x = 0 determines ${bxLabel?.label || ''}_x directly.`,
-        });
+        // Method of Joints (primary pin excluded — shown as sub-structure below)
+        steps.push(...preJointSteps);
 
-        const jointHorzLines = buildJointHorzEquationLatex(
-          primaryPinNodeId, nodes, members, reactions, trussForces || []
-        );
-        if (jointHorzLines.length > 0) {
+        // Sub-structure: primary pin — B_y green (solved), B_x white (unknown)
+        if (primaryPinNodeId) {
+          const subFBD  = buildTrussJointFBD(primaryPinNodeId, nodes, members, reactions, unknowns, p1Solved);
+          const byRxn   = reactions.find(r => r.nodeId === primaryPinNodeId && r.type === 'Ry');
+          const byLabel = unknowns.find(u => u.nodeId === primaryPinNodeId && u.type === 'Ry');
+          const bxLabel = unknowns.find(u => u.nodeId === primaryPinNodeId && u.type === 'Rx');
+          const byValStr = byRxn ? `${fmt(Math.abs(byRxn.value))} kN` : '';
+          const byDir    = byRxn ? (byRxn.value >= 0 ? '↑' : '↓') : '';
           steps.push({
-            title: `Joint ${primaryPinNode?.label || ''} — Horizontal Equilibrium`,
+            title: `Sub-structure: Joint ${primaryPinNode?.label || ''} — FBD`,
+            fbd: subFBD,
+            equations: [],
+            notes: `${byLabel?.label || ''}_y = ${byValStr} ${byDir} (from global ΣM). ` +
+                   `All member forces at ${primaryPinNode?.label || ''} now known. ` +
+                   `Joint ΣF_x = 0 determines ${bxLabel?.label || ''}_x directly.`,
+          });
+          const horzLines = buildJointHorzEquationLatex(primaryPinNodeId, nodes, members, reactions, trussForces || []);
+          if (horzLines.length > 0) steps.push({ title: `Joint ${primaryPinNode?.label || ''} — Horizontal Equilibrium`, fbd: null, equations: horzLines, notes: null });
+        }
+
+        // Phase-2: global ΣFx — B_x now known → derives F_x
+        if (phase2Eqs.length > 0) {
+          const p2Solved = { ...p1Solved };
+          for (let k = 0; k < horzUnknownIndices.length - 1; k++) {
+            const i   = horzUnknownIndices[k];
+            const rxn = reactions.find(r => r.nodeId === unknowns[i].nodeId && r.type === unknowns[i].type);
+            if (rxn) p2Solved[i] = rxn.value;
+          }
+          for (const eq of phase2Eqs) {
+            const eqLines = buildEquationLatex(eq, unknowns, reactions, p2Solved, kf);
+            if (eqLines.length > 0) steps.push({ title: 'Horizontal Force Equation', fbd: null, equations: eqLines, notes: null });
+          }
+        }
+
+      } else {
+        // ── INCLINED SPAN: no equation isolates a single reaction globally ────
+        // Show all 4 global equations as an unsolved system, then method of joints,
+        // then sub-structure at primary pin (both reactions unknown), then global
+        // ΣFy and ΣFx to derive the second support's reactions.
+
+        // Global system step (all unknowns unsolved)
+        const systemLines = [];
+        for (const eq of ordered) {
+          const lines = buildEquationLatex(eq, unknowns, reactions, {}, kf);
+          systemLines.push(...lines, '');
+        }
+        while (systemLines.length > 0 && systemLines[systemLines.length - 1] === '') systemLines.pop();
+        if (systemLines.length > 0) {
+          steps.push({
+            title: 'Global Equilibrium — System',
             fbd: null,
-            equations: jointHorzLines,
-            notes: null,
+            equations: systemLines,
+            notes: 'The supports are at different heights: each moment equation contains 2 unknowns. ' +
+                   'The reactions cannot be found one-at-a-time from global equations. ' +
+                   'Isolate joint ' + (primaryPinNode?.label || '') + ' as a sub-structure ' +
+                   'after the member forces are known.',
+          });
+        }
+
+        // Method of Joints (primary pin excluded)
+        steps.push(...preJointSteps);
+
+        // Sub-structure: primary pin — BOTH reactions unknown
+        if (primaryPinNodeId) {
+          const emptyP1 = {}; // neither reaction solved yet
+          const subFBD  = buildTrussJointFBD(primaryPinNodeId, nodes, members, reactions, unknowns, emptyP1);
+          const bxLabel = unknowns.find(u => u.nodeId === primaryPinNodeId && u.type === 'Rx');
+          const byLabel = unknowns.find(u => u.nodeId === primaryPinNodeId && u.type === 'Ry');
+          steps.push({
+            title: `Sub-structure: Joint ${primaryPinNode?.label || ''} — FBD`,
+            fbd: subFBD,
+            equations: [],
+            notes: `All member forces at ${primaryPinNode?.label || ''} are now known from the joint analysis above. ` +
+                   `ΣF_y = 0 gives ${byLabel?.label || ''}_y; ΣF_x = 0 gives ${bxLabel?.label || ''}_x.`,
+          });
+
+          const bothLines = buildJointBothReactionsLatex(primaryPinNodeId, nodes, members, reactions, trussForces || []);
+          if (bothLines.length > 0) steps.push({ title: `Joint ${primaryPinNode?.label || ''} — Full Equilibrium`, fbd: null, equations: bothLines, notes: null });
+        }
+
+        // Global ΣFy and ΣFx — primary pin's reactions now known → derive second support
+        // Mark primary pin's reactions as solved for display
+        const afterPrimaryPin = {};
+        unknowns.forEach((u, i) => {
+          if (u.nodeId === primaryPinNodeId) {
+            const rxn = reactions.find(r => r.nodeId === u.nodeId && r.type === u.type);
+            if (rxn) afterPrimaryPin[i] = rxn.value;
+          }
+        });
+        for (const eq of ordered) {
+          // Only show ΣFx and ΣFy (force equations), not moment equations (already shown)
+          if (eq.type !== 'force-x' && eq.type !== 'force-y') continue;
+          const eqLines = buildEquationLatex(eq, unknowns, reactions, afterPrimaryPin, kf);
+          const title   = eq.type === 'force-y' ? 'Vertical Force Equation' : 'Horizontal Force Equation';
+          if (eqLines.length > 0) steps.push({ title, fbd: null, equations: eqLines, notes: null });
+          // Mark newly solved unknowns for subsequent equations
+          unknowns.forEach((u, i) => {
+            if (Math.abs(eq.coefficients[i]) > 1e-10 && afterPrimaryPin[i] === undefined) {
+              const rxn = reactions.find(r => r.nodeId === u.nodeId && r.type === u.type);
+              if (rxn) afterPrimaryPin[i] = rxn.value;
+            }
           });
         }
       }
 
-      // Phase-2: global ΣFx — with primary pin's B_x now solved → derives F_x
-      if (phase2Eqs.length > 0) {
-        const p2Solved = { ...p1Solved };
-        // Mark all horizontal unknowns as solved EXCEPT the last one (F_x at second pin)
-        for (let k = 0; k < horzUnknownIndices.length - 1; k++) {
-          const i = horzUnknownIndices[k];
-          const rxn = reactions.find(r => r.nodeId === unknowns[i].nodeId && r.type === unknowns[i].type);
-          if (rxn) p2Solved[i] = rxn.value;
-        }
-        for (const eq of phase2Eqs) {
-          const eqLines = buildEquationLatex(eq, unknowns, reactions, p2Solved, kf);
-          if (eqLines.length > 0) {
-            steps.push({ title: 'Horizontal Force Equation', fbd: null, equations: eqLines, notes: null });
-          }
-        }
-      }
-
-      // Member forces summary — shown last, after reaction determination is complete
+      // Member forces summary — after all reaction steps
       if (summaryStp) steps.push(summaryStp);
 
     } else if (solvingSteps[0]?.type === 'global') {
