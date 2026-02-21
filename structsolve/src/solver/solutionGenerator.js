@@ -1281,8 +1281,10 @@ export function generateSolution(solverResults) {
 
       // Phase-1 steps: ΣM equations → vertical reactions, ΣFy → verification
       const p1Solved = {};
+      console.log('[STRUCTSOLVE DIAG2] phase1Eqs:', phase1Eqs.length, 'phase2Eqs:', phase2Eqs.length);
       for (const eq of phase1Eqs) {
         const eqLines = buildEquationLatex(eq, unknowns, reactions, p1Solved, kf);
+        console.log('[STRUCTSOLVE DIAG2] eq.type=', eq.type, 'eqLines.length=', eqLines.length, 'first=', eqLines[0]?.substring(0, 60));
         unknowns.forEach((u, i) => {
           if (Math.abs(eq.coefficients[i]) > 1e-10 && p1Solved[i] === undefined) {
             const rxn = reactions.find(r => r.nodeId === u.nodeId && r.type === u.type);
