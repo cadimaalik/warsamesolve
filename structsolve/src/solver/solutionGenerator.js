@@ -237,280 +237,275 @@ function buildSubMomentEquation(cutJoint, sideNodeIds, nodes, unknowns, sideKnow
 }
 
 /**
- * Build LaTeX for the simultaneous solving of the 4-equation system.
- * Uses the known reaction values to reconstruct the derivation.
- * Strategy: express groupB unknowns from force equations, substitute into
- * the global moment equation to form a 2×2 system with the sub-structure ΣM.
+ * Step: Global Equilibrium Equations — present all 3 global equations
+ * in variable form, labeled Eq 1–3. DO NOT SOLVE any of them.
  */
-function buildSimultaneousSolveLatex(systemEquations, unknowns, reactions, allKnownForces, sideAKnownForces, sideAIds) {
-  const lines = [];
+function buildGlobalEquationsStep(momentEq, fxEq, fyEq, unknowns, knownForces) {
+  const eqLines = [];
+  const eqs = [
+    { eq: momentEq, label: '\\text{Eq 1: }' },
+    { eq: fxEq,     label: '\\text{Eq 2: }' },
+    { eq: fyEq,     label: '\\text{Eq 3: }' },
+  ];
 
-  // Identify the 4 equation types
-  const momGlobal = systemEquations.find(eq => eq.type === 'moment');
-  const momSub = systemEquations.find(eq => eq.type === 'sub-moment');
-  const eqFx = systemEquations.find(eq => eq.type === 'force-x');
-  const eqFy = systemEquations.find(eq => eq.type === 'force-y');
-
-  if (!momGlobal || !momSub || !eqFx || !eqFy) {
-    // Fallback: just show the answers
+  for (const { eq, label } of eqs) {
+    if (!eq) continue;
+    let varTerms = '';
     for (let i = 0; i < unknowns.length; i++) {
-      const u = unknowns[i];
-      const rxn = reactions.find(r => r.nodeId === u.nodeId && r.type === u.type);
-      if (!rxn) continue;
-      const label = getReactionLabel(u.label, u.type);
-      const dir = getDirectionArrow(rxn.value, u.type);
-      const unit = u.type === 'M' ? '\\text{ kN·m}' : '\\text{ kN}';
-      lines.push(`${label} = ${fmt(Math.abs(rxn.value))} ${unit} \\; ${dir}`);
+      if (Math.abs(eq.coefficients[i]) < 1e-10) continue;
+      const rLabel = getReactionLabel(unknowns[i].label, unknowns[i].type);
+      const coeff = eq.coefficients[i];
+      const sign = coeff > 0
+        ? (varTerms.length > 0 ? ' + ' : '')
+        : ' - ';
+      const absC = Math.abs(coeff);
+      if (Math.abs(absC - 1) < 1e-6) {
+        varTerms += `${sign}${rLabel}`;
+      } else {
+        varTerms += `${sign}${rLabel} \\times ${fmt(absC)}`;
+      }
     }
-    return lines;
+    const loadTerms = buildLoadTermsStr(eq, knownForces) || '';
+    eqLines.push(`${label} ${eq.description}: \\quad ${varTerms.trim()}${loadTerms} = 0`);
+    eqLines.push('');
   }
 
-  // Group A: unknowns in the sub-structure moment eq (one support)
-  // Group B: unknowns in the global moment eq but NOT in sub (other support)
-  const groupA = []; // indices
-  const groupB = [];
-  for (let i = 0; i < unknowns.length; i++) {
-    if (Math.abs(momSub.coefficients[i]) > 1e-10) groupA.push(i);
-    else if (Math.abs(momGlobal.coefficients[i]) > 1e-10) groupB.push(i);
-  }
-
-  // Find the Rx and Ry indices in each group
-  const groupARx = groupA.find(i => unknowns[i].type === 'Rx');
-  const groupARy = groupA.find(i => unknowns[i].type === 'Ry');
-  const groupBRx = groupB.find(i => unknowns[i].type === 'Rx');
-  const groupBRy = groupB.find(i => unknowns[i].type === 'Ry');
-
-  // Get reaction values
-  const getVal = (idx) => {
-    if (idx === undefined) return 0;
-    const u = unknowns[idx];
-    const rxn = reactions.find(r => r.nodeId === u.nodeId && r.type === u.type);
-    return rxn ? rxn.value : 0;
+  return {
+    title: 'Global Equilibrium Equations',
+    fbd: null,
+    equations: eqLines,
+    notes: `3 equations, ${unknowns.length} unknowns — need 1 more equation.`,
   };
-
-  // ΣFx = 0 gives: Σ(all Rx unknowns) + Σ(horizontal loads) = 0
-  // Compute the horizontal load sum from the force-x equation RHS
-  const fxRhs = eqFx.rhs; // RHS of ΣFx (after moving loads to right side)
-  const fyRhs = eqFy.rhs;
-
-  // ── Line 1: Express groupB unknowns from force equations ──
-  if (groupBRx !== undefined && groupARx !== undefined) {
-    const bLabel = getReactionLabel(unknowns[groupBRx].label, 'Rx');
-    const aLabel = getReactionLabel(unknowns[groupARx].label, 'Rx');
-    lines.push(`\\text{From } \\sum F_x = 0: \\quad ${bLabel} = ${fmt(fxRhs)} - ${aLabel}`);
-    lines.push('');
-  }
-  if (groupBRy !== undefined && groupARy !== undefined) {
-    const bLabel = getReactionLabel(unknowns[groupBRy].label, 'Ry');
-    const aLabel = getReactionLabel(unknowns[groupARy].label, 'Ry');
-    lines.push(`\\text{From } \\sum F_y = 0: \\quad ${bLabel} = ${fmt(fyRhs)} - ${aLabel}`);
-    lines.push('');
-  }
-
-  // ── Line 2: Substitute into global moment equation ──
-  // momGlobal has coefficients for groupB unknowns. After substitution:
-  //   coeff_Bx * (fxRhs - A_x) + coeff_By * (fyRhs - A_y) + loadMoments = 0
-  //   → (-coeff_Bx)*A_x + (-coeff_By)*A_y = -(coeff_Bx*fxRhs + coeff_By*fyRhs + loadMoments)
-  // This gives us equation (i) in groupA unknowns only.
-  const momGlobalMp = momGlobal.momentPoint;
-  const momGlobalDesc = momGlobal.description || `\\sum M = 0`;
-
-  lines.push(`\\text{Substitute into } ${momGlobalDesc}:`);
-
-  // Build the substituted equation coefficients for groupA unknowns
-  // After substitution, the new coefficients for groupA unknowns are:
-  //   for A_x: -(coeff of B_x in momGlobal) ... since B_x = fxRhs - A_x
-  //   for A_y: -(coeff of B_y in momGlobal)
-  // And the new RHS absorbs the constant parts
-
-  let substCoeffAx = 0; // coefficient of A_x in substituted eq (i)
-  let substCoeffAy = 0; // coefficient of A_y in substituted eq (i)
-  let substRhs = momGlobal.rhs; // start with original RHS (loads moved to right)
-
-  // The original momGlobal: Σ coeff_i * unknown_i = rhs  (where rhs = -loadMoments)
-  // For groupB unknowns, substitute: B_x = fxRhs - A_x, B_y = fyRhs - A_y
-  for (const bIdx of groupB) {
-    const coeff = momGlobal.coefficients[bIdx];
-    if (Math.abs(coeff) < 1e-10) continue;
-    const u = unknowns[bIdx];
-    if (u.type === 'Rx' && groupARx !== undefined) {
-      // B_x = fxRhs - A_x → coeff * B_x = coeff * fxRhs - coeff * A_x
-      substRhs -= coeff * fxRhs; // move constant to RHS
-      substCoeffAx -= coeff;     // -coeff * A_x moves to LHS
-    } else if (u.type === 'Ry' && groupARy !== undefined) {
-      substRhs -= coeff * fyRhs;
-      substCoeffAy -= coeff;
-    }
-  }
-
-  // Also include any existing groupA coefficients from momGlobal
-  // (these would be zero if the moment is taken about the groupA support,
-  // but handle the general case)
-  for (const aIdx of groupA) {
-    const coeff = momGlobal.coefficients[aIdx];
-    if (Math.abs(coeff) < 1e-10) continue;
-    if (unknowns[aIdx].type === 'Rx') substCoeffAx += coeff;
-    else if (unknowns[aIdx].type === 'Ry') substCoeffAy += coeff;
-  }
-
-  // Show the simplified substituted equation as (i)
-  const buildTermStr = (coeff, label) => {
-    if (Math.abs(coeff) < 1e-10) return null;
-    const absC = Math.abs(coeff);
-    const cStr = Math.abs(absC - 1) < 1e-6 ? '' : `${fmt(absC)} \\cdot `;
-    return { coeff, str: `${cStr}${label}` };
-  };
-
-  const aRxLabel = groupARx !== undefined ? getReactionLabel(unknowns[groupARx].label, 'Rx') : null;
-  const aRyLabel = groupARy !== undefined ? getReactionLabel(unknowns[groupARy].label, 'Ry') : null;
-
-  const termI_x = aRxLabel ? buildTermStr(substCoeffAx, aRxLabel) : null;
-  const termI_y = aRyLabel ? buildTermStr(substCoeffAy, aRyLabel) : null;
-
-  let eqIStr = '';
-  const termsI = [termI_x, termI_y].filter(Boolean);
-  for (let t = 0; t < termsI.length; t++) {
-    const term = termsI[t];
-    if (t === 0) {
-      eqIStr += term.coeff < 0 ? `- ${term.str}` : term.str;
-    } else {
-      eqIStr += term.coeff < 0 ? ` - ${term.str}` : ` + ${term.str}`;
-    }
-  }
-  if (eqIStr) {
-    lines.push(`${eqIStr} = ${fmt(substRhs)} \\quad \\cdots \\text{(i)}`);
-    lines.push('');
-  }
-
-  // ── Line 3: Sub-structure moment equation as (ii) ──
-  lines.push(`\\text{From sub-structure } ${momSub.description}:`);
-
-  let eqIIStr = '';
-  const termsII = [];
-  if (groupARx !== undefined && Math.abs(momSub.coefficients[groupARx]) > 1e-10) {
-    termsII.push({ coeff: momSub.coefficients[groupARx], label: aRxLabel });
-  }
-  if (groupARy !== undefined && Math.abs(momSub.coefficients[groupARy]) > 1e-10) {
-    termsII.push({ coeff: momSub.coefficients[groupARy], label: aRyLabel });
-  }
-
-  for (let t = 0; t < termsII.length; t++) {
-    const { coeff, label } = termsII[t];
-    const absC = Math.abs(coeff);
-    const cStr = Math.abs(absC - 1) < 1e-6 ? '' : `${fmt(absC)} \\cdot `;
-    if (t === 0) {
-      eqIIStr += coeff < 0 ? `- ${cStr}${label}` : `${cStr}${label}`;
-    } else {
-      eqIIStr += coeff < 0 ? ` - ${cStr}${label}` : ` + ${cStr}${label}`;
-    }
-  }
-  if (eqIIStr) {
-    lines.push(`${eqIIStr} = ${fmt(momSub.rhs)} \\quad \\cdots \\text{(ii)}`);
-    lines.push('');
-  }
-
-  // ── Line 4: Solve the 2×2 system ──
-  lines.push('\\text{Solving (i) and (ii) simultaneously:}');
-  lines.push('');
-
-  // Show groupA results
-  for (const aIdx of groupA) {
-    const u = unknowns[aIdx];
-    const val = getVal(aIdx);
-    const label = getReactionLabel(u.label, u.type);
-    const dir = getDirectionArrow(val, u.type);
-    const unit = u.type === 'M' ? '\\text{ kN·m}' : '\\text{ kN}';
-    lines.push(`${label} = ${fmt(Math.abs(val))} ${unit} \\; ${dir}`);
-  }
-  lines.push('');
-
-  // ── Line 5: Back-substitute for groupB ──
-  lines.push('\\text{Back-substitute:}');
-  lines.push('');
-
-  for (const bIdx of groupB) {
-    const u = unknowns[bIdx];
-    const bVal = getVal(bIdx);
-    const bLabel = getReactionLabel(u.label, u.type);
-    const dir = getDirectionArrow(bVal, u.type);
-    const unit = u.type === 'M' ? '\\text{ kN·m}' : '\\text{ kN}';
-
-    // Find the matching groupA unknown
-    const aIdx = groupA.find(ai => unknowns[ai].type === u.type);
-    if (aIdx !== undefined) {
-      const aVal = getVal(aIdx);
-      const rhsVal = u.type === 'Rx' ? fxRhs : fyRhs;
-      lines.push(`${bLabel} = ${fmt(rhsVal)} - ${fmt(aVal)} = ${fmt(Math.abs(bVal))} ${unit} \\; ${dir}`);
-    } else {
-      lines.push(`${bLabel} = ${fmt(Math.abs(bVal))} ${unit} \\; ${dir}`);
-    }
-  }
-
-  return lines;
 }
 
 /**
- * Build full verification step: each equation with numbers plugged in.
- * Shows variable form → numbers → residual ≈ 0 ✓
+ * Step: Sub-structure FBD — show the primary side with cut at partition joint.
  */
-function buildFullEquationVerification(systemEquations, unknowns, reactions, allKnownForces, sideAKnownForces) {
+function buildSubStructureFBDStep(cutJoint, sideNodeIds, nodes, members, unknowns, reactions) {
+  const sideLabel = buildSideLabel(sideNodeIds, cutJoint, nodes);
+  const sideReactionItems = buildReactionItems(unknowns, reactions, null)
+    .filter(r => sideNodeIds.has(r.nodeId));
+  const cutForceItems = [
+    { nodeId: cutJoint.id, type: 'Rx', label: `${cutJoint.label}_x`, value: 0, mode: 'unknown' },
+    { nodeId: cutJoint.id, type: 'Ry', label: `${cutJoint.label}_y`, value: 0, mode: 'unknown' },
+  ];
+
+  return {
+    title: `Sub-structure: ${sideLabel} — FBD`,
+    fbd: {
+      nodes, members,
+      reactionItems: [...sideReactionItems, ...cutForceItems],
+      cutNodeIds: [cutJoint.id],
+      highlightNodeIds: new Set([...sideNodeIds, cutJoint.id]),
+    },
+    equations: [],
+    notes: `Taking ΣM about ${cutJoint.label} eliminates ` +
+           `${cutJoint.label}_x and ${cutJoint.label}_y (zero moment arm) ` +
+           `→ 1 additional equation.`,
+  };
+}
+
+/**
+ * Step: Sub-structure moment equation — present as Eq 4, DO NOT SOLVE.
+ */
+function buildSubEquationStep(subMomentEq, cutJoint, unknowns, sideKnownForces) {
+  let varTerms = '';
+  for (let i = 0; i < unknowns.length; i++) {
+    if (Math.abs(subMomentEq.coefficients[i]) < 1e-10) continue;
+    const rLabel = getReactionLabel(unknowns[i].label, unknowns[i].type);
+    const coeff = subMomentEq.coefficients[i];
+    const sign = coeff > 0
+      ? (varTerms.length > 0 ? ' + ' : '')
+      : ' - ';
+    const absC = Math.abs(coeff);
+    if (Math.abs(absC - 1) < 1e-6) {
+      varTerms += `${sign}${rLabel}`;
+    } else {
+      varTerms += `${sign}${rLabel} \\times ${fmt(absC)}`;
+    }
+  }
+  const loadTerms = buildLoadTermsStr(subMomentEq, sideKnownForces) || '';
+
+  return {
+    title: `Sub-structure — ΣM about ${cutJoint.label}`,
+    fbd: null,
+    equations: [
+      `\\text{Eq 4: } ${subMomentEq.description}: \\quad ${varTerms.trim()}${loadTerms} = 0`,
+    ],
+    notes: `${unknowns.length} equations, ${unknowns.length} unknowns — solvable.`,
+  };
+}
+
+/**
+ * Step: Solving — rewrite all 4 equations then list the answers.
+ * NO methodology, NO intermediate algebra, NO substitution steps.
+ */
+function buildSolveStep(allEqs, unknowns, reactions, globalKnownForces, sideKnownForces) {
   const eqLines = [];
+  const eqLabels = ['\\text{Eq 1: }', '\\text{Eq 2: }', '\\text{Eq 3: }', '\\text{Eq 4: }'];
 
-  for (const eq of systemEquations) {
-    const eqKf = eq.type === 'sub-moment' ? sideAKnownForces : allKnownForces;
-    const header = eq.description || '\\text{Equation}';
-
-    // Line 1: variable form (same as buildEquationLatex line 1)
-    let varForm = '';
+  // Part 1: Rewrite all equations in variable form
+  for (let e = 0; e < allEqs.length; e++) {
+    const eq = allEqs[e];
+    if (!eq) continue;
+    const kf = eq.type === 'sub-moment' ? sideKnownForces : globalKnownForces;
+    let varTerms = '';
     for (let i = 0; i < unknowns.length; i++) {
       if (Math.abs(eq.coefficients[i]) < 1e-10) continue;
-      const label = getReactionLabel(unknowns[i].label, unknowns[i].type);
+      const rLabel = getReactionLabel(unknowns[i].label, unknowns[i].type);
       const coeff = eq.coefficients[i];
-      const sign = coeff > 0 ? (varForm.length > 0 ? ' + ' : '') : ' - ';
+      const sign = coeff > 0
+        ? (varTerms.length > 0 ? ' + ' : '')
+        : ' - ';
       const absC = Math.abs(coeff);
       if (Math.abs(absC - 1) < 1e-6) {
-        varForm += `${sign}${label}`;
+        varTerms += `${sign}${rLabel}`;
       } else {
-        varForm += `${sign}${label} \\times ${fmt(absC)}`;
+        varTerms += `${sign}${rLabel} \\times ${fmt(absC)}`;
       }
     }
-    const loadTerms = buildLoadTermsStr(eq, eqKf);
-    if (loadTerms) varForm += loadTerms;
-    eqLines.push(`${header}: \\quad ${varForm} = 0`);
+    const loadTerms = buildLoadTermsStr(eq, kf) || '';
+    eqLines.push(`${eqLabels[e]} ${eq.description}: \\quad ${varTerms.trim()}${loadTerms} = 0`);
+    eqLines.push('');
+  }
 
-    // Line 2: all numbers plugged in
-    let numForm = '';
-    let residual = 0;
+  // Part 2: Just the answers
+  eqLines.push('\\text{Solving:}');
+  eqLines.push('');
+
+  for (let i = 0; i < unknowns.length; i++) {
+    const u = unknowns[i];
+    const rxn = reactions.find(r => r.nodeId === u.nodeId && r.type === u.type);
+    if (!rxn) continue;
+    const label = getReactionLabel(u.label, u.type);
+    const dir = getDirectionArrow(rxn.value, u.type);
+    const unit = u.type === 'M' ? '\\text{ kN·m}' : '\\text{ kN}';
+    eqLines.push(`${label} = ${fmt(Math.abs(rxn.value))} ${unit} \\; ${dir}`);
+    eqLines.push('');
+  }
+
+  return {
+    title: `Solving — ${unknowns.length} Equations, ${unknowns.length} Unknowns`,
+    fbd: null,
+    equations: eqLines,
+    notes: null,
+  };
+}
+
+/**
+ * Step: Verification — each equation with numbers plugged in.
+ * Line 1: variable form, Line 2: numbers substituted, Line 3: result ≈ 0 ✓
+ */
+function buildFullVerificationStep(allEqs, unknowns, reactions, globalKnownForces, sideKnownForces) {
+  const eqLines = [];
+  let allPass = true;
+
+  for (const eq of allEqs) {
+    if (!eq) continue;
+    const kf = eq.type === 'sub-moment' ? sideKnownForces : globalKnownForces;
+
+    // Line 1: Variable form
+    let varTerms = '';
+    for (let i = 0; i < unknowns.length; i++) {
+      if (Math.abs(eq.coefficients[i]) < 1e-10) continue;
+      const rLabel = getReactionLabel(unknowns[i].label, unknowns[i].type);
+      const coeff = eq.coefficients[i];
+      const sign = coeff > 0
+        ? (varTerms.length > 0 ? ' + ' : '')
+        : ' - ';
+      const absC = Math.abs(coeff);
+      if (Math.abs(absC - 1) < 1e-6) {
+        varTerms += `${sign}${rLabel}`;
+      } else {
+        varTerms += `${sign}${rLabel} \\times ${fmt(absC)}`;
+      }
+    }
+    const loadTerms = buildLoadTermsStr(eq, kf) || '';
+    eqLines.push(`${eq.description}: \\quad ${varTerms.trim()}${loadTerms} = 0`);
+
+    // Line 2: Numbers plugged in
+    let numTerms = '';
+    let runningTotal = 0;
+
     for (let i = 0; i < unknowns.length; i++) {
       if (Math.abs(eq.coefficients[i]) < 1e-10) continue;
       const rxn = reactions.find(r => r.nodeId === unknowns[i].nodeId && r.type === unknowns[i].type);
       const val = rxn ? rxn.value : 0;
       const coeff = eq.coefficients[i];
-      const term = coeff * val;
-      residual += term;
+      const product = coeff * val;
+      runningTotal += product;
 
-      const sign = term >= 0 ? (numForm.length > 0 ? ' + ' : '') : ' - ';
       const absC = Math.abs(coeff);
+      const sign = product >= 0
+        ? (numTerms.length > 0 ? ' + ' : '')
+        : ' - ';
       if (Math.abs(absC - 1) < 1e-6) {
-        numForm += `${sign}${fmt(Math.abs(val))}`;
+        numTerms += `${sign}${fmt(Math.abs(val))}`;
       } else {
-        numForm += `${sign}${fmt(Math.abs(val))} \\times ${fmt(absC)}`;
+        numTerms += `${sign}${fmt(Math.abs(val))} \\times ${fmt(absC)}`;
       }
     }
 
-    // Add load contributions as numbers
-    residual -= eq.rhs; // residual = Σ(coeff*val) - rhs; should ≈ 0
+    // Add load terms as numbers
+    if (kf) {
+      for (const f of kf) {
+        if (eq.type === 'force-x') {
+          if (Math.abs(f.fx) < 1e-10) continue;
+          runningTotal += f.fx;
+          const sign = f.fx > 0 ? ' + ' : ' - ';
+          numTerms += `${sign}${fmt(Math.abs(f.fx))}`;
+        } else if (eq.type === 'force-y') {
+          if (Math.abs(f.fy) < 1e-10) continue;
+          runningTotal += f.fy;
+          const sign = f.fy > 0 ? ' + ' : ' - ';
+          numTerms += `${sign}${fmt(Math.abs(f.fy))}`;
+        } else if (['moment', 'sub-moment'].includes(eq.type)) {
+          const mp = eq.momentPoint;
+          if (!mp) continue;
+          const dx = f.x - mp.x;
+          const dy = f.y - mp.y;
+          if (Math.abs(f.fy) > 1e-10 && Math.abs(dx) > 1e-10) {
+            const mVal = f.fy * dx;
+            runningTotal += mVal;
+            const sign = mVal > 0 ? ' + ' : ' - ';
+            numTerms += `${sign}${fmt(Math.abs(f.fy))} \\times ${fmt(Math.abs(dx))}`;
+          }
+          if (Math.abs(f.fx) > 1e-10 && Math.abs(dy) > 1e-10) {
+            const mVal = -(f.fx * dy);
+            runningTotal += mVal;
+            const sign = mVal > 0 ? ' + ' : ' - ';
+            numTerms += `${sign}${fmt(Math.abs(f.fx))} \\times ${fmt(Math.abs(dy))}`;
+          }
+          if (Math.abs(f.m || 0) > 1e-10) {
+            runningTotal += f.m;
+            const sign = f.m > 0 ? ' + ' : ' - ';
+            numTerms += `${sign}${fmt(Math.abs(f.m))}`;
+          }
+        }
+      }
+    }
 
-    const pass = Math.abs(residual) < 0.01;
-    const checkmark = pass ? '\\checkmark' : '\\times';
-    eqLines.push(`\\quad = ${fmt(Math.abs(residual))} \\approx 0 \\; ${checkmark}`);
+    eqLines.push(`\\quad ${numTerms.trim()} = 0`);
+
+    // Line 3: Result
+    const residual = Math.abs(runningTotal);
+    const pass = residual < 0.01;
+    if (!pass) allPass = false;
+    eqLines.push(`\\quad = ${fmt(runningTotal)} \\approx 0 \\; ${pass ? '\\checkmark' : '\\times'}`);
     eqLines.push('');
   }
 
   // Remove trailing blank
   while (eqLines.length > 0 && eqLines[eqLines.length - 1] === '') eqLines.pop();
 
-  return eqLines;
+  return {
+    title: 'Verification',
+    fbd: null,
+    equations: eqLines,
+    notes: allPass
+      ? 'All equilibrium equations verified with solved values. ✅'
+      : '⚠️ Some equations do not satisfy equilibrium.',
+  };
 }
 
 // ── Equation layout helpers ────────────────────────────────────────
@@ -1722,178 +1717,57 @@ export function generateSolution(solverResults) {
 
     } else if (unknowns.length > 3 && solvingSteps[0]?.type === 'global') {
       // ═══ PURE TRUSS WITH >3 UNKNOWNS — SUB-STRUCTURE PARTITION METHOD ═══
-      // Presents 4 equations (3 global + 1 sub-structure ΣM) as a simultaneous
-      // system. NEVER solves 2 unknowns from 1 equation.
+      // Write equations first (Steps 2, 4), solve later (Step 5).
+      // Only ONE sub-structure FBD. No intermediate algebra.
 
       const globalStep = solvingSteps[0];
       const kf = globalStep.knownForces || [];
+      const globalEqs = globalStep.equations;
+      const globalMomentEq = globalEqs.find(eq => eq.type === 'moment');
+      const globalFxEq = globalEqs.find(eq => eq.type === 'force-x');
+      const globalFyEq = globalEqs.find(eq => eq.type === 'force-y');
 
-      // 1. Find optimal partition joint
+      // Find optimal partition joint
       const cutJoint = findOptimalPartitionJoint(nodes, members, unknowns);
 
-      // Step 1: Global FBD with partition note
+      // Step 1: Global FBD
       steps.push(buildGlobalFBDStep(nodes, members, unknowns, reactions, cutJoint?.label));
 
       if (cutJoint) {
-        // 2. Partition the graph at the cut joint
         const sides = getGraphComponents(cutJoint.id, nodes, members);
+        const sideCounts = sides.map(s => unknowns.filter(u => s.has(u.nodeId)).length);
+        const primarySide = sides.length >= 2
+          ? (sideCounts[0] <= sideCounts[1] ? sides[0] : sides[1])
+          : (sides[0] || new Set());
 
-        // Determine which side is "primary" (fewer support reaction unknowns)
-        let sideAIds, sideBIds;
-        if (sides.length >= 2) {
-          const count0 = unknowns.filter(u => sides[0].has(u.nodeId)).length;
-          const count1 = unknowns.filter(u => sides[1].has(u.nodeId)).length;
-          if (count0 <= count1) {
-            sideAIds = sides[0];
-            sideBIds = sides[1];
-          } else {
-            sideAIds = sides[1];
-            sideBIds = sides[0];
-          }
-        } else {
-          sideAIds = sides[0] || new Set();
-          sideBIds = new Set();
-        }
+        const sideKnownForces = filterKnownForcesToSide(kf, primarySide, cutJoint.id, nodes, true);
+        const subMomentEq = buildSubMomentEquation(cutJoint, primarySide, nodes, unknowns, sideKnownForces);
 
-        const sideALabel = buildSideLabel(sideAIds, cutJoint, nodes);
-        const sideBLabel = buildSideLabel(sideBIds, cutJoint, nodes);
+        // Step 2: Global Equilibrium Equations (DO NOT SOLVE)
+        steps.push(buildGlobalEquationsStep(globalMomentEq, globalFxEq, globalFyEq, unknowns, kf));
 
-        const sideAReactionCount = unknowns.filter(u => sideAIds.has(u.nodeId)).length;
+        // Step 3: Sub-structure FBD
+        steps.push(buildSubStructureFBDStep(cutJoint, primarySide, nodes, members, unknowns, reactions));
 
-        const sideAReactionLabels = unknowns
-          .filter(u => sideAIds.has(u.nodeId))
-          .map(u => getReactionLabel(u.label, u.type))
-          .join(', ');
-        const sideBReactionLabels = unknowns
-          .filter(u => sideBIds.has(u.nodeId))
-          .map(u => getReactionLabel(u.label, u.type))
-          .join(', ');
+        // Step 4: Sub-structure Equation (DO NOT SOLVE)
+        steps.push(buildSubEquationStep(subMomentEq, cutJoint, unknowns, sideKnownForces));
 
-        // Filter known forces for each side
-        const sideAKnownForces = filterKnownForcesToSide(kf, sideAIds, cutJoint.id, nodes, true);
-        const sideBKnownForces = filterKnownForcesToSide(kf, sideBIds, cutJoint.id, nodes, false);
+        // Step 5: Solve all 4 — equations + answers, no methodology
+        const allEqs = [globalMomentEq, globalFxEq, globalFyEq, subMomentEq].filter(Boolean);
+        steps.push(buildSolveStep(allEqs, unknowns, reactions, kf, sideKnownForces));
 
-        const sideAHighlight = new Set([...sideAIds, cutJoint.id]);
-        const sideBHighlight = new Set([...sideBIds, cutJoint.id]);
-
-        const cutLabel = cutJoint.label;
-
-        // ── Step 2: Sub-structure Left — FBD ──
-        const sideAReactionItems = buildReactionItems(unknowns, reactions, null)
-          .filter(r => sideAIds.has(r.nodeId));
-        const cutForceItemsA = [
-          { nodeId: cutJoint.id, type: 'Rx', label: `${cutLabel}_x`, value: 0, mode: 'unknown' },
-          { nodeId: cutJoint.id, type: 'Ry', label: `${cutLabel}_y`, value: 0, mode: 'unknown' },
-        ];
-
-        steps.push({
-          title: `Sub-structure: ${sideALabel} — FBD`,
-          fbd: {
-            nodes, members,
-            reactionItems: [...sideAReactionItems, ...cutForceItemsA],
-            cutNodeIds: [cutJoint.id],
-            highlightNodeIds: sideAHighlight,
-          },
-          equations: [],
-          notes: `Sub-structure has ${sideAReactionCount + 2} unknowns ` +
-                 `(${sideAReactionLabels}, ${cutLabel}_x, ${cutLabel}_y), ` +
-                 `3 equations. Taking ΣM about ${cutLabel} eliminates ` +
-                 `${cutLabel}_x and ${cutLabel}_y (zero moment arm) — ` +
-                 `1 equation relating ${sideAReactionLabels}.`,
-        });
-
-        // ── Step 3: Sub-structure Right — FBD ──
-        const sideBReactionItems = buildReactionItems(unknowns, reactions, null)
-          .filter(r => sideBIds.has(r.nodeId));
-        const cutForceItemsB = [
-          { nodeId: cutJoint.id, type: 'Rx', label: `${cutLabel}_x`, value: 0, mode: 'unknown' },
-          { nodeId: cutJoint.id, type: 'Ry', label: `${cutLabel}_y`, value: 0, mode: 'unknown' },
-        ];
-
-        steps.push({
-          title: `Sub-structure: ${sideBLabel} — FBD`,
-          fbd: {
-            nodes, members,
-            reactionItems: [...sideBReactionItems, ...cutForceItemsB],
-            cutNodeIds: [cutJoint.id],
-            highlightNodeIds: sideBHighlight,
-          },
-          equations: [],
-          notes: `Internal forces at ${cutLabel} act in opposite direction (Newton's 3rd law). ` +
-                 `ΣM about ${cutLabel} → 1 equation relating ${sideBReactionLabels}.`,
-        });
-
-        // ── Step 4: Equilibrium Equations — 4 Equations, 4 Unknowns ──
-        // Gather the 3 global equations and build the sub-structure equation
-        const globalEqs = globalStep.equations;
-        const globalMomentEq = globalEqs.find(eq => eq.type === 'moment');
-        const globalFxEq = globalEqs.find(eq => eq.type === 'force-x');
-        const globalFyEq = globalEqs.find(eq => eq.type === 'force-y');
-        const subMomentEq = buildSubMomentEquation(cutJoint, sideAIds, nodes, unknowns, sideAKnownForces);
-
-        // Present in order: global ΣM, sub ΣM, ΣFx, ΣFy
-        const systemEquations = [globalMomentEq, subMomentEq, globalFxEq, globalFyEq].filter(Boolean);
-
-        // Build variable-form lines for each equation
-        const systemLines = [];
-        for (let eqIdx = 0; eqIdx < systemEquations.length; eqIdx++) {
-          const eq = systemEquations[eqIdx];
-          const eqKf = eq.type === 'sub-moment' ? sideAKnownForces : kf;
-          // Show each equation in variable form (no solved values)
-          const lines = buildEquationLatex(eq, unknowns, reactions, {}, eqKf);
-          const eqNum = eqIdx + 1;
-          // Prepend equation number to the first line
-          if (lines.length > 0) {
-            lines[0] = `\\text{Eq ${eqNum}: } ${lines[0]}`;
-          }
-          systemLines.push(...lines, '');
-        }
-        while (systemLines.length > 0 && systemLines[systemLines.length - 1] === '') systemLines.pop();
-
-        steps.push({
-          title: `Equilibrium Equations — ${systemEquations.length} Equations, ${unknowns.length} Unknowns`,
-          fbd: null,
-          equations: systemLines,
-          notes: `${systemEquations.length} independent equations, ${unknowns.length} unknowns — solvable. ` +
-                 `Solving simultaneously:`,
-        });
-
-        // ── Step 5: Solving the System ──
-        const solveLines = buildSimultaneousSolveLatex(
-          systemEquations, unknowns, reactions, kf, sideAKnownForces, sideAIds
-        );
-
-        steps.push({
-          title: 'Solving the System',
-          fbd: null,
-          equations: solveLines,
-          notes: null,
-        });
-
-        // ── Step 6: Verification — Full Equations with Numbers ──
-        const verifyLines = buildFullEquationVerification(
-          systemEquations, unknowns, reactions, kf, sideAKnownForces
-        );
-
-        steps.push({
-          title: 'Verification',
-          fbd: null,
-          equations: verifyLines,
-          notes: 'All equilibrium equations verified with solved values.',
-        });
-
+        // Step 6: Verification with numbers plugged in
+        steps.push(buildFullVerificationStep(allEqs, unknowns, reactions, kf, sideKnownForces));
       } else {
         // Fallback if no valid partition joint found
         steps.push(buildGlobalFBDStep(nodes, members, unknowns, reactions));
       }
 
-      // Method of Joints steps
+      // Method of Joints (UNCHANGED)
       const trussStepsRaw = buildTrussSteps(nodes, members, trussForces || [], reactions);
       const summaryStp = trussStepsRaw.find(s => s.trussTable);
       const preJointSteps = trussStepsRaw.filter(s => !s.trussTable);
       steps.push(...preJointSteps);
-
-      // Member forces summary — after all reaction steps
       if (summaryStp) steps.push(summaryStp);
 
     } else if (solvingSteps[0]?.type === 'global') {
