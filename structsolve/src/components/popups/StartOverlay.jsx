@@ -11,19 +11,25 @@ const toggleBtn = (active) => ({
   fontWeight: active ? 600 : 400, transition: 'all 0.15s',
 });
 
-const labelStyle = { fontSize: 10, color: COLORS.textDim, marginBottom: 3, fontWeight: 600 };
+const labelStyle = { fontSize: 10, color: '#b0b8c4', marginBottom: 3, fontWeight: 600 };
 
 export default function StartOverlay({ onCreate }) {
   const [length, setLength] = useState('4');
   const [orientation, setOrientation] = useState('horizontal');
   const [type, setType] = useState('frame');
+  const [startConn, setStartConn] = useState('rigid');
+  const [endConn, setEndConn] = useState('rigid');
   const [supportA, setSupportA] = useState('pin');
   const [supportB, setSupportB] = useState(null);
 
   function handleCreate() {
     const len = parseFloat(length);
     if (!len || len <= 0) return;
-    onCreate({ length: len, orientation, type, supportA, supportB });
+    onCreate({
+      length: len, orientation, type, supportA, supportB,
+      startHinge: type === 'truss' ? true : startConn === 'hinge',
+      endHinge: type === 'truss' ? true : endConn === 'hinge',
+    });
   }
 
   return (
@@ -45,7 +51,7 @@ export default function StartOverlay({ onCreate }) {
             <span style={{ color: '#fff' }}>Struct</span>
             <span style={{ color: COLORS.green }}>SOLVE</span>
           </div>
-          <div style={{ fontSize: 11, color: COLORS.textDim }}>
+          <div style={{ fontSize: 11, color: '#b0b8c4' }}>
             Create your first member
           </div>
         </div>
@@ -70,6 +76,26 @@ export default function StartOverlay({ onCreate }) {
             <button style={toggleBtn(type === 'truss')} onClick={() => setType('truss')}>Truss</button>
           </div>
         </div>
+
+        {type === 'frame' && (
+          <div style={{ marginBottom: 10 }}>
+            <div style={labelStyle}>Connection at A</div>
+            <div style={{ display: 'flex', gap: 4 }}>
+              <button style={toggleBtn(startConn === 'rigid')} onClick={() => setStartConn('rigid')}>Rigid</button>
+              <button style={toggleBtn(startConn === 'hinge')} onClick={() => setStartConn('hinge')}>Hinge</button>
+            </div>
+          </div>
+        )}
+
+        {type === 'frame' && (
+          <div style={{ marginBottom: 10 }}>
+            <div style={labelStyle}>Connection at B</div>
+            <div style={{ display: 'flex', gap: 4 }}>
+              <button style={toggleBtn(endConn === 'rigid')} onClick={() => setEndConn('rigid')}>Rigid</button>
+              <button style={toggleBtn(endConn === 'hinge')} onClick={() => setEndConn('hinge')}>Hinge</button>
+            </div>
+          </div>
+        )}
 
         <div style={{ marginBottom: 10 }}>
           <div style={labelStyle}>Support at Node A</div>
