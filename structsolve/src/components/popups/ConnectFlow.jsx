@@ -10,7 +10,7 @@ const toggleBtn = (active) => ({
   fontWeight: active ? 600 : 400, transition: 'all 0.15s',
 });
 
-const labelStyle = { fontSize: 10, color: COLORS.textDim, marginBottom: 3, fontWeight: 600 };
+const labelStyle = { fontSize: 10, color: '#b0b8c4', marginBottom: 3, fontWeight: 600 };
 
 export default function ConnectFlow({ fromId, toId, autoLength, onConfirm, onCancel }) {
   const [type, setType] = useState('frame');
@@ -30,7 +30,7 @@ export default function ConnectFlow({ fromId, toId, autoLength, onConfirm, onCan
 
   return (
     <div>
-      <div style={{ fontSize: 11, color: COLORS.textDim, marginBottom: 10, fontWeight: 600 }}>
+      <div style={{ fontSize: 11, color: '#b0b8c4', marginBottom: 10, fontWeight: 600 }}>
         Connect {fromId} &rarr; {toId}
       </div>
 

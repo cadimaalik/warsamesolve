@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { COLORS } from '../../constants/brand.js';
 
 const ALL_SUPPORTS = [
-  { key: null,       icon: '\u2715', label: 'None' },
   { key: 'pin',      icon: '\u25B3', label: 'Pin' },
   { key: 'roller-h', icon: '\u25CB', sub: 'H', label: 'Roller (horizontal surface)' },
   { key: 'roller-v', icon: '\u25CB', sub: 'V', label: 'Roller (vertical surface)' },
@@ -12,13 +11,13 @@ const ALL_SUPPORTS = [
 ];
 
 // Truss members cannot use supports that resist moment
-const TRUSS_ALLOWED = [null, 'pin', 'roller-h', 'roller-v'];
+const TRUSS_ALLOWED = ['pin', 'roller-h', 'roller-v'];
 
 function SupportButton({ s, active, onChange }) {
   const [hover, setHover] = useState(false);
   return (
     <div style={{ position: 'relative' }}>
-      <button onClick={() => onChange(s.key)}
+      <button onClick={() => onChange(active ? null : s.key)}
         onMouseEnter={() => setHover(true)}
         onMouseLeave={() => setHover(false)}
         style={{
@@ -55,7 +54,7 @@ export default function SupportGrid({ value, onChange, trussMode = false }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 36px)', gap: 4 }}>
       {supports.map(s => (
-        <SupportButton key={s.key || 'none'} s={s} active={value === s.key} onChange={onChange} />
+        <SupportButton key={s.key} s={s} active={value === s.key} onChange={onChange} />
       ))}
     </div>
   );

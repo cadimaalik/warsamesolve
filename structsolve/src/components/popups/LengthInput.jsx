@@ -11,7 +11,7 @@ const toggleBtn = (active) => ({
   fontWeight: active ? 600 : 400, transition: 'all 0.15s',
 });
 
-const labelStyle = { fontSize: 10, color: COLORS.textDim, marginBottom: 3, fontWeight: 600 };
+const labelStyle = { fontSize: 10, color: '#b0b8c4', marginBottom: 3, fontWeight: 600 };
 
 const DIAGONALS = ['NE', 'SE', 'SW', 'NW'];
 const DIAG_SIGNS = { NE: { sx: 1, sy: -1 }, SE: { sx: 1, sy: 1 }, SW: { sx: -1, sy: 1 }, NW: { sx: -1, sy: -1 } };
@@ -28,6 +28,7 @@ export default function LengthInput({ direction, onConfirm, onCancel }) {
   const [type, setType] = useState('frame');
   const [eiFactor, setEiFactor] = useState('1');
   const [startConn, setStartConn] = useState('rigid');
+  const [endConn, setEndConn] = useState('rigid');
   const [newSupport, setNewSupport] = useState(null);
 
   const computedLen = isDiag && !angleMode
@@ -68,13 +69,14 @@ export default function LengthInput({ direction, onConfirm, onCancel }) {
       type,
       eiFactor: parseFloat(eiFactor) || 1,
       startHinge: type === 'truss' ? true : startConn === 'hinge',
+      endHinge: type === 'truss' ? true : endConn === 'hinge',
       newNodeSupport: newSupport,
     });
   }
 
   return (
     <div>
-      <div style={{ fontSize: 11, color: COLORS.textDim, marginBottom: 10, fontWeight: 600 }}>
+      <div style={{ fontSize: 11, color: '#b0b8c4', marginBottom: 10, fontWeight: 600 }}>
         New member &middot; {direction}
       </div>
 
@@ -152,6 +154,17 @@ export default function LengthInput({ direction, onConfirm, onCancel }) {
           <div style={{ display: 'flex', gap: 4 }}>
             <button style={toggleBtn(startConn === 'rigid')} onClick={() => setStartConn('rigid')}>Rigid</button>
             <button style={toggleBtn(startConn === 'hinge')} onClick={() => setStartConn('hinge')}>Hinge</button>
+          </div>
+        </div>
+      )}
+
+      {/* Connection at end node (frame only — truss is always hinged) */}
+      {type === 'frame' && (
+        <div style={{ marginBottom: 8 }}>
+          <div style={labelStyle}>Connection at End</div>
+          <div style={{ display: 'flex', gap: 4 }}>
+            <button style={toggleBtn(endConn === 'rigid')} onClick={() => setEndConn('rigid')}>Rigid</button>
+            <button style={toggleBtn(endConn === 'hinge')} onClick={() => setEndConn('hinge')}>Hinge</button>
           </div>
         </div>
       )}
