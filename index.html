@@ -169,14 +169,8 @@
         /* Calculator Cards */
         .calculator-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(2, 1fr);
             gap: calc(var(--grid) * 4);
-        }
-
-        .calculator-grid-centered {
-            display: flex;
-            justify-content: center;
-            margin-top: calc(var(--grid) * 4);
         }
 
         .calc-card {
@@ -225,18 +219,23 @@
         }
 
         .calc-card .button-text {
+            display: block;
+            width: 100%;
+            padding: calc(var(--grid) * 2);
+            background: var(--primary);
+            color: var(--bg);
+            text-align: center;
             font-family: 'JetBrains Mono', monospace;
-            color: var(--primary);
             font-weight: 700;
+            font-size: 0.875rem;
             text-transform: uppercase;
             letter-spacing: 0.1em;
+            margin-top: auto;
+            transition: background 0.2s;
         }
 
-        .calc-card .contributor-name {
-            font-size: 16px;
-            color: #4ade80;
-            font-weight: 600;
-            margin-top: 12px;
+        .calc-card:hover .button-text {
+            background: var(--primary-light);
         }
 
         .coming-soon-badge {
@@ -347,10 +346,6 @@
             .calc-card {
                 aspect-ratio: auto;
             }
-
-            .calculator-grid-centered .calc-card {
-                width: 100% !important;
-            }
         }
 
         @media (max-width: 768px) {
@@ -415,7 +410,7 @@
         <div class="verified-badge">Verified against textbook examples</div>
         
         <div class="calculator-grid">
-            <!-- HydroSolve - Featured -->
+            <!-- HydroSolve -->
             <a href="hydro/index.html" class="calc-card featured">
                 <h3>HydroSolve</h3>
                 <div class="description">
@@ -425,10 +420,9 @@
                     Darcy-Weisbach'tan bıktıysan burası
                 </div>
                 <div class="button-text">Hesapla →</div>
-                <div class="contributor-name">by Ali Warsame</div>
             </a>
 
-            <!-- StructSolve - Featured -->
+            <!-- StructSolve -->
             <a href="structsolve/index.html" class="calc-card featured">
                 <h3>StructSolve</h3>
                 <div class="description">
@@ -438,46 +432,31 @@
                     Yapısal analiz artık kolay
                 </div>
                 <div class="button-text">Hesapla →</div>
-                <div class="contributor-name">by Ali Warsame</div>
             </a>
 
-            <!-- RootFinder - Featured -->
-            <a href="rootfinder/index.html" class="calc-card featured">
-                <h3>RootFinder</h3>
+            <!-- Numerical Methods -->
+            <a href="numerics/index.html" class="calc-card featured">
+                <h3>Numerical Methods</h3>
                 <div class="description">
-                    Bisection • Newton-Raphson • Secant • Fixed-Point
+                    Root Finding • Condition Number • Norms
                 </div>
                 <div class="turkish-subtitle">
-                    Kök bulma yöntemleri, adım adım
+                    Sayısal yöntemler, adım adım
                 </div>
                 <div class="button-text">Hesapla →</div>
-                <div class="contributor-name">by Fırat Kara</div>
             </a>
 
-            <!-- CondNumber - Featured -->
-            <a href="condnumber/index.html" class="calc-card featured">
-                <h3>CondNumber</h3>
-                <div class="description">
-                    Matrix Conditioning • Norms • Sensitivity
-                </div>
-                <div class="turkish-subtitle">
-                    Matris koşul sayısı hesaplayıcı
-                </div>
-                <div class="button-text">Hesapla →</div>
-                <div class="contributor-name">by Ali Warsame</div>
-            </a>
-        </div>
-
-        <!-- 4th card, centered -->
-        <div class="calculator-grid-centered">
-            <div class="calc-card featured" style="width: calc((100% - var(--grid) * 8) / 3);">
+            <!-- Soil Mechanics - Coming Soon -->
+            <div class="calc-card featured">
                 <div class="coming-soon-badge">Coming Soon</div>
                 <h3>Soil Mechanics</h3>
                 <div class="description">
                     Consolidation, bearing capacity, earth pressure
                 </div>
+                <div class="turkish-subtitle">
+                    Zemin mekaniği yakında
+                </div>
                 <div class="button-text">Hesapla →</div>
-                <div class="contributor-name">by Ahmet Salih Çetin</div>
             </div>
         </div>
     </section>
