@@ -61,9 +61,9 @@ export default function App() {
 
   const btnPrimary = {
     width: '100%',
-    padding: '10px 20px',
+    padding: '16px 24px',
     fontFamily: FONTS.mono,
-    fontSize: 13,
+    fontSize: 16,
     fontWeight: 700,
     color: '#000',
     background: COLORS.green,
@@ -71,7 +71,8 @@ export default function App() {
     borderRadius: 4,
     cursor: 'pointer',
     textTransform: 'uppercase',
-    letterSpacing: '0.05em',
+    letterSpacing: '0.1em',
+    transition: 'all 0.15s',
   };
 
   const btnSecondary = {
@@ -146,10 +147,10 @@ export default function App() {
             <button
               style={btnPrimary}
               onClick={handleCalculate}
-              onMouseOver={e => e.currentTarget.style.background = '#86efac'}
-              onMouseOut={e => e.currentTarget.style.background = COLORS.green}
+              onMouseOver={e => { e.currentTarget.style.background = '#86efac'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 10px 30px rgba(74, 222, 128, 0.3)'; }}
+              onMouseOut={e => { e.currentTarget.style.background = COLORS.green; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}
             >
-              Calculate
+              Hesapla &rarr;
             </button>
             <button
               style={btnSecondary}

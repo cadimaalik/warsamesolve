@@ -352,14 +352,15 @@ export default function InputPanel({ method, onSolve, exprStr, setExprStr }) {
         onClick={handleSolve}
         style={{
           background: COLORS.green, color: '#000', border: 'none',
-          borderRadius: 4, padding: '12px 24px',
-          fontFamily: FONTS.mono, fontSize: 14, fontWeight: 700,
+          borderRadius: 4, padding: '16px 24px',
+          fontFamily: FONTS.mono, fontSize: 16, fontWeight: 700,
           cursor: 'pointer', textTransform: 'uppercase',
           letterSpacing: '0.1em', transition: 'all 0.15s',
+          width: '100%', marginTop: 4,
         }}
-        onMouseEnter={(e) => { e.target.style.background = '#86efac'; e.target.style.transform = 'translateY(-1px)'; }}
-        onMouseLeave={(e) => { e.target.style.background = COLORS.green; e.target.style.transform = 'translateY(0)'; }}
-      >Find Root</button>
+        onMouseEnter={(e) => { e.target.style.background = '#86efac'; e.target.style.transform = 'translateY(-2px)'; e.target.style.boxShadow = '0 10px 30px rgba(74, 222, 128, 0.3)'; }}
+        onMouseLeave={(e) => { e.target.style.background = COLORS.green; e.target.style.transform = 'translateY(0)'; e.target.style.boxShadow = 'none'; }}
+      >Hesapla &rarr;</button>
     </div>
   );
 }
