@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Numerical Methods — CE 305</title>
+    <link rel="icon" type="image/svg+xml" href="/logo.svg">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Spectral:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4ade80;
+            --primary-light: #86efac;
+            --accent: #fbbf24;
+            --bg: #0a0a0a;
+            --surface: #171717;
+            --text: #e5e5e5;
+            --text-muted: #a3a3a3;
+            --border: #404040;
+            --grid: 8px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Spectral', serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: calc(var(--grid) * 6);
+        }
+
+        /* Header */
+        header {
+            text-align: center;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: calc(var(--grid) * 4);
+            margin-bottom: calc(var(--grid) * 8);
+        }
+
+        .back-link {
+            display: inline-block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            margin-bottom: calc(var(--grid) * 2);
+            transition: color 0.2s;
+        }
+
+        .back-link:hover {
+            color: var(--primary);
+        }
+
+        h1 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: -0.02em;
+            margin-bottom: calc(var(--grid) * 1);
+        }
+
+        .subtitle {
+            font-size: 1.125rem;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .credit {
+            font-size: 1rem;
+            color: var(--primary);
+            font-weight: 600;
+            margin-top: calc(var(--grid) * 2);
+        }
+
+        /* Main Sections */
+        .section {
+            margin-bottom: calc(var(--grid) * 8);
+        }
+
+        .section-header {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: calc(var(--grid) * 4);
+            padding-bottom: calc(var(--grid) * 2);
+            border-bottom: 2px solid var(--border);
+        }
+
+        /* Calculator Grid */
+        .calculator-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: calc(var(--grid) * 3);
+        }
+
+        /* Calculator Cards */
+        .calc-card {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            padding: calc(var(--grid) * 4);
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+
+        .calc-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-4px);
+        }
+
+        .card-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: calc(var(--grid) * 2);
+        }
+
+        .card-description {
+            font-size: 0.9375rem;
+            color: var(--text-muted);
+            margin-bottom: calc(var(--grid) * 2);
+            flex-grow: 1;
+        }
+
+        .card-turkish {
+            color: var(--accent);
+            font-style: italic;
+            font-size: 0.9rem;
+            margin-bottom: calc(var(--grid) * 3);
+        }
+
+        /* Buttons */
+        .calc-button {
+            display: block;
+            width: 100%;
+            padding: calc(var(--grid) * 2);
+            background: var(--primary);
+            color: var(--bg);
+            text-align: center;
+            text-decoration: none;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: background 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .calc-button:hover {
+            background: var(--primary-light);
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: calc(var(--grid) * 4) 0;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            border-top: 1px solid var(--border);
+            margin-top: calc(var(--grid) * 8);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            .calculator-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="../index.html" class="back-link">&larr; Back to Home</a>
+            <h1>Numerical Methods</h1>
+            <div class="subtitle">Say&#305;sal Y&ouml;ntemler &mdash; CE 305</div>
+            <div class="credit">by F&#305;rat Kara</div>
+        </header>
+
+        <div class="section">
+            <div class="section-header">Calculators</div>
+
+            <div class="calculator-grid">
+                <!-- RootFinder -->
+                <div class="calc-card">
+                    <div class="card-title">RootFinder</div>
+
+                    <p class="card-description">
+                        Bisection &bull; Newton-Raphson &bull; Secant &bull; Fixed-Point
+                    </p>
+
+                    <div class="card-turkish">
+                        K&ouml;k bulma y&ouml;ntemleri, ad&#305;m ad&#305;m
+                    </div>
+
+                    <a href="/rootfinder/" class="calc-button">Launch Calculator &rarr;</a>
+                </div>
+
+                <!-- CondNumber -->
+                <div class="calc-card">
+                    <div class="card-title">CondNumber</div>
+
+                    <p class="card-description">
+                        Matrix Conditioning &bull; Norms &bull; Sensitivity
+                    </p>
+
+                    <div class="card-turkish">
+                        Matris ko&#351;ul say&#305;s&#305; hesaplay&#305;c&#305;
+                    </div>
+
+                    <a href="/condnumber/" class="calc-button">Launch Calculator &rarr;</a>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Numerical Methods &bull; METU CE 305</p>
+        </footer>
+    </div>
+</body>
+</html>
