@@ -159,18 +159,10 @@ export default function SolverPage({ nodes, members, methodName, solverResults, 
     try {
       const element = bodyRef.current;
 
-      // Flatten MathJax to images — prevents doubled/overlapping text
-      const mathElements = element.querySelectorAll('mjx-container');
-      const originals = [];
-      for (const el of mathElements) {
-        const c = await html2canvas(el, { backgroundColor: null, scale: 2 });
-        const img = document.createElement('img');
-        img.src = c.toDataURL();
-        img.style.width = el.offsetWidth + 'px';
-        img.style.height = el.offsetHeight + 'px';
-        originals.push({ el, parent: el.parentNode, next: el.nextSibling });
-        el.parentNode.replaceChild(img, el);
-      }
+      // Hide MathJax assistive-mml layer — html2canvas doesn't respect
+      // clip/overflow:hidden, causing doubled text from the a11y duplicate
+      const assistive = element.querySelectorAll('mjx-assistive-mml');
+      assistive.forEach(el => el.style.display = 'none');
 
       const canvas = await html2canvas(element, {
         backgroundColor: '#111',
@@ -178,11 +170,8 @@ export default function SolverPage({ nodes, members, methodName, solverResults, 
         useCORS: true,
       });
 
-      // Restore original MathJax DOM
-      for (const { el, parent, next } of originals) {
-        if (next) parent.insertBefore(el, next);
-        else parent.appendChild(el);
-      }
+      // Restore assistive layer
+      assistive.forEach(el => el.style.display = '');
 
       const imgData = canvas.toDataURL('image/jpeg', 0.95);
       const pdf = new jsPDF('p', 'mm', 'a4');
