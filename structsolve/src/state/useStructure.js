@@ -58,7 +58,7 @@ export default function useStructure() {
     setStructure(historyRef.current.pop());
   }, []);
 
-  const addMember = useCallback((fromNodeId, direction, length, type, eiFactor, newNodeSupport, startHinge = false, endHinge = false, realDx, realDy) => {
+  const addMember = useCallback((fromNodeId, direction, length, type, eiFactor, newNodeSupport, startHinge = false, realDx, realDy) => {
     pushHistory();
     setStructure(prev => {
       const fromNode = prev.nodes.find(n => n.id === fromNodeId);
@@ -91,7 +91,6 @@ export default function useStructure() {
         if (useOverlap) {
           const newMem = createMember(fromNodeId, overlap.id, type, eiFactor);
           newMem.startHinge = startHinge;
-          newMem.endHinge = endHinge;
           newMem.realDx = rdx;
           newMem.realDy = rdy;
           return { ...prev, members: [...prev.members, newMem] };
@@ -109,7 +108,6 @@ export default function useStructure() {
       const newNode = createNode(newId, finalX, finalY, newNodeSupport || null);
       const newMem = createMember(fromNodeId, newId, type, eiFactor);
       newMem.startHinge = startHinge;
-      newMem.endHinge = endHinge;
       newMem.realDx = rdx;
       newMem.realDy = rdy;
 
@@ -197,7 +195,7 @@ export default function useStructure() {
     try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
   }, [structure]);
 
-  const createInitialBeam = useCallback(({ length, orientation = 'horizontal', type = 'frame', supportA = 'pin', supportB = null, startHinge = false, endHinge = false }) => {
+  const createInitialBeam = useCallback(({ length, orientation = 'horizontal', type = 'frame', supportA = 'pin', supportB = null }) => {
     const isVert = orientation === 'vertical';
     const pixelLength = length * PIXELS_PER_METER;
     const bx = isVert ? 200 : 200 + pixelLength;
@@ -205,8 +203,6 @@ export default function useStructure() {
     const nodeA = createNode('A', 200, 300, supportA);
     const nodeB = createNode('B', bx, by, supportB);
     const mem = createMember('A', 'B', type);
-    mem.startHinge = startHinge;
-    mem.endHinge = endHinge;
     mem.realDx = isVert ? 0 : length;
     mem.realDy = isVert ? length : 0;
     setStructure(prev => ({
