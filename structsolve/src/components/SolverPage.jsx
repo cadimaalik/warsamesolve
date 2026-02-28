@@ -158,11 +158,31 @@ export default function SolverPage({ nodes, members, methodName, solverResults, 
     setGenerating(true);
     try {
       const element = bodyRef.current;
+
+      // Flatten KaTeX to images — prevents doubled/overlapping text
+      const katexElements = element.querySelectorAll('.katex-display, .katex');
+      const originals = [];
+      for (const el of katexElements) {
+        const c = await html2canvas(el, { backgroundColor: null, scale: 2 });
+        const img = document.createElement('img');
+        img.src = c.toDataURL();
+        img.style.width = el.offsetWidth + 'px';
+        img.style.height = el.offsetHeight + 'px';
+        originals.push({ el, parent: el.parentNode, next: el.nextSibling });
+        el.parentNode.replaceChild(img, el);
+      }
+
       const canvas = await html2canvas(element, {
         backgroundColor: '#111',
         scale: 2,
         useCORS: true,
       });
+
+      // Restore original KaTeX DOM
+      for (const { el, parent, next } of originals) {
+        if (next) parent.insertBefore(el, next);
+        else parent.appendChild(el);
+      }
 
       const imgData = canvas.toDataURL('image/jpeg', 0.95);
       const pdf = new jsPDF('p', 'mm', 'a4');
