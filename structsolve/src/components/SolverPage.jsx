@@ -159,19 +159,20 @@ export default function SolverPage({ nodes, members, methodName, solverResults, 
     try {
       const element = bodyRef.current;
 
-      // Hide MathJax assistive-mml layer — html2canvas doesn't respect
-      // clip/overflow:hidden, causing doubled text from the a11y duplicate
-      const assistive = element.querySelectorAll('mjx-assistive-mml');
-      assistive.forEach(el => el.style.display = 'none');
-
       const canvas = await html2canvas(element, {
         backgroundColor: '#111',
         scale: 2,
         useCORS: true,
+        onclone: (clonedDoc) => {
+          // Remove MathJax assistive-mml (accessibility duplicate that
+          // html2canvas renders visibly because it ignores clip:rect)
+          clonedDoc.querySelectorAll('mjx-assistive-mml').forEach(el => el.remove());
+          // Also inject a style to catch any remaining hidden MathJax layers
+          const s = clonedDoc.createElement('style');
+          s.textContent = 'mjx-assistive-mml{display:none!important}';
+          clonedDoc.head.appendChild(s);
+        },
       });
-
-      // Restore assistive layer
-      assistive.forEach(el => el.style.display = '');
 
       const imgData = canvas.toDataURL('image/jpeg', 0.95);
       const pdf = new jsPDF('p', 'mm', 'a4');
