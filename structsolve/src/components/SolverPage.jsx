@@ -1,4 +1,6 @@
-import React, { useEffect, useRef, useMemo } from 'react';
+import React, { useEffect, useRef, useMemo, useState } from 'react';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 import { COLORS as BRAND, FONTS } from '../constants/brand.js';
 import { generateSolution, computeStrategy } from '../solver/solutionGenerator.js';
 import SolutionStep from './SolutionStep.jsx';
@@ -149,6 +151,53 @@ function TrussJointGrid({ jointSteps }) {
 
 // ── Main SolverPage ───────────────────────────────────────────────
 export default function SolverPage({ nodes, members, methodName, solverResults, onBack, onEdit }) {
+  const bodyRef = useRef(null);
+  const [generating, setGenerating] = useState(false);
+
+  async function downloadPDF() {
+    setGenerating(true);
+    try {
+      const element = bodyRef.current;
+      const canvas = await html2canvas(element, {
+        backgroundColor: '#111',
+        scale: 2,
+        useCORS: true,
+      });
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = 210;
+      const pageHeight = 297;
+      const margin = 10;
+      const contentWidth = pageWidth - 2 * margin;
+      const contentHeight = pageHeight - 2 * margin;
+
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const ratio = contentWidth / imgWidth;
+      const scaledHeight = imgHeight * ratio;
+
+      let heightLeft = scaledHeight;
+      let position = 0;
+
+      // First page
+      pdf.addImage(imgData, 'JPEG', margin, margin, contentWidth, scaledHeight);
+      heightLeft -= contentHeight;
+
+      // Additional pages
+      while (heightLeft > 0) {
+        position -= contentHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', margin, margin + position, contentWidth, scaledHeight);
+        heightLeft -= contentHeight;
+      }
+
+      pdf.save('StructSOLVE-Solution.pdf');
+    } finally {
+      setGenerating(false);
+    }
+  }
+
   // MathJax retypeset trigger
   useEffect(() => {
     if (window.MathJax && window.MathJax.typesetPromise) {
@@ -198,13 +247,21 @@ export default function SolverPage({ nodes, members, methodName, solverResults, 
             StructSOLVE
           </span>
         </a>
+        <button
+          className="solver-nav-btn"
+          onClick={downloadPDF}
+          disabled={generating}
+          style={{ background: generating ? '#1a3a1a' : '#16361c', color: '#4ade80' }}
+        >
+          {generating ? 'Generating...' : '↓ Download PDF'}
+        </button>
         <button className="solver-nav-btn" onClick={onEdit}>
           &#9998; Edit Structure
         </button>
       </div>
 
       {/* ── Body ── */}
-      <div className="solver-body">
+      <div className="solver-body" ref={bodyRef}>
         {/* Structure preview */}
         <div style={{ marginBottom: 20 }}>
           <div style={{ color: '#6b7280', fontSize: 12, fontFamily: FONTS.mono, marginBottom: 8 }}>
