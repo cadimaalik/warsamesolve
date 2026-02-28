@@ -189,3 +189,123 @@ mjx-math {
   max-width: 100% !important;
   overflow-wrap: break-word !important;
 }
+
+/* PDF download button — green filled variant of solver-nav-btn */
+.solver-pdf-btn {
+  background: #059669 !important;
+  border-color: #059669 !important;
+  color: #fff !important;
+}
+.solver-pdf-btn:hover {
+  background: #047857 !important;
+  border-color: #047857 !important;
+}
+
+/* ═══════════════════════════════════════════════════════
+   PRINT STYLES — window.print() → PDF
+   ═══════════════════════════════════════════════════════ */
+@page {
+  margin: 1.5cm;
+  size: A4;
+}
+
+@media print {
+  /* Hide top bar (buttons) */
+  .solver-top-bar { display: none !important; }
+
+  /* White background, black text */
+  html, body, #root {
+    background: #fff !important;
+    color: #000 !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  .solver-page {
+    background: #fff !important;
+    color: #000 !important;
+    overflow: visible !important;
+  }
+
+  .solver-body {
+    background: #fff !important;
+    color: #000 !important;
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Steps — avoid breaking mid-step */
+  .solution-step {
+    page-break-inside: avoid;
+    break-inside: avoid;
+    margin-bottom: 24px !important;
+  }
+
+  /* Step headers */
+  .step-header {
+    border-bottom-color: #ccc !important;
+  }
+  .step-title {
+    color: #000 !important;
+  }
+  .step-number {
+    color: #166534 !important;
+  }
+
+  /* Notes */
+  .step-notes {
+    color: #374151 !important;
+  }
+
+  /* Strategy card */
+  .solver-body > div > div[style] {
+    border-color: #ccc !important;
+  }
+
+  /* FBD canvases / SVGs — white background */
+  .step-fbd svg,
+  .step-fbd canvas,
+  .solution-step svg {
+    background: #fff !important;
+  }
+
+  /* Equations — black text */
+  .equation-block {
+    color: #000 !important;
+  }
+  mjx-container {
+    color: #000 !important;
+  }
+
+  /* Truss table — print friendly */
+  .truss-results-table th {
+    color: #166534 !important;
+    border-bottom-color: #166534 !important;
+  }
+  .truss-results-table td {
+    color: #000 !important;
+    border-bottom-color: #e5e7eb !important;
+  }
+  .force-tension     { color: #1d4ed8 !important; }
+  .force-compression { color: #b91c1c !important; }
+  .force-zero        { color: #6b7280 !important; }
+
+  /* Checkmarks — dark green */
+  .step-check, .verification-check {
+    color: #166534 !important;
+  }
+
+  /* Hide scrollbars and overflow artifacts */
+  ::-webkit-scrollbar { display: none !important; }
+  * {
+    scrollbar-width: none !important;
+    overflow: visible !important;
+  }
+
+  /* Structure preview — white bg */
+  .step-fbd,
+  [style*="canvasBg"] {
+    background: #fff !important;
+  }
+}
