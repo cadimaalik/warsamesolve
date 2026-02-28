@@ -159,10 +159,10 @@ export default function SolverPage({ nodes, members, methodName, solverResults, 
     try {
       const element = bodyRef.current;
 
-      // Flatten KaTeX to images — prevents doubled/overlapping text
-      const katexElements = element.querySelectorAll('.katex-display, .katex');
+      // Flatten MathJax to images — prevents doubled/overlapping text
+      const mathElements = element.querySelectorAll('mjx-container');
       const originals = [];
-      for (const el of katexElements) {
+      for (const el of mathElements) {
         const c = await html2canvas(el, { backgroundColor: null, scale: 2 });
         const img = document.createElement('img');
         img.src = c.toDataURL();
@@ -178,7 +178,7 @@ export default function SolverPage({ nodes, members, methodName, solverResults, 
         useCORS: true,
       });
 
-      // Restore original KaTeX DOM
+      // Restore original MathJax DOM
       for (const { el, parent, next } of originals) {
         if (next) parent.insertBefore(el, next);
         else parent.appendChild(el);
