@@ -159,20 +159,28 @@ export default function SolverPage({ nodes, members, methodName, solverResults, 
     try {
       const element = bodyRef.current;
 
+      // Inject style on LIVE document before html2canvas clones it.
+      // MathJax CHTML renders a hidden <mjx-assistive-mml> with the full
+      // MathML duplicate (clipped via deprecated CSS `clip` property).
+      // html2canvas ignores `clip`, so the duplicate renders visibly.
+      // Also hide raw <math> (MathML) elements that browsers may render
+      // natively alongside the CHTML output.
+      const pdfFixStyle = document.createElement('style');
+      pdfFixStyle.setAttribute('data-pdf-fix', '');
+      pdfFixStyle.textContent = [
+        'mjx-assistive-mml{display:none!important}',
+        'math{display:none!important}',
+        '[style*="clip"]{display:none!important}',
+      ].join('\n');
+      document.head.appendChild(pdfFixStyle);
+
       const canvas = await html2canvas(element, {
         backgroundColor: '#111',
         scale: 2,
         useCORS: true,
-        onclone: (clonedDoc) => {
-          // Remove MathJax assistive-mml (accessibility duplicate that
-          // html2canvas renders visibly because it ignores clip:rect)
-          clonedDoc.querySelectorAll('mjx-assistive-mml').forEach(el => el.remove());
-          // Also inject a style to catch any remaining hidden MathJax layers
-          const s = clonedDoc.createElement('style');
-          s.textContent = 'mjx-assistive-mml{display:none!important}';
-          clonedDoc.head.appendChild(s);
-        },
       });
+
+      document.head.removeChild(pdfFixStyle);
 
       const imgData = canvas.toDataURL('image/jpeg', 0.95);
       const pdf = new jsPDF('p', 'mm', 'a4');
