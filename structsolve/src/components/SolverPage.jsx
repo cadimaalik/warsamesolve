@@ -193,16 +193,11 @@ export default function SolverPage({ nodes, members, methodName, solverResults, 
         <button className="solver-nav-btn" onClick={onBack}>
           &larr; Back to Methods
         </button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <a href="/" style={{ textDecoration: 'none' }}>
-            <span style={{ color: '#4ade80', fontWeight: 700, fontSize: 15, fontFamily: FONTS.mono }}>
-              StructSOLVE
-            </span>
-          </a>
-          <button className="solver-nav-btn solver-pdf-btn" onClick={() => window.print()}>
-            &#128438; Download PDF
-          </button>
-        </div>
+        <a href="/" style={{ textDecoration: 'none' }}>
+          <span style={{ color: '#4ade80', fontWeight: 700, fontSize: 15, fontFamily: FONTS.mono }}>
+            StructSOLVE
+          </span>
+        </a>
         <button className="solver-nav-btn" onClick={onEdit}>
           &#9998; Edit Structure
         </button>
