@@ -160,18 +160,13 @@ export default function SolverPage({ nodes, members, methodName, solverResults, 
       const element = bodyRef.current;
 
       // Inject style on LIVE document before html2canvas clones it.
-      // MathJax CHTML renders a hidden <mjx-assistive-mml> with the full
-      // MathML duplicate (clipped via deprecated CSS `clip` property).
-      // html2canvas ignores `clip`, so the duplicate renders visibly.
-      // Also hide raw <math> (MathML) elements that browsers may render
-      // natively alongside the CHTML output.
+      // MathJax CHTML renders a hidden <mjx-assistive-mml> containing a
+      // full MathML duplicate, clipped via the deprecated CSS `clip`
+      // property. html2canvas ignores `clip`, rendering the duplicate
+      // visibly and causing doubled text.
       const pdfFixStyle = document.createElement('style');
       pdfFixStyle.setAttribute('data-pdf-fix', '');
-      pdfFixStyle.textContent = [
-        'mjx-assistive-mml{display:none!important}',
-        'math{display:none!important}',
-        '[style*="clip"]{display:none!important}',
-      ].join('\n');
+      pdfFixStyle.textContent = 'mjx-assistive-mml{display:none!important}';
       document.head.appendChild(pdfFixStyle);
 
       const canvas = await html2canvas(element, {
