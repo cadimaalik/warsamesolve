@@ -37,6 +37,18 @@ if ! grep -q 'assets/' condnumber/dist/index.html 2>/dev/null; then
   exit 1
 fi
 
+echo "==> Building funcapprox Vite app..."
+cd funcapprox
+npm install
+npm run build
+cd ..
+
+# Verify Vite produced the built index.html (not the source file)
+if ! grep -q 'assets/' funcapprox/dist/index.html 2>/dev/null; then
+  echo "ERROR: funcapprox/dist/index.html missing or not built correctly"
+  exit 1
+fi
+
 echo "==> Assembling output directory..."
 rm -rf dist
 mkdir -p dist
@@ -55,6 +67,7 @@ cp -r contributors dist/
 cp -r structsolve/dist dist/structsolve
 cp -r rootfinder/dist dist/rootfinder
 cp -r condnumber/dist dist/condnumber
+cp -r funcapprox/dist dist/funcapprox
 
 echo "==> Build complete. Contents of dist/:"
 ls -R dist/
