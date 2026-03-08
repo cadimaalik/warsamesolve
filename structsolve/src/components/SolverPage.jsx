@@ -162,15 +162,26 @@ export default function SolverPage({ nodes, members, methodName, solverResults, 
     try {
       const element = bodyRef.current;
 
-      // Inject style to hide MathJax accessibility duplicate and fix
-      // fraction lines for html2canvas (which misrenders border-based lines)
+      // Hide MathJax accessibility duplicates
       const pdfFixStyle = document.createElement('style');
       pdfFixStyle.setAttribute('data-pdf-fix', '');
-      pdfFixStyle.textContent = [
-        'mjx-assistive-mml{display:none!important}',
-        'mjx-line{border-top-style:none!important;height:1px!important;background:currentColor!important}',
-      ].join('\n');
+      pdfFixStyle.textContent = 'mjx-assistive-mml{display:none!important}';
       document.head.appendChild(pdfFixStyle);
+
+      // Fix fraction bars: html2canvas misrenders border-based mjx-line elements.
+      // Directly patch each element's inline style so html2canvas sees background, not border.
+      const fracLines = element.querySelectorAll('mjx-line');
+      const savedStyles = [];
+      fracLines.forEach(el => {
+        const cs = getComputedStyle(el);
+        savedStyles.push(el.getAttribute('style') || '');
+        const color = cs.borderTopColor || cs.color || 'white';
+        const width = cs.borderTopWidth || '1px';
+        el.style.borderTopStyle = 'none';
+        el.style.height = width;
+        el.style.background = color;
+        el.style.display = 'block';
+      });
 
       // Yield to let React render the status update
       await new Promise(r => setTimeout(r, 50));
@@ -189,6 +200,11 @@ export default function SolverPage({ nodes, members, methodName, solverResults, 
       });
 
       clearInterval(fakeTimer);
+
+      // Restore original styles
+      fracLines.forEach((el, i) => {
+        el.setAttribute('style', savedStyles[i]);
+      });
       document.head.removeChild(pdfFixStyle);
 
       setPdfStatus('building');
