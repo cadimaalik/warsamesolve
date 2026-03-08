@@ -162,18 +162,36 @@ export default function SolverPage({ nodes, members, methodName, solverResults, 
     try {
       const element = bodyRef.current;
 
-      // Inject style to hide MathJax accessibility duplicate and fix
-      // fraction lines for html2canvas (which misrenders border-based lines)
+      // Hide MathJax accessibility duplicates
       const pdfFixStyle = document.createElement('style');
       pdfFixStyle.setAttribute('data-pdf-fix', '');
-      pdfFixStyle.textContent = [
-        'mjx-assistive-mml{display:none!important}',
-        'mjx-line{border-top-style:none!important;height:1px!important;background:currentColor!important}',
-      ].join('\n');
+      pdfFixStyle.textContent = 'mjx-assistive-mml{display:none!important}';
       document.head.appendChild(pdfFixStyle);
+
+      // Fix fraction bars: html2canvas misrenders border-based mjx-line elements.
+      // Directly patch each element's inline style so html2canvas sees background, not border.
+      const fracLines = element.querySelectorAll('mjx-line');
+      const savedStyles = [];
+      fracLines.forEach(el => {
+        const cs = getComputedStyle(el);
+        savedStyles.push(el.getAttribute('style') || '');
+        const color = cs.borderTopColor || cs.color || 'white';
+        const width = cs.borderTopWidth || '1px';
+        el.style.borderTopStyle = 'none';
+        el.style.height = width;
+        el.style.background = color;
+        el.style.display = 'block';
+      });
 
       // Yield to let React render the status update
       await new Promise(r => setTimeout(r, 50));
+
+      // Fake progress during html2canvas (which provides no callback)
+      let fakePct = 0;
+      const fakeTimer = setInterval(() => {
+        fakePct = Math.min(fakePct + Math.random() * 8 + 2, 55);
+        setPdfPct(Math.round(fakePct));
+      }, 300);
 
       const canvas = await html2canvas(element, {
         backgroundColor: '#111',
@@ -181,6 +199,12 @@ export default function SolverPage({ nodes, members, methodName, solverResults, 
         useCORS: true,
       });
 
+      clearInterval(fakeTimer);
+
+      // Restore original styles
+      fracLines.forEach((el, i) => {
+        el.setAttribute('style', savedStyles[i]);
+      });
       document.head.removeChild(pdfFixStyle);
 
       setPdfStatus('building');
@@ -227,8 +251,8 @@ export default function SolverPage({ nodes, members, methodName, solverResults, 
       setPdfPct(100);
       pdf.save('StructSOLVE-Solution.pdf');
 
-      // Show "Done!" briefly then reset
-      await new Promise(r => setTimeout(r, 800));
+      // Show "Done! 100%" briefly then reset
+      await new Promise(r => setTimeout(r, 1500));
     } finally {
       setPdfStatus('');
       setPdfPct(0);
@@ -287,7 +311,7 @@ export default function SolverPage({ nodes, members, methodName, solverResults, 
         >
           {pdfStatus === 'capturing' ? `Capturing… ${pdfPct}%`
             : pdfStatus === 'building' ? `Building PDF… ${pdfPct}%`
-            : pdfStatus === 'done' ? 'Done!'
+            : pdfStatus === 'done' ? 'Done! 100%'
             : '↓ Download PDF'}
         </button>
         <button className="solver-nav-btn" onClick={onEdit}>
