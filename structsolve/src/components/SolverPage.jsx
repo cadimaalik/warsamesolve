@@ -175,12 +175,20 @@ export default function SolverPage({ nodes, members, methodName, solverResults, 
       // Yield to let React render the status update
       await new Promise(r => setTimeout(r, 50));
 
+      // Fake progress during html2canvas (which provides no callback)
+      let fakePct = 0;
+      const fakeTimer = setInterval(() => {
+        fakePct = Math.min(fakePct + Math.random() * 8 + 2, 55);
+        setPdfPct(Math.round(fakePct));
+      }, 300);
+
       const canvas = await html2canvas(element, {
         backgroundColor: '#111',
         scale: 2,
         useCORS: true,
       });
 
+      clearInterval(fakeTimer);
       document.head.removeChild(pdfFixStyle);
 
       setPdfStatus('building');
@@ -227,8 +235,8 @@ export default function SolverPage({ nodes, members, methodName, solverResults, 
       setPdfPct(100);
       pdf.save('StructSOLVE-Solution.pdf');
 
-      // Show "Done!" briefly then reset
-      await new Promise(r => setTimeout(r, 800));
+      // Show "Done! 100%" briefly then reset
+      await new Promise(r => setTimeout(r, 1500));
     } finally {
       setPdfStatus('');
       setPdfPct(0);
@@ -287,7 +295,7 @@ export default function SolverPage({ nodes, members, methodName, solverResults, 
         >
           {pdfStatus === 'capturing' ? `Capturing… ${pdfPct}%`
             : pdfStatus === 'building' ? `Building PDF… ${pdfPct}%`
-            : pdfStatus === 'done' ? 'Done!'
+            : pdfStatus === 'done' ? 'Done! 100%'
             : '↓ Download PDF'}
         </button>
         <button className="solver-nav-btn" onClick={onEdit}>

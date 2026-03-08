@@ -90,7 +90,7 @@ function geoFracStr(component, L) {
   const abs = Math.abs(component);
   if (abs < 1e-10) return '0';
   if (Math.abs(abs - L) < 1e-6) return '1';
-  return `\\frac{${fmt(abs)}}{${fmt(L)}}`;
+  return fmt(abs / L);
 }
 
 // ── Sub-structure partition helpers (pure truss >3 unknowns) ──────
