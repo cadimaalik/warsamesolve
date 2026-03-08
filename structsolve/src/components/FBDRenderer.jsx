@@ -657,7 +657,16 @@ export default function FBDRenderer({
       {visibleNodes.map(n => {
         if (!n.support) return null;
         const { x: sx, y: sy } = toSVG(n.x, n.y, t);
-        const angle = getSupportAngle(n.id, nodes, members, n.support);
+        const rawAngle = getSupportAngle(n.id, nodes, members, n.support);
+        // Constrain roller orientations so they don't flip direction
+        let angle = rawAngle;
+        if (n.support === 'roller-h' || n.support === 'guide-h') {
+          // Horizontal surface: only 0° (below) or 180° (above)
+          angle = (rawAngle === 180 || rawAngle === -180) ? 180 : 0;
+        } else if (n.support === 'roller-v' || n.support === 'guide-v') {
+          // Vertical surface: only 90° (right) or -90°/270° (left)
+          angle = (rawAngle === -90 || rawAngle === 270) ? -90 : 90;
+        }
         return (
           <SupportSVG key={`sup-${n.id}`} type={n.support} sx={sx} sy={sy}
             angle={angle} color={COLORS.support} />

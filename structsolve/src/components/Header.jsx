@@ -45,13 +45,13 @@ export default function Header({ onClear, onUndo, canUndo, nodeCount, axialMode,
       fontFamily: FONTS.mono, flexShrink: 0,
     }}>
       {/* Logo */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
         <img src="/structsolve/logo.svg" alt="StructSOLVE" style={{ height: 24 }} />
         <span style={{ fontSize: 20, fontWeight: 700 }}>
           <span style={{ color: '#fff' }}>Struct</span>
           <span style={{ color: COLORS.green }}>SOLVE</span>
         </span>
-      </div>
+      </a>
 
       <span style={{ flex: 1 }} />
 
