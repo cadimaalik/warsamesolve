@@ -189,3 +189,10 @@ mjx-math {
   max-width: 100% !important;
   overflow-wrap: break-word !important;
 }
+
+/* Fraction bars — ensure visible on dark backgrounds */
+mjx-line {
+  border-top-color: currentColor !important;
+  border-top-width: 0.08em !important;
+  border-top-style: solid !important;
+}
