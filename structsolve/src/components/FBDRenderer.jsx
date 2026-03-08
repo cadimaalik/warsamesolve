@@ -153,12 +153,12 @@ function SupportSVG({ type, sx, sy, angle, color }) {
       );
     }
     case 'fixed': {
-      // Hatched wall plate
+      // Horizontal ground line with hatching below (matches main canvas)
       return (
         <g transform={T} stroke={color} strokeWidth={1.5} fill="none">
-          <line x1="0" y1="-18" x2="0" y2="18" strokeWidth={2.5} />
-          {[-14, -8, -2, 4, 10].map(oy => (
-            <line key={oy} x1="0" y1={oy} x2="8" y2={oy + 6} strokeWidth={1} />
+          <line x1="-16" y1="0" x2="16" y2="0" strokeWidth={2.5} />
+          {[-12, -6, 0, 6, 12].map(ox => (
+            <line key={ox} x1={ox} y1="0" x2={ox - 5} y2="8" strokeWidth={1} />
           ))}
         </g>
       );
@@ -657,7 +657,16 @@ export default function FBDRenderer({
       {visibleNodes.map(n => {
         if (!n.support) return null;
         const { x: sx, y: sy } = toSVG(n.x, n.y, t);
-        const angle = getSupportAngle(n.id, nodes, members, n.support);
+        const rawAngle = getSupportAngle(n.id, nodes, members, n.support);
+        // Constrain roller orientations so they don't flip direction
+        let angle = rawAngle;
+        if (n.support === 'roller-h' || n.support === 'guide-h') {
+          // Horizontal surface: only 0° (below) or 180° (above)
+          angle = (rawAngle === 180 || rawAngle === -180) ? 180 : 0;
+        } else if (n.support === 'roller-v' || n.support === 'guide-v') {
+          // Vertical surface: only 90° (right) or -90°/270° (left)
+          angle = (rawAngle === -90 || rawAngle === 270) ? -90 : 90;
+        }
         return (
           <SupportSVG key={`sup-${n.id}`} type={n.support} sx={sx} sy={sy}
             angle={angle} color={COLORS.support} />

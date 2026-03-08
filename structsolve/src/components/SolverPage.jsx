@@ -152,22 +152,28 @@ function TrussJointGrid({ jointSteps }) {
 // ── Main SolverPage ───────────────────────────────────────────────
 export default function SolverPage({ nodes, members, methodName, solverResults, onBack, onEdit }) {
   const bodyRef = useRef(null);
-  const [generating, setGenerating] = useState(false);
+  const [pdfStatus, setPdfStatus] = useState('');  // '', 'capturing', 'building', 'done'
+  const [pdfPct, setPdfPct] = useState(0);
+  const generating = pdfStatus !== '';
 
   async function downloadPDF() {
-    setGenerating(true);
+    setPdfStatus('capturing');
+    setPdfPct(0);
     try {
       const element = bodyRef.current;
 
-      // Inject style on LIVE document before html2canvas clones it.
-      // MathJax CHTML renders a hidden <mjx-assistive-mml> containing a
-      // full MathML duplicate, clipped via the deprecated CSS `clip`
-      // property. html2canvas ignores `clip`, rendering the duplicate
-      // visibly and causing doubled text.
+      // Inject style to hide MathJax accessibility duplicate and fix
+      // fraction lines for html2canvas (which misrenders border-based lines)
       const pdfFixStyle = document.createElement('style');
       pdfFixStyle.setAttribute('data-pdf-fix', '');
-      pdfFixStyle.textContent = 'mjx-assistive-mml{display:none!important}';
+      pdfFixStyle.textContent = [
+        'mjx-assistive-mml{display:none!important}',
+        'mjx-line{border-top-style:none!important;height:1px!important;background:currentColor!important}',
+      ].join('\n');
       document.head.appendChild(pdfFixStyle);
+
+      // Yield to let React render the status update
+      await new Promise(r => setTimeout(r, 50));
 
       const canvas = await html2canvas(element, {
         backgroundColor: '#111',
@@ -177,7 +183,10 @@ export default function SolverPage({ nodes, members, methodName, solverResults, 
 
       document.head.removeChild(pdfFixStyle);
 
-      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      setPdfStatus('building');
+      setPdfPct(60);
+      await new Promise(r => setTimeout(r, 30));
+
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pageWidth = 210;
       const pageHeight = 297;
@@ -189,15 +198,14 @@ export default function SolverPage({ nodes, members, methodName, solverResults, 
       const imgHeight = canvas.height;
       const ratio = contentWidth / imgWidth;
 
-      // Height of one page-worth of content in source-canvas pixels
       const sliceHeight = Math.floor(contentHeight / ratio);
       let srcY = 0;
       let page = 0;
+      const totalPages = Math.ceil(imgHeight / sliceHeight);
 
       while (srcY < imgHeight) {
         const h = Math.min(sliceHeight, imgHeight - srcY);
 
-        // Slice this chunk from the source canvas
         const pageCanvas = document.createElement('canvas');
         pageCanvas.width = imgWidth;
         pageCanvas.height = h;
@@ -212,11 +220,18 @@ export default function SolverPage({ nodes, members, methodName, solverResults, 
 
         srcY += h;
         page++;
+        setPdfPct(60 + Math.round((page / totalPages) * 35));
       }
 
+      setPdfStatus('done');
+      setPdfPct(100);
       pdf.save('StructSOLVE-Solution.pdf');
+
+      // Show "Done!" briefly then reset
+      await new Promise(r => setTimeout(r, 800));
     } finally {
-      setGenerating(false);
+      setPdfStatus('');
+      setPdfPct(0);
     }
   }
 
@@ -268,9 +283,12 @@ export default function SolverPage({ nodes, members, methodName, solverResults, 
           className="solver-nav-btn"
           onClick={downloadPDF}
           disabled={generating}
-          style={{ background: generating ? '#1a3a1a' : '#16361c', color: '#4ade80' }}
+          style={{ background: generating ? '#1a3a1a' : '#16361c', color: '#4ade80', minWidth: 150 }}
         >
-          {generating ? 'Generating...' : '↓ Download PDF'}
+          {pdfStatus === 'capturing' ? `Capturing… ${pdfPct}%`
+            : pdfStatus === 'building' ? `Building PDF… ${pdfPct}%`
+            : pdfStatus === 'done' ? 'Done!'
+            : '↓ Download PDF'}
         </button>
         <button className="solver-nav-btn" onClick={onEdit}>
           &#9998; Edit Structure
