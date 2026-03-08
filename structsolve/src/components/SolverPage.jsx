@@ -188,21 +188,30 @@ export default function SolverPage({ nodes, members, methodName, solverResults, 
       const imgWidth = canvas.width;
       const imgHeight = canvas.height;
       const ratio = contentWidth / imgWidth;
-      const scaledHeight = imgHeight * ratio;
 
-      let heightLeft = scaledHeight;
-      let position = 0;
+      // Height of one page-worth of content in source-canvas pixels
+      const sliceHeight = Math.floor(contentHeight / ratio);
+      let srcY = 0;
+      let page = 0;
 
-      // First page
-      pdf.addImage(imgData, 'JPEG', margin, margin, contentWidth, scaledHeight);
-      heightLeft -= contentHeight;
+      while (srcY < imgHeight) {
+        const h = Math.min(sliceHeight, imgHeight - srcY);
 
-      // Additional pages
-      while (heightLeft > 0) {
-        position -= contentHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'JPEG', margin, margin + position, contentWidth, scaledHeight);
-        heightLeft -= contentHeight;
+        // Slice this chunk from the source canvas
+        const pageCanvas = document.createElement('canvas');
+        pageCanvas.width = imgWidth;
+        pageCanvas.height = h;
+        const ctx = pageCanvas.getContext('2d');
+        ctx.drawImage(canvas, 0, srcY, imgWidth, h, 0, 0, imgWidth, h);
+
+        const pageImg = pageCanvas.toDataURL('image/jpeg', 0.95);
+        const scaledH = h * ratio;
+
+        if (page > 0) pdf.addPage();
+        pdf.addImage(pageImg, 'JPEG', margin, margin, contentWidth, scaledH);
+
+        srcY += h;
+        page++;
       }
 
       pdf.save('StructSOLVE-Solution.pdf');
@@ -255,11 +264,6 @@ export default function SolverPage({ nodes, members, methodName, solverResults, 
         <button className="solver-nav-btn" onClick={onBack}>
           &larr; Back to Methods
         </button>
-        <a href="/" style={{ textDecoration: 'none' }}>
-          <span style={{ color: '#4ade80', fontWeight: 700, fontSize: 15, fontFamily: FONTS.mono }}>
-            StructSOLVE
-          </span>
-        </a>
         <button
           className="solver-nav-btn"
           onClick={downloadPDF}
