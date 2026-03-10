@@ -191,6 +191,18 @@ mjx-math {
 }
 
 /* Fraction bars — ensure visible on dark backgrounds */
-mjx-frac > mjx-line {
+mjx-frac mjx-line {
+  border-color: currentColor !important;
+}
+mjx-frac::before,
+mjx-frac::after {
+  border-color: currentColor !important;
+}
+mjx-den::before,
+mjx-num::after {
+  border-color: currentColor !important;
+}
+mjx-denom::before,
+mjx-num::after {
   border-color: currentColor !important;
 }
