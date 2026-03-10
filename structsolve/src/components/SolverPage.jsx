@@ -169,18 +169,30 @@ export default function SolverPage({ nodes, members, methodName, solverResults, 
       document.head.appendChild(pdfFixStyle);
 
       // Fix fraction bars: html2canvas misrenders border-based mjx-line elements.
-      // Directly patch each element's inline style so html2canvas sees background, not border.
+      // Convert border to a visible background block with explicit spacing so
+      // html2canvas places the bar between numerator and denominator.
       const fracLines = element.querySelectorAll('mjx-line');
       const savedStyles = [];
       fracLines.forEach(el => {
         const cs = getComputedStyle(el);
-        savedStyles.push(el.getAttribute('style') || '');
+        const numEl = el.previousElementSibling;
+        const denEl = el.nextElementSibling;
+        savedStyles.push({
+          line: el.getAttribute('style') || '',
+          num: numEl ? numEl.getAttribute('style') || '' : '',
+          den: denEl ? denEl.getAttribute('style') || '' : '',
+        });
         const color = cs.borderTopColor || cs.color || 'white';
-        const width = cs.borderTopWidth || '1px';
+        const width = parseFloat(cs.borderTopWidth) || 1;
         el.style.borderTopStyle = 'none';
-        el.style.height = width;
+        el.style.height = Math.max(width, 1.5) + 'px';
         el.style.background = color;
         el.style.display = 'block';
+        el.style.marginTop = '3px';
+        el.style.marginBottom = '3px';
+        // Push numerator and denominator away from the bar
+        if (numEl) numEl.style.paddingBottom = '2px';
+        if (denEl) denEl.style.paddingTop = '2px';
       });
 
       // Yield to let React render the status update
@@ -203,7 +215,11 @@ export default function SolverPage({ nodes, members, methodName, solverResults, 
 
       // Restore original styles
       fracLines.forEach((el, i) => {
-        el.setAttribute('style', savedStyles[i]);
+        el.setAttribute('style', savedStyles[i].line);
+        const numEl = el.previousElementSibling;
+        const denEl = el.nextElementSibling;
+        if (numEl) numEl.setAttribute('style', savedStyles[i].num);
+        if (denEl) denEl.setAttribute('style', savedStyles[i].den);
       });
       document.head.removeChild(pdfFixStyle);
 
