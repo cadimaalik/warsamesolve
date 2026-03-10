@@ -90,7 +90,7 @@ function geoFracStr(component, L) {
   const abs = Math.abs(component);
   if (abs < 1e-10) return '0';
   if (Math.abs(abs - L) < 1e-6) return '1';
-  return `\\cfrac{${fmt(abs)}}{${fmt(L)}}`;
+  return `\\dfrac{${fmt(abs)}}{${fmt(L)}}`;
 }
 
 // ── Sub-structure partition helpers (pure truss >3 unknowns) ──────
@@ -699,7 +699,7 @@ function buildEquationLatex(eq, unknowns, reactions, solvedSoFar, knownForces) {
     if (unsolvedIndices.length === 1) {
       const coeff = eq.coefficients[i];
       if (Math.abs(Math.abs(coeff) - 1) > 1e-6) {
-        lines.push(`${label} = \\cfrac{${fmt(adjustedRhs)}}{${fmt(coeff)}} = ${fmt(value)} ${unit} \\; ${dir}`);
+        lines.push(`${label} = \\dfrac{${fmt(adjustedRhs)}}{${fmt(coeff)}} = ${fmt(value)} ${unit} \\; ${dir}`);
       } else {
         lines.push(`${label} = ${fmt(value)} ${unit} \\; ${dir}`);
       }
