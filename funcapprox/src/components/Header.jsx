@@ -24,7 +24,7 @@ export default function Header() {
             letterSpacing: '0.05em',
           }}
         >
-          Formula252
+          metuCE
         </a>
         <span style={{ color: COLORS.textDim }}>/</span>
         <h1 style={{

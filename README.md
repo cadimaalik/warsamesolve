@@ -1,22 +1,22 @@
-# Formula252
+# metuCE
 
-Formula252 is a free civil engineering calculator site. It combines static course pages with several independent React/Vite calculators that show step-by-step solution methodology.
+metuCE is a free civil engineering calculator site. It combines static course pages with several independent React/Vite calculators that show step-by-step solution methodology.
 
 ## Repository Layout
 
 ```text
 .
-├── index.html              # Landing page
-├── contact.html            # Contact page
-├── contribution.html       # Contribution guide page
-├── hydro/                  # Static Hydromechanics calculators
-├── numerics/               # Numerical Methods hub page
-├── structsolve/            # React/Vite structural analysis app
-├── rootfinder/             # React/Vite root-finding app
-├── condnumber/             # React/Vite condition-number app
-├── funcapprox/             # React/Vite interpolation/regression app
-├── build.sh                # Builds all apps and assembles dist/
-└── vercel.json             # Vercel deployment config
+|-- index.html              # Landing page
+|-- contact.html            # Contact page
+|-- contribution.html       # Contribution guide page
+|-- hydro/                  # Static Hydromechanics calculators
+|-- numerics/               # Numerical Methods hub page
+|-- structsolve/            # React/Vite structural analysis app
+|-- rootfinder/             # React/Vite root-finding app
+|-- condnumber/             # React/Vite condition-number app
+|-- funcapprox/             # React/Vite interpolation/regression app
+|-- build.sh                # Builds all apps and assembles dist/
+`-- vercel.json             # Vercel deployment config
 ```
 
 ## Local Development
