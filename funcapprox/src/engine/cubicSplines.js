@@ -1,4 +1,4 @@
-import { solveLinearSystem, fmt } from './matrix';
+import { solveLinearSystem, fmt } from './matrix.js';
 
 export function cubicSplineInterpolation(points, xEval = null) {
   const n = points.length;

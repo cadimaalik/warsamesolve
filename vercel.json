@@ -1,0 +1,17 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "cleanUrls": false,
+  "trailingSlash": false,
+  "rewrites": [
+    { "source": "/structsolve", "destination": "/structsolve/index.html" },
+    { "source": "/structsolve/:path*", "destination": "/structsolve/index.html" },
+    { "source": "/rootfinder", "destination": "/rootfinder/index.html" },
+    { "source": "/rootfinder/:path*", "destination": "/rootfinder/index.html" },
+    { "source": "/condnumber", "destination": "/condnumber/index.html" },
+    { "source": "/condnumber/:path*", "destination": "/condnumber/index.html" },
+    { "source": "/funcapprox", "destination": "/funcapprox/index.html" },
+    { "source": "/funcapprox/:path*", "destination": "/funcapprox/index.html" }
+  ]
+}

@@ -2,3 +2,10 @@ dist/
 node_modules/
 structsolve/node_modules/
 structsolve/dist/
+rootfinder/node_modules/
+rootfinder/dist/
+condnumber/node_modules/
+condnumber/dist/
+funcapprox/node_modules/
+funcapprox/dist/
+.vercel/

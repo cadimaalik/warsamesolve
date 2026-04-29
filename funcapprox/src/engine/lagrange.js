@@ -1,4 +1,4 @@
-import { fmt } from './matrix';
+import { fmt } from './matrix.js';
 
 export function lagrangeInterpolation(points, xEval = null) {
   const n = points.length;

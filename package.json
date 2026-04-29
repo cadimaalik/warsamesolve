@@ -1,0 +1,17 @@
+{
+  "name": "formula252",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node tests/engines.test.mjs",
+    "dev:structsolve": "npm --prefix structsolve run dev",
+    "dev:rootfinder": "npm --prefix rootfinder run dev",
+    "dev:condnumber": "npm --prefix condnumber run dev",
+    "dev:funcapprox": "npm --prefix funcapprox run dev"
+  },
+  "engines": {
+    "node": "20.x"
+  }
+}

@@ -1,4 +1,4 @@
-import { solveLinearSystem, transpose, matMul, fmt } from './matrix';
+import { solveLinearSystem, transpose, matMul, fmt } from './matrix.js';
 
 // ─── Linear Regression ──────────────────────────────────────────────
 
