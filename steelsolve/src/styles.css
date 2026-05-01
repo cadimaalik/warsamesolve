@@ -330,12 +330,44 @@ p {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.72rem;
   padding: 7px 9px;
+  accent-color: var(--primary);
+  color-scheme: dark;
+}
+
+.descriptor-row select {
+  background:
+    linear-gradient(45deg, transparent 50%, var(--primary) 50%) calc(100% - 15px) 50% / 6px 6px no-repeat,
+    linear-gradient(135deg, var(--primary) 50%, transparent 50%) calc(100% - 10px) 50% / 6px 6px no-repeat,
+    #0d0d0d;
+  padding-right: 28px;
+}
+
+.descriptor-row select:hover,
+.descriptor-row input:hover {
+  border-color: rgba(74, 222, 128, 0.72);
 }
 
 .descriptor-row select:focus,
 .descriptor-row input:focus {
   border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.16);
   outline: none;
+}
+
+.descriptor-row select option {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.descriptor-row select option:checked {
+  background: var(--primary);
+  color: var(--bg);
+}
+
+.descriptor-row select option:hover,
+.descriptor-row select option:focus {
+  background: var(--primary-light);
+  color: var(--bg);
 }
 
 .control-stack {

@@ -4,11 +4,7 @@ export default function ConnectionInputPanel({ steelProblem }) {
   const { problem, updateField } = steelProblem
 
   if (problem.member.memberType === 'splice-plate') {
-    return (
-      <DescriptorGroup title="Connection">
-        <p className="muted-note">Splice plate members do not use a web/flange selection.</p>
-      </DescriptorGroup>
-    )
+    return null
   }
 
   const isDouble = problem.gusset.arrangement === 'double'
