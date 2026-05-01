@@ -99,6 +99,27 @@ export default function useSteelProblem() {
     }))
   }, [])
 
+  const updateSectionFamily = useCallback((sectionFamily) => {
+    setProblem((current) => ({
+      ...current,
+      member: {
+        ...current.member,
+        sectionFamily,
+        sectionDesignation: '',
+      },
+    }))
+  }, [])
+
+  const updateSectionDesignation = useCallback((sectionDesignation) => {
+    setProblem((current) => ({
+      ...current,
+      member: {
+        ...current.member,
+        sectionDesignation,
+      },
+    }))
+  }, [])
+
   const updateMaterialGrade = useCallback((grade) => {
     setProblem((current) => ({
       ...current,
@@ -172,6 +193,8 @@ export default function useSteelProblem() {
     problem,
     updateField,
     updateMemberType,
+    updateSectionFamily,
+    updateSectionDesignation,
     updateMaterialGrade,
     updateGussetArrangement,
     updateColumnCount,

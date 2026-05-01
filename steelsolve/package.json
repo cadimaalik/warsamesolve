@@ -5,6 +5,8 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "vite",
+    "build:sections": "node scripts/build-section-data.mjs",
+    "prebuild": "npm run build:sections",
     "build": "vite build",
     "preview": "vite preview"
   },

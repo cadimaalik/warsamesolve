@@ -40,8 +40,13 @@ export function validateProblem(problem) {
     }
   }
 
-  if (problem.member.memberType === 'rolled-section' && !problem.member.sectionFamily) {
-    issues.push('Section family is required for rolled sections.')
+  if (problem.member.memberType === 'rolled-section') {
+    if (!problem.member.sectionFamily) {
+      issues.push('Section family is required for rolled sections.')
+    }
+    if (!problem.member.sectionDesignation) {
+      issues.push('Section designation is required for rolled sections.')
+    }
   }
 
   if (problem.member.memberType === 'splice-plate') {

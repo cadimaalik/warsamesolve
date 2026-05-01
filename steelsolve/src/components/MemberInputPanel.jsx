@@ -1,28 +1,26 @@
 import DescriptorGroup, { FieldRow, StaticRow } from './DescriptorGroup'
+import SectionPicker from './SectionPicker'
+import SectionProperties from './SectionProperties'
+import { getSectionByDesignation } from '../utils/sectionLookup'
 
+const materialGrades = ['S235', 'S275', 'S355', 'custom']
 const memberTypes = [
   ['rolled-section', 'Rolled section'],
   ['splice-plate', 'Splice plate'],
   ['built-up', 'Built-up member'],
 ]
 
-const sectionFamilies = [
-  ['IPN', 'IPN'],
-  ['IPE', 'IPE'],
-  ['HEA', 'HEA'],
-  ['HEB', 'HEB'],
-  ['HEM', 'HEM'],
-  ['HD', 'HD'],
-  ['UPN', 'UPN'],
-  ['equal-angle', 'Equal angle'],
-  ['unequal-angle', 'Unequal angle'],
-]
-
-const materialGrades = ['S235', 'S275', 'S355', 'custom']
-
 export default function MemberInputPanel({ steelProblem }) {
-  const { problem, updateField, updateMemberType, updateMaterialGrade } = steelProblem
+  const {
+    problem,
+    updateField,
+    updateMemberType,
+    updateSectionFamily,
+    updateSectionDesignation,
+    updateMaterialGrade,
+  } = steelProblem
   const { member } = problem
+  const selectedSection = getSectionByDesignation(member.sectionFamily, member.sectionDesignation)
 
   return (
     <DescriptorGroup title="Member">
@@ -41,23 +39,12 @@ export default function MemberInputPanel({ steelProblem }) {
 
       {member.memberType === 'rolled-section' ? (
         <>
-          <FieldRow label="Section family">
-            <select
-              className={!member.sectionFamily ? 'select-empty' : ''}
-              value={member.sectionFamily}
-              onChange={(event) => updateField(['member', 'sectionFamily'], event.target.value)}
-            >
-              <option value="" disabled>Select section family</option>
-              {sectionFamilies.map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
-            </select>
-          </FieldRow>
-          <FieldRow label="Section designation">
-            <select value={member.sectionDesignation} disabled>
-              <option value="">Section table pending</option>
-            </select>
-          </FieldRow>
+          <SectionPicker
+            member={member}
+            onFamilyChange={updateSectionFamily}
+            onDesignationChange={updateSectionDesignation}
+          />
+          <SectionProperties section={selectedSection} />
         </>
       ) : null}
 
