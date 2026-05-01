@@ -131,6 +131,11 @@
             margin-bottom: calc(var(--grid) * 2);
         }
 
+        .available-badge {
+            color: var(--primary);
+            border-color: rgba(74, 222, 128, 0.65);
+        }
+
         .card-title {
             font-family: 'JetBrains Mono', monospace;
             font-size: 1.125rem;
@@ -232,7 +237,7 @@
 
             <div class="calculator-grid">
                 <article class="calc-card">
-                    <div class="coming-soon-badge">Coming Soon</div>
+                    <div class="coming-soon-badge available-badge">Available</div>
                     <div class="card-title">Tension Members</div>
                     <p class="card-description">Net area • Staggered holes • Effective net area • Shear lag</p>
                     <ul class="card-features">
@@ -240,7 +245,7 @@
                         <li>Net section rupture</li>
                         <li>Block shear</li>
                     </ul>
-                    <button class="calc-button disabled" disabled>Launch Calculator →</button>
+                    <a href="../steelsolve/index.html" class="calc-button">Launch Calculator →</a>
                 </article>
 
                 <article class="calc-card">
