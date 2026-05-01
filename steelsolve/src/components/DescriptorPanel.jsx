@@ -3,23 +3,38 @@ import DescriptorGroup from './DescriptorGroup'
 const descriptorGroups = [
   {
     title: 'Member',
-    text: 'Section selection will be added next.',
+    rows: [
+      { label: 'Member type', value: 'Section picker coming next' },
+      { label: 'Section', value: 'Not configured' },
+    ],
   },
   {
     title: 'Gusset Plates',
-    text: 'Mirrored end gussets will be configured here.',
+    rows: [
+      { label: 'Arrangement', value: 'Mirrored trapezoid gussets' },
+      { label: 'Plate mode', value: 'Single / double coming next' },
+    ],
   },
   {
     title: 'Connection',
-    text: 'Connected part and orientation will be configured here.',
+    rows: [
+      { label: 'Connected part', value: 'Web / flange / leg coming next' },
+      { label: 'Orientation', value: 'Front / back / top / bottom coming next' },
+    ],
   },
   {
     title: 'Bolts',
-    text: 'Bolt layout controls will be added here.',
+    rows: [
+      { label: 'Bolt diameter', value: 'M24' },
+      { label: 'Layout', type: 'input', value: '2 rows x 2 columns' },
+    ],
   },
   {
     title: 'Failure Path',
-    text: 'Straight and custom paths will be added here.',
+    rows: [
+      { label: 'Mode', value: 'Straight path' },
+      { label: 'Custom path', type: 'button', value: 'Coming next' },
+    ],
   },
 ]
 
@@ -33,9 +48,7 @@ export default function DescriptorPanel() {
 
       <div className="descriptor-list">
         {descriptorGroups.map((group) => (
-          <DescriptorGroup key={group.title} title={group.title}>
-            {group.text}
-          </DescriptorGroup>
+          <DescriptorGroup key={group.title} title={group.title} rows={group.rows} />
         ))}
       </div>
     </aside>

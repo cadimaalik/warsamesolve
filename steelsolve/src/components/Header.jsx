@@ -9,7 +9,7 @@ export default function Header() {
         </div>
       </div>
       <div className="status-pill" aria-label="Current app mode">
-        Problem description mode
+        Description mode
       </div>
     </header>
   )

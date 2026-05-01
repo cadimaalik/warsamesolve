@@ -1,24 +1,24 @@
 export default function TopViewPlaceholder() {
   return (
-    <svg viewBox="0 0 760 220" role="img" aria-labelledby="top-view-title">
+    <svg viewBox="0 0 620 180" role="img" aria-labelledby="top-view-title">
       <title id="top-view-title">Placeholder top view of a tension member with gusset plates and bolts</title>
       <defs>
-        <marker id="arrow-green" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
-          <path d="M 0 0 L 10 5 L 0 10 z" fill="#1f8f4d" />
+        <marker id="top-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+          <path d="M 0 0 L 8 4 L 0 8 z" className="svg-marker" />
         </marker>
       </defs>
-      <rect x="230" y="82" width="300" height="56" rx="4" className="svg-member" />
-      <polygon points="80,58 230,82 230,138 80,162" className="svg-gusset" />
-      <polygon points="680,58 530,82 530,138 680,162" className="svg-gusset" />
-      <line x1="90" y1="110" x2="670" y2="110" className="svg-centerline" />
-      {[150, 190, 570, 610].map((cx) => (
-        <circle key={cx} cx={cx} cy="110" r="13" className="svg-bolt" />
+      <rect x="190" y="72" width="240" height="36" className="svg-member" />
+      <polygon points="62,52 190,72 190,108 62,128" className="svg-gusset" />
+      <polygon points="558,52 430,72 430,108 558,128" className="svg-gusset" />
+      <line x1="70" y1="90" x2="550" y2="90" className="svg-centerline" />
+      {[120, 152, 468, 500].map((cx) => (
+        <circle key={cx} cx={cx} cy="90" r="8" className="svg-bolt" />
       ))}
-      <line x1="42" y1="110" x2="14" y2="110" className="svg-force" markerEnd="url(#arrow-green)" />
-      <line x1="718" y1="110" x2="746" y2="110" className="svg-force" markerEnd="url(#arrow-green)" />
-      <text x="380" y="54" textAnchor="middle" className="svg-label">axial tension member</text>
-      <text x="150" y="190" textAnchor="middle" className="svg-note">left gusset</text>
-      <text x="610" y="190" textAnchor="middle" className="svg-note">right gusset</text>
+      <line x1="46" y1="90" x2="20" y2="90" className="svg-force" markerEnd="url(#top-arrow)" />
+      <line x1="574" y1="90" x2="600" y2="90" className="svg-force" markerEnd="url(#top-arrow)" />
+      <text x="310" y="42" textAnchor="middle" className="svg-label">member axis</text>
+      <text x="138" y="150" textAnchor="middle" className="svg-note">gusset</text>
+      <text x="482" y="150" textAnchor="middle" className="svg-note">gusset</text>
     </svg>
   )
 }
