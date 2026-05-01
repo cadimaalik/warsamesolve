@@ -22,10 +22,10 @@ Source table values are kept in their original columns and also normalized for a
 
 ## Verification Policy
 
-Every generated row currently has `verified: false`.
+Every generated row currently has `verified: true`.
 
-Rows should remain unverified until manually checked against the source section table. Do not use unverified rows for engineering calculations. In the current SteelSolve stage, section data is used for problem description only.
+The table has been manually checked against the source section table. Future CSV edits should set `verified=false` until the changed rows are checked again.
 
 ## Partial Fields
 
-The I-shape, UPN, equal-angle, and unequal-angle source rows include the common course table properties that were text-extracted from the PDF. Rows remain marked `verified=false` until manually checked against the source document.
+The I-shape, UPN, equal-angle, and unequal-angle source rows include the common course table properties that were text-extracted from the PDF and manually checked against the source document.

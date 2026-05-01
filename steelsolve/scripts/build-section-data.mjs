@@ -187,7 +187,7 @@ const database = {
     library: 'European/METU',
     units: 'mm-based normalized properties',
     generatedAt,
-    verifiedPolicy: 'Rows remain unverified until manually checked.',
+    verifiedPolicy: 'verified=true indicates the row has been manually checked against the source table.',
   },
   families,
 }

@@ -2,8 +2,8 @@
   "meta": {
     "library": "European/METU",
     "units": "mm-based normalized properties",
-    "generatedAt": "2026-05-01T17:42:17.844Z",
-    "verifiedPolicy": "Rows remain unverified until manually checked."
+    "generatedAt": "2026-05-01T17:48:22.325Z",
+    "verifiedPolicy": "verified=true indicates the row has been manually checked against the source table."
   },
   "families": {
     "equal-angle": {
@@ -64,7 +64,7 @@
             "rv_cm": 0.38,
             "Ixy_cm4": -0.226
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -120,7 +120,7 @@
             "rv_cm": 0.481,
             "Ixy_cm4": -0.467
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -176,7 +176,7 @@
             "rv_cm": 0.479,
             "Ixy_cm4": -0.587
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -232,7 +232,7 @@
             "rv_cm": 0.578,
             "Ixy_cm4": -0.825
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -288,7 +288,7 @@
             "rv_cm": 0.575,
             "Ixy_cm4": -1.05
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -344,7 +344,7 @@
             "rv_cm": 0.68,
             "Ixy_cm4": -1.73
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -400,7 +400,7 @@
             "rv_cm": 0.67,
             "Ixy_cm4": -2.08
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -456,7 +456,7 @@
             "rv_cm": 0.77,
             "Ixy_cm4": -2.63
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -512,7 +512,7 @@
             "rv_cm": 0.77,
             "Ixy_cm4": -3.18
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -568,7 +568,7 @@
             "rv_cm": 0.77,
             "Ixy_cm4": -3.67
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -624,7 +624,7 @@
             "rv_cm": 0.88,
             "Ixy_cm4": -2.88
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -680,7 +680,7 @@
             "rv_cm": 0.87,
             "Ixy_cm4": -3.78
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -736,7 +736,7 @@
             "rv_cm": 0.87,
             "Ixy_cm4": -4.2
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -792,7 +792,7 @@
             "rv_cm": 0.87,
             "Ixy_cm4": -4.6
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -848,7 +848,7 @@
             "rv_cm": 0.86,
             "Ixy_cm4": -5.36
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -904,7 +904,7 @@
             "rv_cm": 0.86,
             "Ixy_cm4": -6.04
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -960,7 +960,7 @@
             "rv_cm": 0.97,
             "Ixy_cm4": -5.28
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -1016,7 +1016,7 @@
             "rv_cm": 0.97,
             "Ixy_cm4": -6.45
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -1072,7 +1072,7 @@
             "rv_cm": 0.97,
             "Ixy_cm4": -7.53
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -1128,7 +1128,7 @@
             "rv_cm": 0.96,
             "Ixy_cm4": -8.52
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -1184,7 +1184,7 @@
             "rv_cm": 0.96,
             "Ixy_cm4": -9.43
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -1240,7 +1240,7 @@
             "rv_cm": 0.96,
             "Ixy_cm4": -10.25
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -1296,7 +1296,7 @@
             "rv_cm": 1.07,
             "Ixy_cm4": -7.05
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -1352,7 +1352,7 @@
             "rv_cm": 1.07,
             "Ixy_cm4": -8.66
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -1408,7 +1408,7 @@
             "rv_cm": 1.06,
             "Ixy_cm4": -10.16
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -1464,7 +1464,7 @@
             "rv_cm": 1.18,
             "Ixy_cm4": -9.26
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -1520,7 +1520,7 @@
             "rv_cm": 1.17,
             "Ixy_cm4": -11.4
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -1576,7 +1576,7 @@
             "rv_cm": 1.17,
             "Ixy_cm4": -13.41
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -1632,7 +1632,7 @@
             "rv_cm": 1.16,
             "Ixy_cm4": -15.23
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -1688,7 +1688,7 @@
             "rv_cm": 1.16,
             "Ixy_cm4": -17.04
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -1744,7 +1744,7 @@
             "rv_cm": 1.15,
             "Ixy_cm4": -20.17
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -1800,7 +1800,7 @@
             "rv_cm": 1.23,
             "Ixy_cm4": -13.18
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -1856,7 +1856,7 @@
             "rv_cm": 1.22,
             "Ixy_cm4": -15.55
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -1912,7 +1912,7 @@
             "rv_cm": 1.22,
             "Ixy_cm4": -16.68
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -1968,7 +1968,7 @@
             "rv_cm": 1.27,
             "Ixy_cm4": -11.77
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -2024,7 +2024,7 @@
             "rv_cm": 1.27,
             "Ixy_cm4": -14.55
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -2080,7 +2080,7 @@
             "rv_cm": 1.26,
             "Ixy_cm4": -17.17
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -2136,7 +2136,7 @@
             "rv_cm": 1.26,
             "Ixy_cm4": -19.65
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -2192,7 +2192,7 @@
             "rv_cm": 1.26,
             "Ixy_cm4": -21.97
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -2248,7 +2248,7 @@
             "rv_cm": 1.25,
             "Ixy_cm4": -24.15
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -2304,7 +2304,7 @@
             "rv_cm": 1.25,
             "Ixy_cm4": -26.17
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -2360,7 +2360,7 @@
             "rv_cm": 1.25,
             "Ixy_cm4": -28.06
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -2416,7 +2416,7 @@
             "rv_cm": 1.37,
             "Ixy_cm4": -18.37
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -2472,7 +2472,7 @@
             "rv_cm": 1.37,
             "Ixy_cm4": -21.72
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -2528,7 +2528,7 @@
             "rv_cm": 1.36,
             "Ixy_cm4": -24.89
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -2584,7 +2584,7 @@
             "rv_cm": 1.35,
             "Ixy_cm4": -27.75
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -2640,7 +2640,7 @@
             "rv_cm": 1.35,
             "Ixy_cm4": -30.71
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -2696,7 +2696,7 @@
             "rv_cm": 1.35,
             "Ixy_cm4": -33.36
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -2752,7 +2752,7 @@
             "rv_cm": 1.48,
             "Ixy_cm4": -18.42
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -2808,7 +2808,7 @@
             "rv_cm": 1.47,
             "Ixy_cm4": -22.82
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -2864,7 +2864,7 @@
             "rv_cm": 1.47,
             "Ixy_cm4": -27.01
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -2920,7 +2920,7 @@
             "rv_cm": 1.46,
             "Ixy_cm4": -30.99
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -2976,7 +2976,7 @@
             "rv_cm": 1.46,
             "Ixy_cm4": -34.78
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -3032,7 +3032,7 @@
             "rv_cm": 1.45,
             "Ixy_cm4": -38.36
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -3088,7 +3088,7 @@
             "rv_cm": 1.45,
             "Ixy_cm4": -41.75
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -3144,7 +3144,7 @@
             "rv_cm": 1.57,
             "Ixy_cm4": -27.69
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -3200,7 +3200,7 @@
             "rv_cm": 1.57,
             "Ixy_cm4": -32.87
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -3256,7 +3256,7 @@
             "rv_cm": 1.56,
             "Ixy_cm4": -37.81
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -3312,7 +3312,7 @@
             "rv_cm": 1.56,
             "Ixy_cm4": -42.52
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -3368,7 +3368,7 @@
             "rv_cm": 1.55,
             "Ixy_cm4": -47.01
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -3424,7 +3424,7 @@
             "rv_cm": 1.55,
             "Ixy_cm4": -51.27
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -3480,7 +3480,7 @@
             "rv_cm": 1.78,
             "Ixy_cm4": -39.68
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -3536,7 +3536,7 @@
             "rv_cm": 1.77,
             "Ixy_cm4": -47.57
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -3592,7 +3592,7 @@
             "rv_cm": 1.76,
             "Ixy_cm4": -54.52
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -3648,7 +3648,7 @@
             "rv_cm": 1.76,
             "Ixy_cm4": -61.5
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -3704,7 +3704,7 @@
             "rv_cm": 1.75,
             "Ixy_cm4": -68.19
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -3760,7 +3760,7 @@
             "rv_cm": 1.75,
             "Ixy_cm4": -74.59
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -3816,7 +3816,7 @@
             "rv_cm": 1.74,
             "Ixy_cm4": -80.7
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -3872,7 +3872,7 @@
             "rv_cm": 1.74,
             "Ixy_cm4": -107
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -3928,7 +3928,7 @@
             "rv_cm": 1.97,
             "Ixy_cm4": -65.25
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -3984,7 +3984,7 @@
             "rv_cm": 1.96,
             "Ixy_cm4": -75.48
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -4040,7 +4040,7 @@
             "rv_cm": 1.96,
             "Ixy_cm4": -85.35
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -4096,7 +4096,7 @@
             "rv_cm": 1.95,
             "Ixy_cm4": -94.86
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -4152,7 +4152,7 @@
             "rv_cm": 1.95,
             "Ixy_cm4": -104
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -4208,7 +4208,7 @@
             "rv_cm": 1.94,
             "Ixy_cm4": -112.8
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -4264,7 +4264,7 @@
             "rv_cm": 1.94,
             "Ixy_cm4": -121.3
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -4320,7 +4320,7 @@
             "rv_cm": 1.93,
             "Ixy_cm4": -137.1
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -4376,7 +4376,7 @@
             "rv_cm": 1.93,
             "Ixy_cm4": -151.5
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -4432,7 +4432,7 @@
             "rv_cm": 2.18,
             "Ixy_cm4": -87.87
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -4488,7 +4488,7 @@
             "rv_cm": 2.17,
             "Ixy_cm4": -101.7
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -4544,7 +4544,7 @@
             "rv_cm": 2.16,
             "Ixy_cm4": -115.2
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -4600,7 +4600,7 @@
             "rv_cm": 2.16,
             "Ixy_cm4": -128.2
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -4656,7 +4656,7 @@
             "rv_cm": 2.15,
             "Ixy_cm4": -140.2
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -4712,7 +4712,7 @@
             "rv_cm": 2.14,
             "Ixy_cm4": -152.4
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -4768,7 +4768,7 @@
             "rv_cm": 2.14,
             "Ixy_cm4": -164.1
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -4824,7 +4824,7 @@
             "rv_cm": 2.37,
             "Ixy_cm4": -132.8
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -4880,7 +4880,7 @@
             "rv_cm": 2.37,
             "Ixy_cm4": -150.6
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -4936,7 +4936,7 @@
             "rv_cm": 2.36,
             "Ixy_cm4": -167.9
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -4992,7 +4992,7 @@
             "rv_cm": 2.35,
             "Ixy_cm4": -184.6
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -5048,7 +5048,7 @@
             "rv_cm": 2.35,
             "Ixy_cm4": -200.9
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -5104,7 +5104,7 @@
             "rv_cm": 2.34,
             "Ixy_cm4": -216.6
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -5160,7 +5160,7 @@
             "rv_cm": 2.34,
             "Ixy_cm4": -231.8
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -5216,7 +5216,7 @@
             "rv_cm": 2.33,
             "Ixy_cm4": -246.5
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -5272,7 +5272,7 @@
             "rv_cm": 2.33,
             "Ixy_cm4": -260.7
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -5328,7 +5328,7 @@
             "rv_cm": 2.33,
             "Ixy_cm4": -274.4
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -5384,7 +5384,7 @@
             "rv_cm": 2.57,
             "Ixy_cm4": -192.5
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -5440,7 +5440,7 @@
             "rv_cm": 2.56,
             "Ixy_cm4": -214.9
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -5496,7 +5496,7 @@
             "rv_cm": 2.55,
             "Ixy_cm4": -236.7
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -5552,7 +5552,7 @@
             "rv_cm": 2.55,
             "Ixy_cm4": -257.9
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -5608,7 +5608,7 @@
             "rv_cm": 2.54,
             "Ixy_cm4": -278.4
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -5664,7 +5664,7 @@
             "rv_cm": 2.54,
             "Ixy_cm4": -298.4
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -5720,7 +5720,7 @@
             "rv_cm": 2.53,
             "Ixy_cm4": -317.8
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -5776,7 +5776,7 @@
             "rv_cm": 2.53,
             "Ixy_cm4": -336.5
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -5832,7 +5832,7 @@
             "rv_cm": 2.53,
             "Ixy_cm4": -354.7
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -5888,7 +5888,7 @@
             "rv_cm": 2.76,
             "Ixy_cm4": -269.8
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -5944,7 +5944,7 @@
             "rv_cm": 2.76,
             "Ixy_cm4": -297.6
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -6000,7 +6000,7 @@
             "rv_cm": 2.75,
             "Ixy_cm4": -324.6
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -6056,7 +6056,7 @@
             "rv_cm": 2.74,
             "Ixy_cm4": -350.9
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -6112,7 +6112,7 @@
             "rv_cm": 2.74,
             "Ixy_cm4": -376.5
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -6168,7 +6168,7 @@
             "rv_cm": 2.73,
             "Ixy_cm4": -401.4
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -6224,7 +6224,7 @@
             "rv_cm": 2.73,
             "Ixy_cm4": -425.6
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -6280,7 +6280,7 @@
             "rv_cm": 2.72,
             "Ixy_cm4": -449.2
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -6336,7 +6336,7 @@
             "rv_cm": 2.96,
             "Ixy_cm4": -368
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -6392,7 +6392,7 @@
             "rv_cm": 2.94,
             "Ixy_cm4": -434.9
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -6448,7 +6448,7 @@
             "rv_cm": 2.94,
             "Ixy_cm4": -467.1
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -6504,7 +6504,7 @@
             "rv_cm": 2.93,
             "Ixy_cm4": -498.5
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -6560,7 +6560,7 @@
             "rv_cm": 2.93,
             "Ixy_cm4": -529.1
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -6616,7 +6616,7 @@
             "rv_cm": 2.92,
             "Ixy_cm4": -558.9
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -6672,7 +6672,7 @@
             "rv_cm": 2.92,
             "Ixy_cm4": -616.1
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -6728,7 +6728,7 @@
             "rv_cm": 2.91,
             "Ixy_cm4": -670.2
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -6784,7 +6784,7 @@
             "rv_cm": 3.13,
             "Ixy_cm4": -609.9
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -6840,7 +6840,7 @@
             "rv_cm": 3.13,
             "Ixy_cm4": -647.9
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -6896,7 +6896,7 @@
             "rv_cm": 3.12,
             "Ixy_cm4": -685
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -6952,7 +6952,7 @@
             "rv_cm": 3.12,
             "Ixy_cm4": -721.2
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -7008,7 +7008,7 @@
             "rv_cm": 3.11,
             "Ixy_cm4": -756.5
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -7064,7 +7064,7 @@
             "rv_cm": 3.11,
             "Ixy_cm4": -790.9
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -7120,7 +7120,7 @@
             "rv_cm": 3.55,
             "Ixy_cm4": -824.4
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -7176,7 +7176,7 @@
             "rv_cm": 3.54,
             "Ixy_cm4": -881.8
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -7232,7 +7232,7 @@
             "rv_cm": 3.53,
             "Ixy_cm4": -938
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -7288,7 +7288,7 @@
             "rv_cm": 3.53,
             "Ixy_cm4": -993
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -7344,7 +7344,7 @@
             "rv_cm": 3.52,
             "Ixy_cm4": -1047
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -7400,7 +7400,7 @@
             "rv_cm": 3.52,
             "Ixy_cm4": -1100
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -7456,7 +7456,7 @@
             "rv_cm": 3.51,
             "Ixy_cm4": -1151
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -7512,7 +7512,7 @@
             "rv_cm": 3.51,
             "Ixy_cm4": -1202
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -7568,7 +7568,7 @@
             "rv_cm": 3.96,
             "Ixy_cm4": -1146
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -7624,7 +7624,7 @@
             "rv_cm": 3.94,
             "Ixy_cm4": -1306
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -7680,7 +7680,7 @@
             "rv_cm": 3.94,
             "Ixy_cm4": -1384
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -7736,7 +7736,7 @@
             "rv_cm": 3.93,
             "Ixy_cm4": -1461
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -7792,7 +7792,7 @@
             "rv_cm": 3.92,
             "Ixy_cm4": -1535
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -7848,7 +7848,7 @@
             "rv_cm": 3.92,
             "Ixy_cm4": -1609
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -7904,7 +7904,7 @@
             "rv_cm": 3.91,
             "Ixy_cm4": -1681
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -7960,7 +7960,7 @@
             "rv_cm": 3.91,
             "Ixy_cm4": -1752
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -8016,7 +8016,7 @@
             "rv_cm": 3.9,
             "Ixy_cm4": -1821
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -8072,7 +8072,7 @@
             "rv_cm": 3.9,
             "Ixy_cm4": -1889
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -8128,7 +8128,7 @@
             "rv_cm": 3.9,
             "Ixy_cm4": -1955
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -8184,7 +8184,7 @@
             "rv_cm": 3.89,
             "Ixy_cm4": -2020
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -8240,7 +8240,7 @@
             "rv_cm": 3.89,
             "Ixy_cm4": -2084
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -8296,7 +8296,7 @@
             "rv_cm": 3.88,
             "Ixy_cm4": -2207
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -8352,7 +8352,7 @@
             "rv_cm": 4.93,
             "Ixy_cm4": -2896
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -8408,7 +8408,7 @@
             "rv_cm": 4.93,
             "Ixy_cm4": -3052
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -8464,7 +8464,7 @@
             "rv_cm": 4.92,
             "Ixy_cm4": -3205
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -8520,7 +8520,7 @@
             "rv_cm": 4.91,
             "Ixy_cm4": -3357
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -8576,7 +8576,7 @@
             "rv_cm": 4.91,
             "Ixy_cm4": -3506
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -8632,7 +8632,7 @@
             "rv_cm": 4.9,
             "Ixy_cm4": -3652
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -8688,7 +8688,7 @@
             "rv_cm": 4.9,
             "Ixy_cm4": -3797
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -8744,7 +8744,7 @@
             "rv_cm": 4.89,
             "Ixy_cm4": -3939
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -8800,7 +8800,7 @@
             "rv_cm": 4.89,
             "Ixy_cm4": -4079
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -8856,7 +8856,7 @@
             "rv_cm": 4.88,
             "Ixy_cm4": -4217
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -8912,7 +8912,7 @@
             "rv_cm": 4.88,
             "Ixy_cm4": -4353
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -8968,7 +8968,7 @@
             "rv_cm": 4.88,
             "Ixy_cm4": -4486
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -9024,7 +9024,7 @@
             "rv_cm": 4.87,
             "Ixy_cm4": -4618
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -9080,7 +9080,7 @@
             "rv_cm": 4.87,
             "Ixy_cm4": -4747
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -9136,7 +9136,7 @@
             "rv_cm": 4.86,
             "Ixy_cm4": -4874
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -9192,7 +9192,7 @@
             "rv_cm": 4.86,
             "Ixy_cm4": -4998
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -9248,7 +9248,7 @@
             "rv_cm": 4.86,
             "Ixy_cm4": -5121
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -9304,7 +9304,7 @@
             "rv_cm": 4.86,
             "Ixy_cm4": -5241
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "equal-angle",
@@ -9360,7 +9360,7 @@
             "rv_cm": 4.85,
             "Ixy_cm4": -5359
           },
-          "verified": false
+          "verified": true
         }
       ]
     },
@@ -9415,7 +9415,7 @@
             "J_cm4": 30.31,
             "Cw_cm6": 382.6
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HD",
@@ -9464,7 +9464,7 @@
             "J_cm4": 52.37,
             "Cw_cm6": 516.4
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HD",
@@ -9513,7 +9513,7 @@
             "J_cm4": 123.8,
             "Cw_cm6": 753.7
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HD",
@@ -9562,7 +9562,7 @@
             "J_cm4": 222.4,
             "Cw_cm6": 979
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HD",
@@ -9611,7 +9611,7 @@
             "J_cm4": 406.8,
             "Cw_cm6": 1300
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HD",
@@ -9660,7 +9660,7 @@
             "J_cm4": 719,
             "Cw_cm6": 1728
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HD",
@@ -9709,7 +9709,7 @@
             "J_cm4": 55.87,
             "Cw_cm6": 1041
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HD",
@@ -9758,7 +9758,7 @@
             "J_cm4": 108,
             "Cw_cm6": 1512
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HD",
@@ -9807,7 +9807,7 @@
             "J_cm4": 225.1,
             "Cw_cm6": 2069
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HD",
@@ -9856,7 +9856,7 @@
             "J_cm4": 420.5,
             "Cw_cm6": 2741
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HD",
@@ -9905,7 +9905,7 @@
             "J_cm4": 805.3,
             "Cw_cm6": 3695
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HD",
@@ -9954,7 +9954,7 @@
             "J_cm4": 1501,
             "Cw_cm6": 5004
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HD",
@@ -10003,7 +10003,7 @@
             "J_cm4": 2650,
             "Cw_cm6": 6558
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HD",
@@ -10052,7 +10052,7 @@
             "J_cm4": 168.8,
             "Cw_cm6": 4305
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HD",
@@ -10101,7 +10101,7 @@
             "J_cm4": 223.7,
             "Cw_cm6": 4836
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HD",
@@ -10150,7 +10150,7 @@
             "J_cm4": 295.5,
             "Cw_cm6": 5432
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HD",
@@ -10199,7 +10199,7 @@
             "J_cm4": 393.8,
             "Cw_cm6": 6119
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HD",
@@ -10248,7 +10248,7 @@
             "J_cm4": 517.1,
             "Cw_cm6": 6829
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HD",
@@ -10297,7 +10297,7 @@
             "J_cm4": 414.6,
             "Cw_cm6": 7074
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HD",
@@ -10346,7 +10346,7 @@
             "J_cm4": 637.3,
             "Cw_cm6": 8515
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HD",
@@ -10395,7 +10395,7 @@
             "J_cm4": 825.5,
             "Cw_cm6": 9489
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HD",
@@ -10444,7 +10444,7 @@
             "J_cm4": 1116,
             "Cw_cm6": 10940
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HD",
@@ -10493,7 +10493,7 @@
             "J_cm4": 1464,
             "Cw_cm6": 12300
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HD",
@@ -10542,7 +10542,7 @@
             "J_cm4": 1870,
             "Cw_cm6": 13740
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HD",
@@ -10591,7 +10591,7 @@
             "J_cm4": 2510,
             "Cw_cm6": 15850
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HD",
@@ -10640,7 +10640,7 @@
             "J_cm4": 3326,
             "Cw_cm6": 18130
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HD",
@@ -10689,7 +10689,7 @@
             "J_cm4": 4398,
             "Cw_cm6": 20800
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HD",
@@ -10738,7 +10738,7 @@
             "J_cm4": 5735,
             "Cw_cm6": 23850
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HD",
@@ -10787,7 +10787,7 @@
             "J_cm4": 7513,
             "Cw_cm6": 27630
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HD",
@@ -10836,7 +10836,7 @@
             "J_cm4": 9410,
             "Cw_cm6": 30870
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HD",
@@ -10885,7 +10885,7 @@
             "J_cm4": 11560,
             "Cw_cm6": 34670
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HD",
@@ -10934,7 +10934,7 @@
             "J_cm4": 14020,
             "Cw_cm6": 38570
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HD",
@@ -10983,7 +10983,7 @@
             "J_cm4": 16790,
             "Cw_cm6": 42920
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HD",
@@ -11032,7 +11032,7 @@
             "J_cm4": 21840,
             "Cw_cm6": 49980
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HD",
@@ -11081,7 +11081,7 @@
             "J_cm4": 28510,
             "Cw_cm6": 58650
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HD",
@@ -11130,7 +11130,7 @@
             "J_cm4": 37350,
             "Cw_cm6": 68890
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HD",
@@ -11179,7 +11179,7 @@
             "J_cm4": 48210,
             "Cw_cm6": 81530
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HD",
@@ -11228,7 +11228,7 @@
             "J_cm4": 62290,
             "Cw_cm6": 96080
           },
-          "verified": false
+          "verified": true
         }
       ]
     },
@@ -11283,7 +11283,7 @@
             "J_cm4": 5.24,
             "Cw_cm6": 2.58
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEA",
@@ -11332,7 +11332,7 @@
             "J_cm4": 5.99,
             "Cw_cm6": 6.47
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEA",
@@ -11381,7 +11381,7 @@
             "J_cm4": 8.13,
             "Cw_cm6": 15.06
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEA",
@@ -11430,7 +11430,7 @@
             "J_cm4": 12.19,
             "Cw_cm6": 31.41
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEA",
@@ -11479,7 +11479,7 @@
             "J_cm4": 14.8,
             "Cw_cm6": 60.21
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEA",
@@ -11528,7 +11528,7 @@
             "J_cm4": 20.98,
             "Cw_cm6": 108
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEA",
@@ -11577,7 +11577,7 @@
             "J_cm4": 28.46,
             "Cw_cm6": 193.3
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEA",
@@ -11626,7 +11626,7 @@
             "J_cm4": 41.55,
             "Cw_cm6": 328.5
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEA",
@@ -11675,7 +11675,7 @@
             "J_cm4": 52.37,
             "Cw_cm6": 516.4
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEA",
@@ -11724,7 +11724,7 @@
             "J_cm4": 62.1,
             "Cw_cm6": 785.4
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEA",
@@ -11773,7 +11773,7 @@
             "J_cm4": 85.17,
             "Cw_cm6": 1200
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEA",
@@ -11822,7 +11822,7 @@
             "J_cm4": 108,
             "Cw_cm6": 1512
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEA",
@@ -11871,7 +11871,7 @@
             "J_cm4": 127.2,
             "Cw_cm6": 1824
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEA",
@@ -11920,7 +11920,7 @@
             "J_cm4": 148.8,
             "Cw_cm6": 2177
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEA",
@@ -11969,7 +11969,7 @@
             "J_cm4": 189,
             "Cw_cm6": 2942
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEA",
@@ -12018,7 +12018,7 @@
             "J_cm4": 243.8,
             "Cw_cm6": 4148
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEA",
@@ -12067,7 +12067,7 @@
             "J_cm4": 309.3,
             "Cw_cm6": 5643
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEA",
@@ -12116,7 +12116,7 @@
             "J_cm4": 351.5,
             "Cw_cm6": 7189
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEA",
@@ -12165,7 +12165,7 @@
             "J_cm4": 397.8,
             "Cw_cm6": 8978
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEA",
@@ -12214,7 +12214,7 @@
             "J_cm4": 448.3,
             "Cw_cm6": 11030
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEA",
@@ -12263,7 +12263,7 @@
             "J_cm4": 513.9,
             "Cw_cm6": 13350
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEA",
@@ -12312,7 +12312,7 @@
             "J_cm4": 596.9,
             "Cw_cm6": 18290
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEA",
@@ -12361,7 +12361,7 @@
             "J_cm4": 736.8,
             "Cw_cm6": 24960
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEA",
@@ -12410,7 +12410,7 @@
             "J_cm4": 822.4,
             "Cw_cm6": 32070
           },
-          "verified": false
+          "verified": true
         }
       ]
     },
@@ -12465,7 +12465,7 @@
             "J_cm4": 9.25,
             "Cw_cm6": 3.38
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEB",
@@ -12514,7 +12514,7 @@
             "J_cm4": 13.84,
             "Cw_cm6": 9.41
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEB",
@@ -12563,7 +12563,7 @@
             "J_cm4": 20.06,
             "Cw_cm6": 22.48
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEB",
@@ -12612,7 +12612,7 @@
             "J_cm4": 31.24,
             "Cw_cm6": 47.94
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEB",
@@ -12661,7 +12661,7 @@
             "J_cm4": 42.16,
             "Cw_cm6": 93.75
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEB",
@@ -12710,7 +12710,7 @@
             "J_cm4": 59.28,
             "Cw_cm6": 171.1
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEB",
@@ -12759,7 +12759,7 @@
             "J_cm4": 76.57,
             "Cw_cm6": 295.4
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEB",
@@ -12808,7 +12808,7 @@
             "J_cm4": 102.7,
             "Cw_cm6": 486.9
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEB",
@@ -12857,7 +12857,7 @@
             "J_cm4": 123.8,
             "Cw_cm6": 753.7
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEB",
@@ -12906,7 +12906,7 @@
             "J_cm4": 143.7,
             "Cw_cm6": 1130
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEB",
@@ -12955,7 +12955,7 @@
             "J_cm4": 185,
             "Cw_cm6": 1688
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEB",
@@ -13004,7 +13004,7 @@
             "J_cm4": 225.1,
             "Cw_cm6": 2069
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEB",
@@ -13053,7 +13053,7 @@
             "J_cm4": 257.2,
             "Cw_cm6": 2454
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEB",
@@ -13102,7 +13102,7 @@
             "J_cm4": 292.5,
             "Cw_cm6": 2883
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEB",
@@ -13151,7 +13151,7 @@
             "J_cm4": 355.7,
             "Cw_cm6": 3817
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEB",
@@ -13200,7 +13200,7 @@
             "J_cm4": 440.5,
             "Cw_cm6": 5258
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEB",
@@ -13249,7 +13249,7 @@
             "J_cm4": 538.4,
             "Cw_cm6": 7018
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEB",
@@ -13298,7 +13298,7 @@
             "J_cm4": 600.3,
             "Cw_cm6": 8856
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEB",
@@ -13347,7 +13347,7 @@
             "J_cm4": 667.2,
             "Cw_cm6": 10970
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEB",
@@ -13396,7 +13396,7 @@
             "J_cm4": 739.2,
             "Cw_cm6": 13360
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEB",
@@ -13445,7 +13445,7 @@
             "J_cm4": 830.9,
             "Cw_cm6": 16060
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEB",
@@ -13494,7 +13494,7 @@
             "J_cm4": 946,
             "Cw_cm6": 21840
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEB",
@@ -13543,7 +13543,7 @@
             "J_cm4": 1137,
             "Cw_cm6": 29460
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEB",
@@ -13592,7 +13592,7 @@
             "J_cm4": 1254,
             "Cw_cm6": 37640
           },
-          "verified": false
+          "verified": true
         }
       ]
     },
@@ -13647,7 +13647,7 @@
             "J_cm4": 68.21,
             "Cw_cm6": 9.93
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEM",
@@ -13696,7 +13696,7 @@
             "J_cm4": 91.66,
             "Cw_cm6": 24.79
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEM",
@@ -13745,7 +13745,7 @@
             "J_cm4": 120,
             "Cw_cm6": 54.33
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEM",
@@ -13794,7 +13794,7 @@
             "J_cm4": 162.4,
             "Cw_cm6": 108.1
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEM",
@@ -13843,7 +13843,7 @@
             "J_cm4": 203.3,
             "Cw_cm6": 199.3
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEM",
@@ -13892,7 +13892,7 @@
             "J_cm4": 259.4,
             "Cw_cm6": 346.3
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEM",
@@ -13941,7 +13941,7 @@
             "J_cm4": 315.3,
             "Cw_cm6": 572.7
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEM",
@@ -13990,7 +13990,7 @@
             "J_cm4": 627.9,
             "Cw_cm6": 1152
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEM",
@@ -14039,7 +14039,7 @@
             "J_cm4": 719,
             "Cw_cm6": 1728
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEM",
@@ -14088,7 +14088,7 @@
             "J_cm4": 807.3,
             "Cw_cm6": 2520
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEM",
@@ -14137,7 +14137,7 @@
             "J_cm4": 1408,
             "Cw_cm6": 4386
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEM",
@@ -14186,7 +14186,7 @@
             "J_cm4": 1501,
             "Cw_cm6": 5004
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEM",
@@ -14235,7 +14235,7 @@
             "J_cm4": 1506,
             "Cw_cm6": 5584
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEM",
@@ -14284,7 +14284,7 @@
             "J_cm4": 1507,
             "Cw_cm6": 6137
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEM",
@@ -14333,7 +14333,7 @@
             "J_cm4": 1515,
             "Cw_cm6": 7410
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEM",
@@ -14382,7 +14382,7 @@
             "J_cm4": 1529,
             "Cw_cm6": 9251
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEM",
@@ -14431,7 +14431,7 @@
             "J_cm4": 1539,
             "Cw_cm6": 11190
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEM",
@@ -14480,7 +14480,7 @@
             "J_cm4": 1554,
             "Cw_cm6": 13520
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEM",
@@ -14529,7 +14529,7 @@
             "J_cm4": 1564,
             "Cw_cm6": 15910
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEM",
@@ -14578,7 +14578,7 @@
             "J_cm4": 1579,
             "Cw_cm6": 18650
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEM",
@@ -14627,7 +14627,7 @@
             "J_cm4": 1589,
             "Cw_cm6": 21400
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEM",
@@ -14676,7 +14676,7 @@
             "J_cm4": 1646,
             "Cw_cm6": 27780
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEM",
@@ -14725,7 +14725,7 @@
             "J_cm4": 1671,
             "Cw_cm6": 34750
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "HEM",
@@ -14774,7 +14774,7 @@
             "J_cm4": 1701,
             "Cw_cm6": 43020
           },
-          "verified": false
+          "verified": true
         }
       ]
     },
@@ -14829,7 +14829,7 @@
             "J_cm4": 0.7,
             "Cw_cm6": 0.12
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "IPE",
@@ -14878,7 +14878,7 @@
             "J_cm4": 1.2,
             "Cw_cm6": 0.35
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "IPE",
@@ -14927,7 +14927,7 @@
             "J_cm4": 1.74,
             "Cw_cm6": 0.89
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "IPE",
@@ -14976,7 +14976,7 @@
             "J_cm4": 2.45,
             "Cw_cm6": 1.98
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "IPE",
@@ -15025,7 +15025,7 @@
             "J_cm4": 3.6,
             "Cw_cm6": 3.96
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "IPE",
@@ -15074,7 +15074,7 @@
             "J_cm4": 4.79,
             "Cw_cm6": 7.43
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "IPE",
@@ -15123,7 +15123,7 @@
             "J_cm4": 6.98,
             "Cw_cm6": 12.99
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "IPE",
@@ -15172,7 +15172,7 @@
             "J_cm4": 9.07,
             "Cw_cm6": 22.67
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "IPE",
@@ -15221,7 +15221,7 @@
             "J_cm4": 12.88,
             "Cw_cm6": 37.39
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "IPE",
@@ -15270,7 +15270,7 @@
             "J_cm4": 15.94,
             "Cw_cm6": 70.58
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "IPE",
@@ -15319,7 +15319,7 @@
             "J_cm4": 20.12,
             "Cw_cm6": 125.9
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "IPE",
@@ -15368,7 +15368,7 @@
             "J_cm4": 28.15,
             "Cw_cm6": 199.1
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "IPE",
@@ -15417,7 +15417,7 @@
             "J_cm4": 37.32,
             "Cw_cm6": 313.6
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "IPE",
@@ -15466,7 +15466,7 @@
             "J_cm4": 51.08,
             "Cw_cm6": 490
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "IPE",
@@ -15515,7 +15515,7 @@
             "J_cm4": 66.87,
             "Cw_cm6": 791
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "IPE",
@@ -15564,7 +15564,7 @@
             "J_cm4": 89.29,
             "Cw_cm6": 1249
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "IPE",
@@ -15613,7 +15613,7 @@
             "J_cm4": 123.2,
             "Cw_cm6": 1884
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "IPE",
@@ -15662,7 +15662,7 @@
             "J_cm4": 165.4,
             "Cw_cm6": 2846
           },
-          "verified": false
+          "verified": true
         }
       ]
     },
@@ -15717,7 +15717,7 @@
             "J_cm4": 0.87,
             "Cw_cm6": 0.09
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "IPN",
@@ -15766,7 +15766,7 @@
             "J_cm4": 1.6,
             "Cw_cm6": 0.27
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "IPN",
@@ -15815,7 +15815,7 @@
             "J_cm4": 2.71,
             "Cw_cm6": 0.69
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "IPN",
@@ -15864,7 +15864,7 @@
             "J_cm4": 4.32,
             "Cw_cm6": 1.54
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "IPN",
@@ -15913,7 +15913,7 @@
             "J_cm4": 6.57,
             "Cw_cm6": 3.14
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "IPN",
@@ -15962,7 +15962,7 @@
             "J_cm4": 9.58,
             "Cw_cm6": 5.92
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "IPN",
@@ -16011,7 +16011,7 @@
             "J_cm4": 13.5,
             "Cw_cm6": 10.5
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "IPN",
@@ -16060,7 +16060,7 @@
             "J_cm4": 18.6,
             "Cw_cm6": 17.8
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "IPN",
@@ -16109,7 +16109,7 @@
             "J_cm4": 25,
             "Cw_cm6": 28.7
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "IPN",
@@ -16158,7 +16158,7 @@
             "J_cm4": 33.5,
             "Cw_cm6": 44.1
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "IPN",
@@ -16207,7 +16207,7 @@
             "J_cm4": 44.2,
             "Cw_cm6": 64.6
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "IPN",
@@ -16256,7 +16256,7 @@
             "J_cm4": 56.8,
             "Cw_cm6": 91.8
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "IPN",
@@ -16305,7 +16305,7 @@
             "J_cm4": 72.5,
             "Cw_cm6": 129
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "IPN",
@@ -16354,7 +16354,7 @@
             "J_cm4": 90.4,
             "Cw_cm6": 176
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "IPN",
@@ -16403,7 +16403,7 @@
             "J_cm4": 115,
             "Cw_cm6": 240
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "IPN",
@@ -16452,7 +16452,7 @@
             "J_cm4": 141,
             "Cw_cm6": 319
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "IPN",
@@ -16501,7 +16501,7 @@
             "J_cm4": 170,
             "Cw_cm6": 420
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "IPN",
@@ -16550,7 +16550,7 @@
             "J_cm4": 267,
             "Cw_cm6": 791
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "IPN",
@@ -16599,7 +16599,7 @@
             "J_cm4": 402,
             "Cw_cm6": 1400
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "IPN",
@@ -16648,7 +16648,7 @@
             "J_cm4": 544,
             "Cw_cm6": 2390
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "IPN",
@@ -16697,7 +16697,7 @@
             "J_cm4": 787,
             "Cw_cm6": 3814
           },
-          "verified": false
+          "verified": true
         }
       ]
     },
@@ -16764,7 +16764,7 @@
             "Ixy_cm4": -37.7,
             "alpha_deg": 22.59
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "unequal-angle",
@@ -16825,7 +16825,7 @@
             "Ixy_cm4": -42.4,
             "alpha_deg": 22.53
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "unequal-angle",
@@ -16886,7 +16886,7 @@
             "Ixy_cm4": -46.8,
             "alpha_deg": 22.44
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "unequal-angle",
@@ -16947,7 +16947,7 @@
             "Ixy_cm4": -51,
             "alpha_deg": 22.35
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "unequal-angle",
@@ -17008,7 +17008,7 @@
             "Ixy_cm4": -58.7,
             "alpha_deg": 22.11
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "unequal-angle",
@@ -17069,7 +17069,7 @@
             "Ixy_cm4": -66.8,
             "alpha_deg": 21.67
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "unequal-angle",
@@ -17130,7 +17130,7 @@
             "Ixy_cm4": -77.1,
             "alpha_deg": 21.46
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "unequal-angle",
@@ -17191,7 +17191,7 @@
             "Ixy_cm4": -78.5,
             "alpha_deg": 23.65
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "unequal-angle",
@@ -17252,7 +17252,7 @@
             "Ixy_cm4": -95.3,
             "alpha_deg": 23.53
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "unequal-angle",
@@ -17313,7 +17313,7 @@
             "Ixy_cm4": -110.8,
             "alpha_deg": 23.37
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "unequal-angle",
@@ -17374,7 +17374,7 @@
             "Ixy_cm4": -131.6,
             "alpha_deg": 25.19
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "unequal-angle",
@@ -17435,7 +17435,7 @@
             "Ixy_cm4": -152.6,
             "alpha_deg": 25.02
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "unequal-angle",
@@ -17496,7 +17496,7 @@
             "Ixy_cm4": -173.5,
             "alpha_deg": 24.89
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "unequal-angle",
@@ -17557,7 +17557,7 @@
             "Ixy_cm4": -119.8,
             "alpha_deg": 22.38
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "unequal-angle",
@@ -17618,7 +17618,7 @@
             "Ixy_cm4": -146.2,
             "alpha_deg": 22.28
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "unequal-angle",
@@ -17679,7 +17679,7 @@
             "Ixy_cm4": -170.6,
             "alpha_deg": 22.15
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "unequal-angle",
@@ -17740,7 +17740,7 @@
             "Ixy_cm4": -193.3,
             "alpha_deg": 21.99
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "unequal-angle",
@@ -17801,7 +17801,7 @@
             "Ixy_cm4": -160.9,
             "alpha_deg": 19.87
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "unequal-angle",
@@ -17862,7 +17862,7 @@
             "Ixy_cm4": -174.7,
             "alpha_deg": 19.81
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "unequal-angle",
@@ -17923,7 +17923,7 @@
             "Ixy_cm4": -188.1,
             "alpha_deg": 19.75
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "unequal-angle",
@@ -17984,7 +17984,7 @@
             "Ixy_cm4": -192.8,
             "alpha_deg": 23.72
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "unequal-angle",
@@ -18045,7 +18045,7 @@
             "Ixy_cm4": -225.9,
             "alpha_deg": 23.61
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "unequal-angle",
@@ -18106,7 +18106,7 @@
             "Ixy_cm4": -256.8,
             "alpha_deg": 23.48
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "unequal-angle",
@@ -18167,7 +18167,7 @@
             "Ixy_cm4": -286.8,
             "alpha_deg": 14.82
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "unequal-angle",
@@ -18228,7 +18228,7 @@
             "Ixy_cm4": -337.3,
             "alpha_deg": 14.74
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "unequal-angle",
@@ -18289,7 +18289,7 @@
             "Ixy_cm4": -384.8,
             "alpha_deg": 14.65
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "unequal-angle",
@@ -18350,7 +18350,7 @@
             "Ixy_cm4": -407.4,
             "alpha_deg": 14.59
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "unequal-angle",
@@ -18411,7 +18411,7 @@
             "Ixy_cm4": -429.3,
             "alpha_deg": 14.53
           },
-          "verified": false
+          "verified": true
         }
       ]
     },
@@ -18460,7 +18460,7 @@
             "J_cm4": 1.12,
             "Cw_cm6": 27.8
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "UPN",
@@ -18503,7 +18503,7 @@
             "J_cm4": 0.939,
             "Cw_cm6": 21.9
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "UPN",
@@ -18546,7 +18546,7 @@
             "J_cm4": 1.61,
             "Cw_cm6": 77.3
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "UPN",
@@ -18589,7 +18589,7 @@
             "J_cm4": 2.16,
             "Cw_cm6": 168
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "UPN",
@@ -18632,7 +18632,7 @@
             "J_cm4": 2.81,
             "Cw_cm6": 414
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "UPN",
@@ -18675,7 +18675,7 @@
             "J_cm4": 4.15,
             "Cw_cm6": 900
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "UPN",
@@ -18718,7 +18718,7 @@
             "J_cm4": 5.7,
             "Cw_cm6": 1800
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "UPN",
@@ -18761,7 +18761,7 @@
             "J_cm4": 7.4,
             "Cw_cm6": 3260
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "UPN",
@@ -18804,7 +18804,7 @@
             "J_cm4": 9.6,
             "Cw_cm6": 5570
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "UPN",
@@ -18847,7 +18847,7 @@
             "J_cm4": 11.9,
             "Cw_cm6": 9070
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "UPN",
@@ -18890,7 +18890,7 @@
             "J_cm4": 16,
             "Cw_cm6": 14600
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "UPN",
@@ -18933,7 +18933,7 @@
             "J_cm4": 19.7,
             "Cw_cm6": 22100
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "UPN",
@@ -18976,7 +18976,7 @@
             "J_cm4": 25.5,
             "Cw_cm6": 33300
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "UPN",
@@ -19019,7 +19019,7 @@
             "J_cm4": 31,
             "Cw_cm6": 48500
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "UPN",
@@ -19062,7 +19062,7 @@
             "J_cm4": 37,
             "Cw_cm6": 69100
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "UPN",
@@ -19105,7 +19105,7 @@
             "J_cm4": 67,
             "Cw_cm6": 96100
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "UPN",
@@ -19148,7 +19148,7 @@
             "J_cm4": 61,
             "Cw_cm6": 114000
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "UPN",
@@ -19191,7 +19191,7 @@
             "J_cm4": 59,
             "Cw_cm6": 146000
           },
-          "verified": false
+          "verified": true
         },
         {
           "family": "UPN",
@@ -19234,7 +19234,7 @@
             "J_cm4": 82,
             "Cw_cm6": 221000
           },
-          "verified": false
+          "verified": true
         }
       ]
     }
