@@ -9,7 +9,8 @@
     "dev:structsolve": "npm --prefix structsolve run dev",
     "dev:rootfinder": "npm --prefix rootfinder run dev",
     "dev:condnumber": "npm --prefix condnumber run dev",
-    "dev:funcapprox": "npm --prefix funcapprox run dev"
+    "dev:funcapprox": "npm --prefix funcapprox run dev",
+    "dev:steelsolve": "npm --prefix steelsolve run dev"
   },
   "engines": {
     "node": "20.x"

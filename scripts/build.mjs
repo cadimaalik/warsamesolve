@@ -4,7 +4,7 @@ import { execFileSync } from 'node:child_process';
 
 const root = process.cwd();
 const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-const apps = ['structsolve', 'rootfinder', 'condnumber', 'funcapprox'];
+const apps = ['structsolve', 'rootfinder', 'condnumber', 'funcapprox', 'steelsolve'];
 
 function run(command, args, cwd = root) {
   if (process.platform === 'win32') {

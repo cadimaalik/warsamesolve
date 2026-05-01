@@ -8,4 +8,6 @@ condnumber/node_modules/
 condnumber/dist/
 funcapprox/node_modules/
 funcapprox/dist/
+steelsolve/node_modules/
+steelsolve/dist/
 .vercel/
