@@ -28,4 +28,4 @@ Rows should remain unverified until manually checked against the source section 
 
 ## Partial Fields
 
-The I-shape and UPN source rows include the common course table properties that were text-extracted cleanly from the PDF. Angle rows currently keep geometry, area, and centroid values for the picker/readout. Angle inertia and principal-axis fields are intentionally left blank where the extracted table header/value mapping is not yet manually checked.
+The I-shape, UPN, equal-angle, and unequal-angle source rows include the common course table properties that were text-extracted from the PDF. Rows remain marked `verified=false` until manually checked against the source document.

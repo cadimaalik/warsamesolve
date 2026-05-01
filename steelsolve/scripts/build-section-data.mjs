@@ -50,6 +50,12 @@ const conversions = {
   xs_cm: ['xs_mm', 10],
   ys_cm: ['ys_mm', 10],
   xm_cm: ['xm_mm', 10],
+  v_cm: ['v_mm', 10],
+  v1_cm: ['v1_mm', 10],
+  v2_cm: ['v2_mm', 10],
+  u1_cm: ['u1_mm', 10],
+  u2_cm: ['u2_mm', 10],
+  u3_cm: ['u3_mm', 10],
 }
 
 function parseCsvLine(line) {
