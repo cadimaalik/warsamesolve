@@ -1,4 +1,4 @@
-function DisabledRow({ label, type = 'select', value }) {
+function DisabledRow({ label, type = 'select', value = '' }) {
   return (
     <label className="descriptor-row">
       <span>{label}</span>
@@ -8,7 +8,7 @@ function DisabledRow({ label, type = 'select', value }) {
         <input value={value} disabled readOnly />
       ) : (
         <select value={value} disabled>
-          <option>{value}</option>
+          <option value="">{value}</option>
         </select>
       )}
     </label>

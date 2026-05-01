@@ -96,14 +96,19 @@ p {
   margin-top: 0;
 }
 
-h1 {
-  margin-bottom: 0;
+.brand-link {
   color: var(--primary);
   font-family: 'JetBrains Mono', monospace;
   font-size: clamp(1.45rem, 2vw, 2rem);
   font-weight: 800;
   letter-spacing: -0.04em;
   line-height: 1;
+  text-decoration: none;
+}
+
+.brand-link:hover,
+.brand-link:focus-visible {
+  color: var(--primary-light);
 }
 
 .subtitle {
@@ -113,17 +118,44 @@ h1 {
   font-weight: 600;
 }
 
-.status-pill {
-  border: 1px solid rgba(74, 222, 128, 0.48);
-  background: rgba(74, 222, 128, 0.08);
-  color: var(--primary-light);
+.header-actions {
+  position: relative;
+}
+
+.analyze-button {
+  min-height: 36px;
+  border: 0;
+  background: var(--primary);
+  color: var(--bg);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 8px 16px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.analyze-button:hover,
+.analyze-button:focus-visible {
+  background: var(--primary-light);
+}
+
+.analysis-toast {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: max-content;
+  max-width: 260px;
+  border: 1px solid rgba(251, 191, 36, 0.55);
+  background: var(--surface);
+  color: var(--accent);
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.04em;
-  padding: 7px 10px;
-  text-transform: uppercase;
-  white-space: nowrap;
+  padding: 9px 11px;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.35);
+  z-index: 30;
 }
 
 .workspace {
@@ -324,12 +356,6 @@ h1 {
   text-transform: uppercase;
 }
 
-.drawing-scale {
-  color: var(--accent);
-  font-size: 0.64rem;
-  letter-spacing: 0.1em;
-}
-
 .drawing-frame {
   flex: 1;
   min-height: 0;
@@ -347,57 +373,6 @@ h1 {
   width: 100%;
   height: 100%;
   display: block;
-}
-
-.svg-member,
-.svg-member-light,
-.svg-gusset,
-.svg-plate,
-.svg-section {
-  fill: none;
-  stroke: #202020;
-  stroke-width: 2;
-}
-
-.svg-member-light {
-  stroke: #777;
-}
-
-.svg-bolt {
-  fill: #ffffff;
-  stroke: #111111;
-  stroke-width: 2;
-}
-
-.svg-centerline {
-  stroke: #7a7a7a;
-  stroke-width: 1.2;
-  stroke-dasharray: 7 6;
-}
-
-.svg-force,
-.svg-dim {
-  stroke: #202020;
-  stroke-width: 1.6;
-  stroke-linecap: round;
-}
-
-.svg-marker {
-  fill: #202020;
-}
-
-.svg-label {
-  fill: var(--drawing-text);
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.svg-note {
-  fill: #555;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 12px;
-  font-weight: 600;
 }
 
 @media (max-width: 900px) {
@@ -446,10 +421,16 @@ h1 {
 
   .brand-lockup,
   .title-row,
+  .header-actions,
   .panel-heading,
   .sheet-heading {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .analysis-toast {
+    left: 0;
+    right: auto;
   }
 
   .descriptor-list,

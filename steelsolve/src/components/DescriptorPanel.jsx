@@ -4,36 +4,36 @@ const descriptorGroups = [
   {
     title: 'Member',
     rows: [
-      { label: 'Member type', value: 'Section picker coming next' },
-      { label: 'Section', value: 'Not configured' },
+      { label: 'Member type' },
+      { label: 'Section' },
     ],
   },
   {
     title: 'Gusset Plates',
     rows: [
-      { label: 'Arrangement', value: 'Mirrored trapezoid gussets' },
-      { label: 'Plate mode', value: 'Single / double coming next' },
+      { label: 'Arrangement' },
+      { label: 'Plate mode' },
     ],
   },
   {
     title: 'Connection',
     rows: [
-      { label: 'Connected part', value: 'Web / flange / leg coming next' },
-      { label: 'Orientation', value: 'Front / back / top / bottom coming next' },
+      { label: 'Connected part' },
+      { label: 'Orientation' },
     ],
   },
   {
     title: 'Bolts',
     rows: [
-      { label: 'Bolt diameter', value: 'M24' },
-      { label: 'Layout', type: 'input', value: '2 rows x 2 columns' },
+      { label: 'Bolt diameter' },
+      { label: 'Layout', type: 'input' },
     ],
   },
   {
     title: 'Failure Path',
     rows: [
-      { label: 'Mode', value: 'Straight path' },
-      { label: 'Custom path', type: 'button', value: 'Coming next' },
+      { label: 'Mode' },
+      { label: 'Custom path', type: 'button' },
     ],
   },
 ]
