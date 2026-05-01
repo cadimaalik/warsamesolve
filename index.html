@@ -169,7 +169,7 @@
         /* Calculator Cards */
         .calculator-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: calc(var(--grid) * 4);
         }
 
@@ -221,6 +221,11 @@
             transform: translateY(-4px);
             box-shadow: 0 20px 60px rgba(74, 222, 128, 0.2);
             border-color: var(--primary-light);
+        }
+
+        .calc-card.steel-card {
+            grid-column: 1;
+            grid-row: 2;
         }
 
 
@@ -461,7 +466,7 @@
             </a>
 
             <!-- Steel Design - Featured -->
-            <a href="steel/index.html" class="calc-card featured">
+            <a href="steel/index.html" class="calc-card featured steel-card">
                 <h3>Steel Design</h3>
                 <div class="description">
                     Tension • Compression • Flexure • Connections
