@@ -1,44 +1,12 @@
-import DescriptorGroup from './DescriptorGroup'
+import MemberInputPanel from './MemberInputPanel'
+import GussetInputPanel from './GussetInputPanel'
+import ConnectionInputPanel from './ConnectionInputPanel'
+import BoltInputPanel from './BoltInputPanel'
+import FailurePathPanel from './FailurePathPanel'
 
-const descriptorGroups = [
-  {
-    title: 'Member',
-    rows: [
-      { label: 'Member type' },
-      { label: 'Section' },
-    ],
-  },
-  {
-    title: 'Gusset Plates',
-    rows: [
-      { label: 'Arrangement' },
-      { label: 'Plate mode' },
-    ],
-  },
-  {
-    title: 'Connection',
-    rows: [
-      { label: 'Connected part' },
-      { label: 'Orientation' },
-    ],
-  },
-  {
-    title: 'Bolts',
-    rows: [
-      { label: 'Bolt diameter' },
-      { label: 'Layout', type: 'input' },
-    ],
-  },
-  {
-    title: 'Failure Path',
-    rows: [
-      { label: 'Mode' },
-      { label: 'Custom path', type: 'button' },
-    ],
-  },
-]
+export default function DescriptorPanel({ steelProblem }) {
+  const { problem } = steelProblem
 
-export default function DescriptorPanel() {
   return (
     <aside className="descriptor-panel" aria-labelledby="descriptor-heading">
       <div className="panel-heading">
@@ -47,10 +15,17 @@ export default function DescriptorPanel() {
       </div>
 
       <div className="descriptor-list">
-        {descriptorGroups.map((group) => (
-          <DescriptorGroup key={group.title} title={group.title} rows={group.rows} />
-        ))}
+        <MemberInputPanel steelProblem={steelProblem} />
+        <GussetInputPanel steelProblem={steelProblem} />
+        <ConnectionInputPanel steelProblem={steelProblem} />
+        <BoltInputPanel steelProblem={steelProblem} />
+        <FailurePathPanel steelProblem={steelProblem} />
       </div>
+
+      <details className="model-json">
+        <summary>Model JSON</summary>
+        <pre>{JSON.stringify(problem, null, 2)}</pre>
+      </details>
     </aside>
   )
 }

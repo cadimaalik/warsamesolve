@@ -146,7 +146,7 @@ p {
   top: calc(100% + 10px);
   right: 0;
   width: max-content;
-  max-width: 260px;
+  max-width: min(420px, 90vw);
   border: 1px solid rgba(251, 191, 36, 0.55);
   background: var(--surface);
   color: var(--accent);
@@ -156,6 +156,20 @@ p {
   padding: 9px 11px;
   box-shadow: 0 12px 34px rgba(0, 0, 0, 0.35);
   z-index: 30;
+}
+
+.analysis-toast ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.analysis-toast li + li {
+  margin-top: 5px;
+}
+
+.analysis-toast-ready {
+  border-color: rgba(74, 222, 128, 0.48);
+  color: var(--primary-light);
 }
 
 .workspace {
@@ -305,7 +319,8 @@ p {
 
 .descriptor-row select,
 .descriptor-row input,
-.descriptor-row button {
+.descriptor-row button,
+.fixed-value {
   width: 100%;
   min-height: 34px;
   border: 1px solid var(--border);
@@ -317,14 +332,83 @@ p {
   padding: 7px 9px;
 }
 
-.descriptor-row button {
+.descriptor-row select:focus,
+.descriptor-row input:focus {
+  border-color: var(--primary);
+  outline: none;
+}
+
+.control-stack {
+  display: grid;
+  gap: 4px;
+}
+
+.control-stack small {
   color: var(--accent);
-  text-align: left;
+  font-size: 0.64rem;
+  line-height: 1.35;
 }
 
 .descriptor-row :disabled {
   opacity: 1;
   cursor: not-allowed;
+}
+
+.fixed-value {
+  color: var(--text-muted);
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--grid) * 1);
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.checkbox-row input {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--primary);
+}
+
+.muted-note {
+  margin: 0;
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  line-height: 1.5;
+}
+
+.model-json {
+  margin-top: calc(var(--grid) * 2);
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.model-json summary {
+  color: var(--primary);
+  cursor: pointer;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: calc(var(--grid) * 1.25);
+  text-transform: uppercase;
+}
+
+.model-json pre {
+  max-height: 320px;
+  margin: 0;
+  overflow: auto;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  line-height: 1.5;
+  padding: calc(var(--grid) * 1.5);
 }
 
 .drawing-stack {

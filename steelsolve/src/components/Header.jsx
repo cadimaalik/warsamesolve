@@ -1,16 +1,25 @@
 import { useEffect, useState } from 'react'
+import AnalyzeButton from './AnalyzeButton'
 
-export default function Header() {
-  const [showToast, setShowToast] = useState(false)
+export default function Header({ onAnalyze }) {
+  const [toast, setToast] = useState(null)
 
   useEffect(() => {
-    if (!showToast) {
+    if (!toast) {
       return undefined
     }
 
-    const timeoutId = window.setTimeout(() => setShowToast(false), 2400)
+    const timeoutId = window.setTimeout(() => setToast(null), 4200)
     return () => window.clearTimeout(timeoutId)
-  }, [showToast])
+  }, [toast])
+
+  const handleAnalyze = () => {
+    const issues = onAnalyze()
+    setToast({
+      type: issues.length ? 'issues' : 'ready',
+      messages: issues.length ? issues : ['Analysis will be added in a later step.'],
+    })
+  }
 
   return (
     <header className="app-header">
@@ -23,12 +32,18 @@ export default function Header() {
         </div>
       </div>
       <div className="header-actions">
-        <button type="button" className="analyze-button" onClick={() => setShowToast(true)}>
-          Analyze
-        </button>
-        {showToast ? (
-          <div className="analysis-toast" role="status">
-            Analysis will be added later.
+        <AnalyzeButton onAnalyze={handleAnalyze} />
+        {toast ? (
+          <div className={`analysis-toast analysis-toast-${toast.type}`} role="status">
+            {toast.messages.length > 1 ? (
+              <ul>
+                {toast.messages.map((message) => (
+                  <li key={message}>{message}</li>
+                ))}
+              </ul>
+            ) : (
+              toast.messages[0]
+            )}
           </div>
         ) : null}
       </div>
