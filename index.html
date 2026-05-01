@@ -169,14 +169,8 @@
         /* Calculator Cards */
         .calculator-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: calc(var(--grid) * 4);
-        }
-
-        .calculator-grid-centered {
-            display: flex;
-            justify-content: center;
-            margin-top: calc(var(--grid) * 4);
         }
 
         .calculator-grid-2col {
@@ -251,18 +245,30 @@
         }
 
         .calc-card .button-text {
+            display: block;
+            width: 100%;
+            padding: calc(var(--grid) * 2);
+            background: var(--primary);
+            color: var(--bg);
+            text-align: center;
+            text-decoration: none;
             font-family: 'JetBrains Mono', monospace;
-            color: var(--primary);
+            font-size: 0.875rem;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.1em;
+            letter-spacing: 0.08em;
+            margin-top: calc(var(--grid) * 3);
+            transition: background 0.2s;
+        }
+
+        .calc-card:hover .button-text {
+            background: var(--primary-light);
         }
 
         .calc-card .contributor-name {
             font-size: 16px;
             color: #4ade80;
             font-weight: 600;
-            margin-top: 12px;
         }
 
         .coming-soon-badge {
@@ -377,10 +383,6 @@
             .calc-card {
                 aspect-ratio: auto;
             }
-
-            .calculator-grid-centered .calc-card {
-                width: 100% !important;
-            }
         }
 
         @media (max-width: 768px) {
@@ -454,8 +456,21 @@
                 <div class="turkish-subtitle">
                     Darcy-Weisbach'tan bıktıysan burası
                 </div>
-                <div class="button-text">Hesapla →</div>
                 <div class="contributor-name">by Ali Warsame</div>
+                <div class="button-text">HESAPLA →</div>
+            </a>
+
+            <!-- Steel Design - Featured -->
+            <a href="steel/index.html" class="calc-card featured">
+                <h3>Steel Design</h3>
+                <div class="description">
+                    Tension • Compression • Flexure • Connections
+                </div>
+                <div class="turkish-subtitle">
+                    Çelik gibi sinirlerin varsa başla
+                </div>
+                <div class="contributor-name">by Ahmet Salih Çetin</div>
+                <div class="button-text">HESAPLA →</div>
             </a>
 
             <!-- StructSolve - Featured -->
@@ -467,8 +482,8 @@
                 <div class="turkish-subtitle">
                     Yapısal analiz artık kolay
                 </div>
-                <div class="button-text">Hesapla →</div>
                 <div class="contributor-name">by Ali Warsame</div>
+                <div class="button-text">HESAPLA →</div>
             </a>
 
             <!-- Numerical Methods - Featured -->
@@ -480,22 +495,9 @@
                 <div class="turkish-subtitle">
                     Sayısal yöntemler, adım adım
                 </div>
-                <div class="button-text">Hesapla →</div>
                 <div class="contributor-name">by Fırat Kara</div>
+                <div class="button-text">HESAPLA →</div>
             </a>
-        </div>
-
-        <!-- Solid Mechanics, centered -->
-        <div class="calculator-grid-centered">
-            <div class="calc-card featured" style="width: calc((100% - var(--grid) * 8) / 3);">
-                <div class="coming-soon-badge">Coming Soon</div>
-                <h3>Soil Mechanics</h3>
-                <div class="description">
-                    Consolidation, bearing capacity, earth pressure
-                </div>
-                <div class="button-text">Hesapla →</div>
-                <div class="contributor-name">by Ahmet Salih Çetin</div>
-            </div>
         </div>
     </section>
     
@@ -527,7 +529,7 @@
             </p>
 
             <p>
-                Other students are bringing their own expertise to the platform. <span style="color: #60a5fa; font-weight: 700;">Fırat Kara</span> brought Numerical Methods. <span style="color: #fbbf24; font-weight: 700;">Ahmet Salih Çetin</span> is building Soil Mechanics. The door is open for anyone.
+                Other students are bringing their own expertise to the platform. <span style="color: #60a5fa; font-weight: 700;">Fırat Kara</span> brought Numerical Methods. <span style="color: #fbbf24; font-weight: 700;">Ahmet Salih Çetin</span> is building Steel Design. The door is open for anyone.
             </p>
 
             <p style="font-size: 20px; font-weight: 800; color: white; text-align: center; margin: 24px 0;">CODING IS NOT A PREREQUISITE.</p>

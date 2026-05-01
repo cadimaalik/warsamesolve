@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Steel Design - Çelik Yapı Tasarımı</title>
+    <link rel="icon" type="image/svg+xml" href="../logo.svg">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Spectral:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4ade80;
+            --primary-light: #86efac;
+            --accent: #fbbf24;
+            --bg: #0a0a0a;
+            --surface: #171717;
+            --text: #e5e5e5;
+            --text-muted: #a3a3a3;
+            --border: #404040;
+            --grid: 8px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Spectral', serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: calc(var(--grid) * 6);
+        }
+
+        header {
+            text-align: center;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: calc(var(--grid) * 4);
+            margin-bottom: calc(var(--grid) * 8);
+        }
+
+        .back-link {
+            display: inline-block;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            margin-bottom: calc(var(--grid) * 2);
+            transition: color 0.2s;
+        }
+
+        .back-link:hover {
+            color: var(--primary);
+        }
+
+        h1 {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: -0.02em;
+            margin-bottom: calc(var(--grid) * 1);
+        }
+
+        .subtitle {
+            font-size: 1.125rem;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .credit {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            color: var(--accent);
+            margin-top: calc(var(--grid) * 1);
+        }
+
+        .section {
+            margin-bottom: calc(var(--grid) * 8);
+        }
+
+        .section-header {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: calc(var(--grid) * 4);
+            padding-bottom: calc(var(--grid) * 2);
+            border-bottom: 2px solid var(--border);
+        }
+
+        .calculator-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: calc(var(--grid) * 3);
+        }
+
+        .calc-card {
+            background: var(--surface);
+            border: 2px solid var(--border);
+            padding: calc(var(--grid) * 4);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .calc-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-4px);
+        }
+
+        .coming-soon-badge {
+            align-self: flex-start;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--accent);
+            border: 1px solid rgba(251, 191, 36, 0.55);
+            padding: 3px 10px;
+            margin-bottom: calc(var(--grid) * 2);
+        }
+
+        .card-title {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: calc(var(--grid) * 2);
+        }
+
+        .card-description {
+            font-size: 0.9375rem;
+            color: var(--text-muted);
+            margin-bottom: calc(var(--grid) * 3);
+            flex-grow: 1;
+        }
+
+        .card-features {
+            list-style: none;
+            margin-bottom: calc(var(--grid) * 3);
+        }
+
+        .card-features li {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+            padding-left: calc(var(--grid) * 3);
+            position: relative;
+            margin-bottom: calc(var(--grid) * 1);
+        }
+
+        .card-features li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: var(--primary);
+        }
+
+        .calc-button {
+            display: block;
+            width: 100%;
+            padding: calc(var(--grid) * 2);
+            background: var(--primary);
+            color: var(--bg);
+            text-align: center;
+            text-decoration: none;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: background 0.2s;
+            border: none;
+        }
+
+        .calc-button.disabled {
+            background: var(--border);
+            color: var(--text-muted);
+            cursor: not-allowed;
+            opacity: 0.65;
+        }
+
+        .calc-button.disabled:hover {
+            background: var(--border);
+        }
+
+        footer {
+            text-align: center;
+            padding: calc(var(--grid) * 4) 0;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            border-top: 1px solid var(--border);
+            margin-top: calc(var(--grid) * 8);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: calc(var(--grid) * 3);
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .calculator-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="../index.html" class="back-link">← Back to Home</a>
+            <h1>Steel Design</h1>
+            <div class="subtitle">Çelik Yapı Tasarımı</div>
+            <div class="credit">by Ahmet Salih Çetin</div>
+        </header>
+
+        <main class="section">
+            <div class="section-header">Course Topics</div>
+
+            <div class="calculator-grid">
+                <article class="calc-card">
+                    <div class="coming-soon-badge">Coming Soon</div>
+                    <div class="card-title">Tension Members</div>
+                    <p class="card-description">Net area • Staggered holes • Effective net area • Shear lag</p>
+                    <ul class="card-features">
+                        <li>Gross yielding</li>
+                        <li>Net section rupture</li>
+                        <li>Block shear</li>
+                    </ul>
+                    <button class="calc-button disabled" disabled>Launch Calculator →</button>
+                </article>
+
+                <article class="calc-card">
+                    <div class="coming-soon-badge">Coming Soon</div>
+                    <div class="card-title">Compression Members</div>
+                    <p class="card-description">Euler buckling • Residual stresses • Elastic/inelastic buckling</p>
+                    <ul class="card-features">
+                        <li>Effective length</li>
+                        <li>Column buckling</li>
+                        <li>Design criteria</li>
+                    </ul>
+                    <button class="calc-button disabled" disabled>Launch Calculator →</button>
+                </article>
+
+                <article class="calc-card">
+                    <div class="coming-soon-badge">Coming Soon</div>
+                    <div class="card-title">Flexural Members</div>
+                    <p class="card-description">Plastic moment • Plate buckling • Lateral torsional buckling</p>
+                    <ul class="card-features">
+                        <li>Cross-section classification</li>
+                        <li>Shear strength</li>
+                        <li>Beam design criteria</li>
+                    </ul>
+                    <button class="calc-button disabled" disabled>Launch Calculator →</button>
+                </article>
+
+                <article class="calc-card">
+                    <div class="coming-soon-badge">Coming Soon</div>
+                    <div class="card-title">Members Under Combined Bending and Axial Load</div>
+                    <p class="card-description">First/second order analysis • Interaction equations</p>
+                    <ul class="card-features">
+                        <li>Beam-column behavior</li>
+                        <li>Interaction checks</li>
+                        <li>Design criteria</li>
+                    </ul>
+                    <button class="calc-button disabled" disabled>Launch Calculator →</button>
+                </article>
+
+                <article class="calc-card">
+                    <div class="coming-soon-badge">Coming Soon</div>
+                    <div class="card-title">Bolted Connections</div>
+                    <p class="card-description">Bolt properties • Connection types • Installation techniques</p>
+                    <ul class="card-features">
+                        <li>Bolt failure modes</li>
+                        <li>Bolted connection checks</li>
+                        <li>Design criteria</li>
+                    </ul>
+                    <button class="calc-button disabled" disabled>Launch Calculator →</button>
+                </article>
+
+                <article class="calc-card">
+                    <div class="coming-soon-badge">Coming Soon</div>
+                    <div class="card-title">Welded Connections</div>
+                    <p class="card-description">Arc welding • Weld types • Welding symbols</p>
+                    <ul class="card-features">
+                        <li>Weld failure modes</li>
+                        <li>Simple welded connections</li>
+                        <li>Elastic vector analysis</li>
+                    </ul>
+                    <button class="calc-button disabled" disabled>Launch Calculator →</button>
+                </article>
+            </div>
+        </main>
+
+        <footer>
+            <p>metuCE • Engineering calculators built by students</p>
+        </footer>
+    </div>
+</body>
+</html>

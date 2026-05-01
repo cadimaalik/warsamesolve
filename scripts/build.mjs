@@ -42,7 +42,7 @@ for (const file of ['index.html', 'contact.html', 'contribution.html', 'logo.svg
   copyRequiredFile(file);
 }
 
-for (const dir of ['hydro', 'numerics', 'contributors']) {
+for (const dir of ['hydro', 'numerics', 'contributors', 'steel']) {
   copyRequiredDir(dir);
 }
 
