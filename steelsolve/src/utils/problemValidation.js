@@ -57,7 +57,7 @@ export function validateProblem(problem) {
     issues.push('Gusset arrangement is required.')
   }
 
-  if (problem.member.memberType !== 'splice-plate' && !problem.connection.connectedElement) {
+  if (problem.member.memberType === 'rolled-section' && !problem.connection.connectedElement) {
     issues.push('Connected element is required.')
   }
 

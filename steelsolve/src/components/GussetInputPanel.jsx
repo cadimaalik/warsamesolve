@@ -7,10 +7,11 @@ export default function GussetInputPanel({ steelProblem }) {
     <DescriptorGroup title="Gusset Plates">
       <FieldRow label="Gusset arrangement">
         <select
+          className={!problem.gusset.arrangement ? 'select-empty' : ''}
           value={problem.gusset.arrangement}
           onChange={(event) => updateGussetArrangement(event.target.value)}
         >
-          <option value="" />
+          <option value="" disabled>Select gusset arrangement</option>
           <option value="single">Single gusset plate</option>
           <option value="double">Double gusset plate</option>
         </select>

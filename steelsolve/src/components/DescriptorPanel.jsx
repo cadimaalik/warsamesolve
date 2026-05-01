@@ -16,7 +16,7 @@ export default function DescriptorPanel({ steelProblem }) {
 
       <div className="descriptor-list">
         <MemberInputPanel steelProblem={steelProblem} />
-        <GussetInputPanel steelProblem={steelProblem} />
+        {problem.member.memberType ? <GussetInputPanel steelProblem={steelProblem} /> : null}
         <ConnectionInputPanel steelProblem={steelProblem} />
         <BoltInputPanel steelProblem={steelProblem} />
         <FailurePathPanel steelProblem={steelProblem} />

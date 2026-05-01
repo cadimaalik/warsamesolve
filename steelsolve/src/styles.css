@@ -335,11 +335,23 @@ p {
 }
 
 .descriptor-row select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
   background:
-    linear-gradient(45deg, transparent 50%, var(--primary) 50%) calc(100% - 15px) 50% / 6px 6px no-repeat,
-    linear-gradient(135deg, var(--primary) 50%, transparent 50%) calc(100% - 10px) 50% / 6px 6px no-repeat,
+    linear-gradient(45deg, transparent 50%, var(--primary) 50%) calc(100% - 18px) 52% / 7px 7px no-repeat,
+    linear-gradient(135deg, var(--primary) 50%, transparent 50%) calc(100% - 13px) 52% / 7px 7px no-repeat,
     #0d0d0d;
-  padding-right: 28px;
+  color: var(--text);
+  padding-right: 38px;
+}
+
+.descriptor-row select::-ms-expand {
+  display: none;
+}
+
+.descriptor-row select.select-empty {
+  color: var(--text-muted);
 }
 
 .descriptor-row select:hover,
@@ -359,14 +371,21 @@ p {
   color: var(--text);
 }
 
+.descriptor-row select option:disabled {
+  background: var(--bg);
+  color: var(--text-muted);
+}
+
 .descriptor-row select option:checked {
   background: var(--primary);
+  box-shadow: 0 0 0 9999px var(--primary) inset;
   color: var(--bg);
 }
 
 .descriptor-row select option:hover,
 .descriptor-row select option:focus {
   background: var(--primary-light);
+  box-shadow: 0 0 0 9999px var(--primary-light) inset;
   color: var(--bg);
 }
 

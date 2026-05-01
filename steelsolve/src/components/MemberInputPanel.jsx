@@ -28,10 +28,11 @@ export default function MemberInputPanel({ steelProblem }) {
     <DescriptorGroup title="Member">
       <FieldRow label="Member type">
         <select
+          className={!member.memberType ? 'select-empty' : ''}
           value={member.memberType}
           onChange={(event) => updateMemberType(event.target.value)}
         >
-          <option value="" />
+          <option value="" disabled>Select member type</option>
           {memberTypes.map(([value, label]) => (
             <option key={value} value={value}>{label}</option>
           ))}
@@ -42,10 +43,11 @@ export default function MemberInputPanel({ steelProblem }) {
         <>
           <FieldRow label="Section family">
             <select
+              className={!member.sectionFamily ? 'select-empty' : ''}
               value={member.sectionFamily}
               onChange={(event) => updateField(['member', 'sectionFamily'], event.target.value)}
             >
-              <option value="" />
+              <option value="" disabled>Select section family</option>
               {sectionFamilies.map(([value, label]) => (
                 <option key={value} value={value}>{label}</option>
               ))}
@@ -53,7 +55,7 @@ export default function MemberInputPanel({ steelProblem }) {
           </FieldRow>
           <FieldRow label="Section designation">
             <select value={member.sectionDesignation} disabled>
-              <option value="" />
+              <option value="">Section table pending</option>
             </select>
           </FieldRow>
         </>
@@ -88,10 +90,11 @@ export default function MemberInputPanel({ steelProblem }) {
 
       <FieldRow label="Steel grade">
         <select
+          className={!member.material.grade ? 'select-empty' : ''}
           value={member.material.grade}
           onChange={(event) => updateMaterialGrade(event.target.value)}
         >
-          <option value="" />
+          <option value="" disabled>Select steel grade</option>
           {materialGrades.map((grade) => (
             <option key={grade} value={grade}>{grade === 'custom' ? 'Custom' : grade}</option>
           ))}
