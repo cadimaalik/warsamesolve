@@ -20,6 +20,17 @@ function validateOptionalMinimum(value, minimum, label, issues) {
   }
 }
 
+function validateMemberType(memberType, issues) {
+  if (!memberType) {
+    issues.push('Member type is required.')
+    return
+  }
+
+  if (!['rolled-section', 'splice-plate'].includes(memberType)) {
+    issues.push('Member type must be rolled section or splice plate.')
+  }
+}
+
 function validateConnectedElement(problem, issues) {
   if (problem.member.memberType !== 'rolled-section') {
     return
@@ -69,9 +80,7 @@ function validateGussetArrangement(problem, issues) {
 export function validateProblem(problem) {
   const issues = []
 
-  if (!problem.member.memberType) {
-    issues.push('Member type is required.')
-  }
+  validateMemberType(problem.member.memberType, issues)
 
   if (!problem.member.material.grade) {
     issues.push('Steel grade is required.')

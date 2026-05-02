@@ -7,7 +7,6 @@ const materialGrades = ['S235', 'S275', 'S355', 'custom']
 const memberTypes = [
   ['rolled-section', 'Rolled section'],
   ['splice-plate', 'Splice plate'],
-  ['built-up', 'Built-up member'],
 ]
 
 export default function MemberInputPanel({ steelProblem }) {
@@ -69,10 +68,6 @@ export default function MemberInputPanel({ steelProblem }) {
             />
           </FieldRow>
         </>
-      ) : null}
-
-      {member.memberType === 'built-up' ? (
-        <p className="muted-note">Built-up member editor will be added in a separate step.</p>
       ) : null}
 
       <FieldRow label="Steel grade">
