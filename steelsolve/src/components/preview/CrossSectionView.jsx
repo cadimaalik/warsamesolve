@@ -321,10 +321,6 @@ function RolledSectionCrossSection({ problem }) {
     return null
   }
 
-  if (!problem.gusset.arrangement) {
-    return null
-  }
-
   const section = getSectionByDesignation(
     problem.member.sectionFamily,
     problem.member.sectionDesignation,

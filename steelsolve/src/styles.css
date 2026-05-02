@@ -516,7 +516,7 @@ p {
 }
 
 .drawing-card {
-  height: clamp(180px, 25vh, 240px);
+  height: clamp(360px, 50vh, 480px);
   min-height: 0;
   display: flex;
   flex-direction: column;
