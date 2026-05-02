@@ -85,8 +85,8 @@ function normalizeConnectedElementForSectionFamily(sectionFamily, connectedEleme
   return ['web', 'flange'].includes(connectedElement) ? connectedElement : ''
 }
 
-function isAngleSectionFamily(sectionFamily) {
-  return ['equal-angle', 'unequal-angle'].includes(sectionFamily)
+function requiresSingleGussetFamily(sectionFamily) {
+  return ['equal-angle', 'unequal-angle', 'UPN'].includes(sectionFamily)
 }
 
 export default function useSteelProblem() {
@@ -119,7 +119,7 @@ export default function useSteelProblem() {
       },
       gusset: {
         ...current.gusset,
-        arrangement: memberType === 'rolled-section' && isAngleSectionFamily(current.member.sectionFamily)
+        arrangement: memberType === 'rolled-section' && requiresSingleGussetFamily(current.member.sectionFamily)
           ? 'single'
           : current.gusset.arrangement,
       },
@@ -143,7 +143,7 @@ export default function useSteelProblem() {
       },
       gusset: {
         ...current.gusset,
-        arrangement: isAngleSectionFamily(sectionFamily) ? 'single' : current.gusset.arrangement,
+        arrangement: requiresSingleGussetFamily(sectionFamily) ? 'single' : current.gusset.arrangement,
       },
     }))
   }, [])
@@ -177,7 +177,7 @@ export default function useSteelProblem() {
       ...current,
       gusset: {
         ...current.gusset,
-        arrangement: isAngleSectionFamily(current.member.sectionFamily) ? 'single' : arrangement,
+        arrangement: requiresSingleGussetFamily(current.member.sectionFamily) ? 'single' : arrangement,
         mirroredEnds: true,
         shape: 'trapezoid',
         assumedRigid: true,

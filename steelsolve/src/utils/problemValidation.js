@@ -59,10 +59,10 @@ function validateGussetArrangement(problem, issues) {
 
   if (
     problem.member.memberType === 'rolled-section'
-    && ['equal-angle', 'unequal-angle'].includes(problem.member.sectionFamily)
+    && ['equal-angle', 'unequal-angle', 'UPN'].includes(problem.member.sectionFamily)
     && problem.gusset.arrangement !== 'single'
   ) {
-    issues.push('Angle sections must use a single gusset plate.')
+    issues.push('This section family must use a single gusset plate.')
   }
 }
 

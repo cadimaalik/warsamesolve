@@ -2,11 +2,13 @@ import DescriptorGroup, { FieldRow, StaticRow } from './DescriptorGroup'
 
 export default function GussetInputPanel({ steelProblem }) {
   const { problem, updateGussetArrangement } = steelProblem
-  const isAngleSection = ['equal-angle', 'unequal-angle'].includes(problem.member.sectionFamily)
+  const requiresSingleGusset = ['equal-angle', 'unequal-angle', 'UPN'].includes(
+    problem.member.sectionFamily,
+  )
 
   return (
     <DescriptorGroup title="Gusset Plates">
-      {isAngleSection ? (
+      {requiresSingleGusset ? (
         <StaticRow label="Gusset arrangement" value="Single gusset plate" />
       ) : (
         <FieldRow label="Gusset arrangement">
