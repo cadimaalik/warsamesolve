@@ -51,6 +51,21 @@ function validateConnectedElement(problem, issues) {
   }
 }
 
+function validateGussetArrangement(problem, issues) {
+  if (!problem.gusset.arrangement) {
+    issues.push('Gusset arrangement is required.')
+    return
+  }
+
+  if (
+    problem.member.memberType === 'rolled-section'
+    && ['equal-angle', 'unequal-angle'].includes(problem.member.sectionFamily)
+    && problem.gusset.arrangement !== 'single'
+  ) {
+    issues.push('Angle sections must use a single gusset plate.')
+  }
+}
+
 export function validateProblem(problem) {
   const issues = []
 
@@ -89,9 +104,7 @@ export function validateProblem(problem) {
     }
   }
 
-  if (!problem.gusset.arrangement) {
-    issues.push('Gusset arrangement is required.')
-  }
+  validateGussetArrangement(problem, issues)
 
   validateConnectedElement(problem, issues)
 
