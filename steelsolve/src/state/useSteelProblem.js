@@ -79,7 +79,7 @@ function normalizeConnectedElementForSectionFamily(sectionFamily, connectedEleme
   }
 
   if (sectionFamily === 'unequal-angle') {
-    return ['short-leg', 'long-leg'].includes(connectedElement) ? connectedElement : ''
+    return ['short-leg', 'long-leg'].includes(connectedElement) ? connectedElement : 'long-leg'
   }
 
   return ['web', 'flange'].includes(connectedElement) ? connectedElement : ''

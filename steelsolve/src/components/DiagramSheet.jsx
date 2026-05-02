@@ -1,9 +1,9 @@
 import DrawingCard from './DrawingCard'
-import TopViewPlaceholder from './placeholders/TopViewPlaceholder'
+import TopView from './preview/TopView'
 import EndDetailPlaceholder from './placeholders/EndDetailPlaceholder'
-import CrossSectionPlaceholder from './placeholders/CrossSectionPlaceholder'
+import CrossSectionView from './preview/CrossSectionView'
 
-export default function DiagramSheet() {
+export default function DiagramSheet({ problem }) {
   return (
     <section className="diagram-sheet" aria-labelledby="diagram-heading">
       <div className="sheet-heading">
@@ -13,13 +13,13 @@ export default function DiagramSheet() {
 
       <div className="drawing-stack">
         <DrawingCard title="Top View">
-          <TopViewPlaceholder />
+          <TopView problem={problem} />
         </DrawingCard>
         <DrawingCard title="Typical End Detail">
           <EndDetailPlaceholder />
         </DrawingCard>
         <DrawingCard title="Cross-Section Detail">
-          <CrossSectionPlaceholder />
+          <CrossSectionView problem={problem} />
         </DrawingCard>
       </div>
     </section>
