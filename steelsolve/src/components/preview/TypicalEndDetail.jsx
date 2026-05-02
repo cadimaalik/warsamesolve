@@ -122,13 +122,13 @@ function DimensionExtension({ x1, y1, x2, y2 }) {
 }
 
 function Dimensions({ layout, transform }) {
-  const { geometry, maxBoltCount } = layout
+  const { geometry, maxBoltLineLevel } = layout
   const { region, mapX, mapY } = transform
   const firstColumnX = mapX(geometry.horizontalEdge)
   const secondColumnX = mapX(geometry.horizontalEdge + geometry.pitch)
   const topBoltY = mapY(geometry.topEdge)
   const secondBoltLineY = mapY(geometry.topEdge + geometry.gage)
-  const lastBoltY = mapY(geometry.topEdge + Math.max(0, maxBoltCount - 1) * geometry.gage)
+  const lastBoltY = mapY(geometry.topEdge + maxBoltLineLevel * geometry.gage)
   const below = region.y + region.height + 28
   const above = region.y - 26
   const left = region.x - 26
@@ -174,7 +174,7 @@ function Dimensions({ layout, transform }) {
         rotate={-90}
       />
 
-      {maxBoltCount >= 2 && geometry.gage > 0 ? (
+      {maxBoltLineLevel >= 1 && geometry.gage > 0 ? (
         <>
           <DimensionExtension x1={firstColumnX} y1={topBoltY} x2={right + 10} y2={topBoltY} />
           <DimensionExtension x1={firstColumnX} y1={secondBoltLineY} x2={right + 10} y2={secondBoltLineY} />

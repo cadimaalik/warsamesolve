@@ -51,35 +51,39 @@ export function getTypicalEndDetailLayout(problem) {
   }
 
   const maxBoltCount = Math.max(...boltCounts)
+  const isStaggered = !bolts.sameBoltCountEachColumn && new Set(boltCounts).size > 1
+  const maxBoltLineLevel = isStaggered ? Math.max(0, 2 * (maxBoltCount - 1)) : Math.max(0, maxBoltCount - 1)
   const warnings = []
 
   if (columnCount > 1 && pitch === 0) {
     warnings.push('s = 0 with multiple columns')
   }
 
-  if (maxBoltCount > 1 && gage === 0) {
+  if (maxBoltLineLevel > 0 && gage === 0) {
     warnings.push('g = 0 with multiple bolt lines')
   }
 
   const extension = Math.max(horizontalEdge * 0.6, 40)
   const width = horizontalEdge + Math.max(0, columnCount - 1) * pitch + horizontalEdge + extension
-  const height = topEdge + Math.max(0, maxBoltCount - 1) * gage + bottomEdge
+  const height = topEdge + maxBoltLineLevel * gage + bottomEdge
 
   const boltPoints = boltCounts.flatMap((count, columnIndex) => {
-    const offset = gage > 0 ? (maxBoltCount - count) / 2 : 0
-
     return Array.from({ length: count }, (_, boltIndex) => ({
       columnIndex,
       boltIndex,
       x: horizontalEdge + columnIndex * pitch,
-      y: topEdge + (boltIndex + offset) * gage,
+      y: topEdge + (
+        isStaggered
+          ? (maxBoltCount - count) + boltIndex * 2
+          : boltIndex
+      ) * gage,
     }))
   })
 
   const columnLines = Array.from({ length: columnCount }, (_, columnIndex) => (
     horizontalEdge + columnIndex * pitch
   ))
-  const transverseLines = Array.from({ length: maxBoltCount }, (_, lineIndex) => (
+  const transverseLines = Array.from({ length: maxBoltLineLevel + 1 }, (_, lineIndex) => (
     topEdge + lineIndex * gage
   ))
 
@@ -88,6 +92,8 @@ export function getTypicalEndDetailLayout(problem) {
     boltDiameter: parseBoltDiameter(bolts.diameter),
     boltCounts,
     maxBoltCount,
+    maxBoltLineLevel,
+    isStaggered,
     warnings,
     geometry: {
       width,
