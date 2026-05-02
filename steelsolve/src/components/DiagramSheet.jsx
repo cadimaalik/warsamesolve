@@ -1,6 +1,6 @@
 import DrawingCard from './DrawingCard'
 import TopView from './preview/TopView'
-import EndDetailPlaceholder from './placeholders/EndDetailPlaceholder'
+import TypicalEndDetail from './preview/TypicalEndDetail'
 import CrossSectionView from './preview/CrossSectionView'
 
 export default function DiagramSheet({ problem }) {
@@ -16,7 +16,7 @@ export default function DiagramSheet({ problem }) {
           <TopView problem={problem} />
         </DrawingCard>
         <DrawingCard title="Typical End Detail">
-          <EndDetailPlaceholder />
+          <TypicalEndDetail problem={problem} />
         </DrawingCard>
         <DrawingCard title="Cross-Section Detail">
           <CrossSectionView problem={problem} />
