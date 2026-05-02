@@ -20,6 +20,37 @@ function validateOptionalMinimum(value, minimum, label, issues) {
   }
 }
 
+function validateConnectedElement(problem, issues) {
+  if (problem.member.memberType !== 'rolled-section') {
+    return
+  }
+
+  const { sectionFamily } = problem.member
+  const { connectedElement } = problem.connection
+
+  if (!sectionFamily) {
+    return
+  }
+
+  if (sectionFamily === 'equal-angle') {
+    if (connectedElement !== 'one-leg') {
+      issues.push('Equal angle sections must connect through one leg.')
+    }
+    return
+  }
+
+  if (sectionFamily === 'unequal-angle') {
+    if (!['short-leg', 'long-leg'].includes(connectedElement)) {
+      issues.push('Unequal angle sections must connect through the short leg or long leg.')
+    }
+    return
+  }
+
+  if (!['web', 'flange'].includes(connectedElement)) {
+    issues.push('Connected element must be web or flange for this section family.')
+  }
+}
+
 export function validateProblem(problem) {
   const issues = []
 
@@ -62,9 +93,7 @@ export function validateProblem(problem) {
     issues.push('Gusset arrangement is required.')
   }
 
-  if (problem.member.memberType === 'rolled-section' && !problem.connection.connectedElement) {
-    issues.push('Connected element is required.')
-  }
+  validateConnectedElement(problem, issues)
 
   validateOptionalMinimum(problem.bolts.columnCount, 1, 'Number of longitudinal bolt columns', issues)
 

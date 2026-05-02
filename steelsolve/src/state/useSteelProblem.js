@@ -73,6 +73,18 @@ function normalizeBoltCounts(columnCount, existingCounts = []) {
   return Array.from({ length: count }, (_, index) => existingCounts[index] ?? '')
 }
 
+function normalizeConnectedElementForSectionFamily(sectionFamily, connectedElement) {
+  if (sectionFamily === 'equal-angle') {
+    return 'one-leg'
+  }
+
+  if (sectionFamily === 'unequal-angle') {
+    return ['short-leg', 'long-leg'].includes(connectedElement) ? connectedElement : ''
+  }
+
+  return ['web', 'flange'].includes(connectedElement) ? connectedElement : ''
+}
+
 export default function useSteelProblem() {
   const [problem, setProblem] = useState(defaultProblem)
 
@@ -94,7 +106,12 @@ export default function useSteelProblem() {
       },
       connection: {
         ...current.connection,
-        connectedElement: memberType === 'splice-plate' ? '' : current.connection.connectedElement,
+        connectedElement: memberType === 'rolled-section'
+          ? normalizeConnectedElementForSectionFamily(
+            current.member.sectionFamily,
+            current.connection.connectedElement,
+          )
+          : '',
       },
     }))
   }, [])
@@ -106,6 +123,13 @@ export default function useSteelProblem() {
         ...current.member,
         sectionFamily,
         sectionDesignation: '',
+      },
+      connection: {
+        ...current.connection,
+        connectedElement: normalizeConnectedElementForSectionFamily(
+          sectionFamily,
+          current.connection.connectedElement,
+        ),
       },
     }))
   }, [])
