@@ -73,9 +73,21 @@ function CheckCard({ check }) {
       {check.equations.length ? (
         <pre className="solution-equations">{check.equations.join('\n')}</pre>
       ) : null}
-      <ol>
+      <ol className="solution-step-list">
         {check.steps.map((step) => (
-          <li key={step}>{step}</li>
+          <li key={typeof step === 'string' ? step : step.id}>
+            {typeof step === 'string' ? (
+              step
+            ) : (
+              <>
+                <span>{step.title}</span>
+                <p>{step.body}</p>
+                {step.equations?.length ? (
+                  <pre className="solution-equations">{step.equations.join('\n')}</pre>
+                ) : null}
+              </>
+            )}
+          </li>
         ))}
       </ol>
     </article>
@@ -115,3 +127,5 @@ export default function SolutionPanel({ result }) {
     </section>
   )
 }
+
+export { SectionInputSummary, MessageList, CheckCard }

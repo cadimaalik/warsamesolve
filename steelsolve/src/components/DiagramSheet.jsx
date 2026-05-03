@@ -2,9 +2,8 @@ import DrawingCard from './DrawingCard'
 import TopView from './preview/TopView'
 import TypicalEndDetail from './preview/TypicalEndDetail'
 import CrossSectionView from './preview/CrossSectionView'
-import SolutionPanel from './SolutionPanel'
 
-export default function DiagramSheet({ problem, analysisResult }) {
+export default function DiagramSheet({ problem }) {
   return (
     <section className="diagram-sheet" aria-labelledby="diagram-heading">
       <div className="sheet-heading">
@@ -22,7 +21,6 @@ export default function DiagramSheet({ problem, analysisResult }) {
         <DrawingCard title="Cross-Section Detail">
           <CrossSectionView problem={problem} />
         </DrawingCard>
-        <SolutionPanel result={analysisResult} />
       </div>
     </section>
   )

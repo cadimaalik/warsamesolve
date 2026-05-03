@@ -14,8 +14,18 @@ function placeholderCheck(id, title, purpose) {
     asd: null,
     equations: [],
     steps: [
-      `${purpose} will be implemented in a later analysis prompt.`,
-      'Inputs are normalized now so this check can plug into the same result object.',
+      {
+        id: `${id}-setup`,
+        title: 'Setup',
+        body: `${purpose} will be implemented in a later analysis prompt.`,
+        equations: [],
+      },
+      {
+        id: `${id}-placeholder`,
+        title: 'Calculation placeholder',
+        body: 'Inputs are normalized now so equations and LaTeX-rendered steps can plug into this check object.',
+        equations: [],
+      },
     ],
   }
 }

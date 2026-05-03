@@ -585,6 +585,99 @@ p {
   padding: calc(var(--grid) * 1.5);
 }
 
+.steel-solver-page {
+  min-height: 100vh;
+  background:
+    linear-gradient(rgba(64, 64, 64, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(64, 64, 64, 0.08) 1px, transparent 1px),
+    var(--bg);
+  background-size: 32px 32px;
+  color: var(--text);
+}
+
+.steel-solver-top-bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  justify-content: flex-start;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(10, 10, 10, 0.96);
+  padding: 14px 24px;
+}
+
+.steel-solver-nav-btn {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--primary);
+  cursor: pointer;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 9px 13px;
+}
+
+.steel-solver-nav-btn:hover,
+.steel-solver-nav-btn:focus-visible {
+  background: rgba(74, 222, 128, 0.1);
+  outline: none;
+}
+
+.steel-solver-body {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 24px 24px 80px;
+}
+
+.steel-solver-hero {
+  margin-bottom: 24px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  padding: 20px;
+}
+
+.steel-solver-hero h1 {
+  margin: 4px 0 10px;
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: clamp(1.35rem, 3vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.steel-solver-hero p:last-child,
+.steel-solver-empty {
+  margin: 0;
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+.steel-solver-message-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.steel-step-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+}
+
+.steel-step-heading h2 {
+  margin: 0;
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
 .solution-heading {
   display: flex;
   align-items: baseline;
@@ -689,6 +782,15 @@ p {
   font-size: 0.68rem;
   line-height: 1.55;
   padding-left: 18px;
+}
+
+.solution-step-list li span {
+  color: var(--text);
+  font-weight: 800;
+}
+
+.solution-step-list li p {
+  margin: 4px 0 0;
 }
 
 .solution-check-grid {
