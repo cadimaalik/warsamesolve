@@ -14,10 +14,10 @@ export default function Header({ onAnalyze, onClear }) {
   }, [toast])
 
   const handleAnalyze = () => {
-    const issues = onAnalyze()
+    const { issues, result } = onAnalyze()
     setToast({
       type: issues.length ? 'issues' : 'ready',
-      messages: issues.length ? issues : ['Analysis will be added in a later step.'],
+      messages: issues.length ? issues : [result?.status ? 'Solution outline generated.' : 'Analysis will be added in a later step.'],
     })
   }
 
