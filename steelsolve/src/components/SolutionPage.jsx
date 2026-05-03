@@ -25,15 +25,6 @@ export default function SolutionPage({ result, onBack }) {
       </div>
 
       <div className="steel-solver-body">
-        <section className="steel-solver-hero">
-          <p className="panel-kicker">SteelSolve analysis</p>
-          <h1>Tension Member Solution Outline</h1>
-          <p>
-            This page captures the interpreted problem statement and the placeholder calculation
-            sequence. Real steel-design checks will plug into these cards in later prompts.
-          </p>
-        </section>
-
         <SectionInputSummary inputs={result.inputs} />
 
         <div className="steel-solver-message-grid">
