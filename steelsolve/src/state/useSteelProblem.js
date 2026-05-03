@@ -1,4 +1,6 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+
+const STORAGE_KEY = 'steelsolve_problem_descriptor_v1'
 
 export const defaultProblem = {
   problemType: 'tension-member-connection',
@@ -50,6 +52,65 @@ const materialDefaults = {
   S355: { Fy_MPa: 355, Fu_MPa: 510 },
 }
 
+function cloneDefaultProblem() {
+  return JSON.parse(JSON.stringify(defaultProblem))
+}
+
+function isPlainObject(value) {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+}
+
+function mergeWithDefault(defaultValue, savedValue) {
+  if (Array.isArray(defaultValue)) {
+    return Array.isArray(savedValue) ? savedValue : defaultValue
+  }
+
+  if (!isPlainObject(defaultValue)) {
+    if (savedValue === null || savedValue === undefined || isPlainObject(savedValue) || Array.isArray(savedValue)) {
+      return defaultValue
+    }
+
+    return savedValue
+  }
+
+  if (!isPlainObject(savedValue)) {
+    return defaultValue
+  }
+
+  return Object.fromEntries(
+    Object.entries(defaultValue).map(([key, value]) => [
+      key,
+      mergeWithDefault(value, savedValue[key]),
+    ]),
+  )
+}
+
+function loadSavedProblem() {
+  if (typeof window === 'undefined') {
+    return cloneDefaultProblem()
+  }
+
+  try {
+    const saved = window.localStorage.getItem(STORAGE_KEY)
+
+    if (!saved) {
+      return cloneDefaultProblem()
+    }
+
+    const parsed = JSON.parse(saved)
+
+    if (!isPlainObject(parsed)) {
+      window.localStorage.removeItem(STORAGE_KEY)
+      return cloneDefaultProblem()
+    }
+
+    return mergeWithDefault(cloneDefaultProblem(), parsed)
+  } catch {
+    window.localStorage.removeItem(STORAGE_KEY)
+    return cloneDefaultProblem()
+  }
+}
+
 function setAtPath(source, path, value) {
   const [key, ...rest] = path
 
@@ -86,7 +147,25 @@ function normalizeConnectedElementForSectionFamily(sectionFamily, connectedEleme
 }
 
 export default function useSteelProblem() {
-  const [problem, setProblem] = useState(defaultProblem)
+  const [problem, setProblem] = useState(loadSavedProblem)
+  const skipNextSave = useRef(false)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    if (skipNextSave.current) {
+      skipNextSave.current = false
+      return
+    }
+
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(problem))
+    } catch {
+      // Ignore storage failures so descriptor editing keeps working.
+    }
+  }, [problem])
 
   const updateField = useCallback((path, value) => {
     setProblem((current) => setAtPath(current, path, value))
@@ -213,6 +292,15 @@ export default function useSteelProblem() {
     })
   }, [])
 
+  const resetProblem = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      skipNextSave.current = true
+      window.localStorage.removeItem(STORAGE_KEY)
+    }
+
+    setProblem(cloneDefaultProblem())
+  }, [])
+
   return {
     problem,
     updateField,
@@ -224,5 +312,6 @@ export default function useSteelProblem() {
     updateColumnCount,
     updateSameBoltCountEachColumn,
     updateBoltCountByColumn,
+    resetProblem,
   }
 }

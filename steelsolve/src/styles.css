@@ -119,14 +119,15 @@ p {
 }
 
 .header-actions {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--grid) * 1);
   position: relative;
 }
 
-.analyze-button {
+.analyze-button,
+.clear-button {
   min-height: 36px;
-  border: 0;
-  background: var(--primary);
-  color: var(--bg);
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.78rem;
   font-weight: 700;
@@ -136,9 +137,28 @@ p {
   cursor: pointer;
 }
 
+.analyze-button {
+  border: 0;
+  background: var(--primary);
+  color: var(--bg);
+}
+
 .analyze-button:hover,
 .analyze-button:focus-visible {
   background: var(--primary-light);
+}
+
+.clear-button {
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-muted);
+}
+
+.clear-button:hover,
+.clear-button:focus-visible {
+  border-color: var(--accent);
+  color: var(--accent);
+  outline: none;
 }
 
 .analysis-toast {

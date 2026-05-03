@@ -12,7 +12,7 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <Header onAnalyze={handleAnalyze} />
+      <Header onAnalyze={handleAnalyze} onClear={steelProblem.resetProblem} />
       <ResizableSplit>
         <DescriptorPanel steelProblem={steelProblem} />
         <DiagramSheet problem={steelProblem.problem} />

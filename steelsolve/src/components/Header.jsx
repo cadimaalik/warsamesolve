@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import AnalyzeButton from './AnalyzeButton'
 
-export default function Header({ onAnalyze }) {
+export default function Header({ onAnalyze, onClear }) {
   const [toast, setToast] = useState(null)
 
   useEffect(() => {
@@ -32,6 +32,9 @@ export default function Header({ onAnalyze }) {
         </div>
       </div>
       <div className="header-actions">
+        <button type="button" className="clear-button" onClick={onClear}>
+          Clear
+        </button>
         <AnalyzeButton onAnalyze={handleAnalyze} />
         {toast ? (
           <div className={`analysis-toast analysis-toast-${toast.type}`} role="status">
