@@ -1,6 +1,16 @@
 import { formatKn, formatMm2 } from '../analysis/steelUtils'
 import EquationBlock from './EquationBlock'
 
+const solutionCheckOrder = [
+  'gross-area',
+  'gross-section-yielding',
+  'net-area',
+  'effective-net-area',
+  'net-section-rupture',
+  'block-shear',
+  'governing-result',
+]
+
 function DisplayValue({ value }) {
   return <strong>{value === null || value === undefined || value === '' ? '-' : value}</strong>
 }
@@ -85,6 +95,16 @@ function getCheckNotes(check) {
   return ['This check remains a placeholder for a later analysis step.']
 }
 
+function getOrderedChecks(checks) {
+  const checksById = new Map(checks.map((check) => [check.id, check]))
+  const orderedChecks = solutionCheckOrder
+    .map((id) => checksById.get(id))
+    .filter(Boolean)
+  const remainingChecks = checks.filter((check) => !solutionCheckOrder.includes(check.id))
+
+  return [...orderedChecks, ...remainingChecks]
+}
+
 export default function SolutionPanel({ result }) {
   if (!result) {
     return null
@@ -106,7 +126,7 @@ export default function SolutionPanel({ result }) {
           <h2>Worked Calculation</h2>
         </div>
 
-        {result.checks.map((check, index) => (
+        {getOrderedChecks(result.checks).map((check, index) => (
           <div key={check.id} className="solution-step">
             <div className="step-header">
               <span className="step-number">Step {index + 1}</span>
@@ -120,4 +140,4 @@ export default function SolutionPanel({ result }) {
   )
 }
 
-export { SectionInputSummary, CheckCard }
+export { SectionInputSummary, CheckCard, getOrderedChecks }

@@ -60,7 +60,7 @@ export default function EquationBlock({ equations }) {
       {groups.map((group, index) => {
         const latex = group.length === 1
           ? `\\[${group[0]}\\]`
-          : `\\[\\begin{gathered}${group.join(' \\\\ ')}\\end{gathered}\\]`
+          : `\\[\\begin{gathered}${group.join(' \\\\[0.75em] ')}\\end{gathered}\\]`
 
         return (
           <div

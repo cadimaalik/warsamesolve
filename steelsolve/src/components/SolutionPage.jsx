@@ -1,4 +1,4 @@
-import { CheckCard, SectionInputSummary } from './SolutionPanel'
+import { CheckCard, SectionInputSummary, getOrderedChecks } from './SolutionPanel'
 
 export default function SolutionPage({ result, onBack }) {
   if (!result) {
@@ -33,7 +33,7 @@ export default function SolutionPage({ result, onBack }) {
             <h2>Worked Calculation</h2>
           </div>
 
-          {result.checks.map((check, index) => (
+          {getOrderedChecks(result.checks).map((check, index) => (
             <div key={check.id} className="solution-step">
               <div className="step-header">
                 <span className="step-number">Step {index + 1}</span>

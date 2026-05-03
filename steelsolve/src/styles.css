@@ -45,8 +45,8 @@ select {
   display: flex;
   flex-direction: column;
   background:
-    linear-gradient(rgba(64, 64, 64, 0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(64, 64, 64, 0.08) 1px, transparent 1px),
+    linear-gradient(rgba(255, 255, 255, 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.09) 1px, transparent 1px),
     var(--bg);
   background-size: 32px 32px;
 }
@@ -588,8 +588,8 @@ p {
 .steel-solver-page {
   min-height: 100vh;
   background:
-    linear-gradient(rgba(64, 64, 64, 0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(64, 64, 64, 0.08) 1px, transparent 1px),
+    linear-gradient(rgba(255, 255, 255, 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.09) 1px, transparent 1px),
     var(--bg);
   background-size: 32px 32px;
   color: var(--text);
@@ -845,9 +845,9 @@ p {
 }
 
 .equation-block {
-  margin: 12px 0;
+  margin: 16px 0;
   overflow: visible;
-  padding: 16px 0;
+  padding: 20px 0;
 }
 
 .equation-group-spaced {
