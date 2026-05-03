@@ -59,6 +59,8 @@ function SectionInputSummary({ inputs }) {
 }
 
 function CheckCard({ check }) {
+  const hasStrengthValues = check.nominal !== null || check.lrfd !== null || check.asd !== null
+
   return (
     <article className="solution-check-card">
       <div className="solution-check-heading">
@@ -66,10 +68,20 @@ function CheckCard({ check }) {
         <span>{check.status}</span>
       </div>
       <div className="solution-check-values">
-        <SummaryItem label="Nominal" value={check.nominal ? formatKn(check.nominal) : 'pending'} />
-        <SummaryItem label="LRFD" value={check.lrfd ? formatKn(check.lrfd) : 'pending'} />
-        <SummaryItem label="ASD" value={check.asd ? formatKn(check.asd) : 'pending'} />
+        {check.area ? (
+          <SummaryItem label="Area" value={formatMm2(check.area.value_mm2)} />
+        ) : null}
+        {hasStrengthValues || !check.area ? (
+          <>
+            <SummaryItem label="Nominal" value={check.nominal !== null ? formatKn(check.nominal) : 'pending'} />
+            <SummaryItem label="LRFD" value={check.lrfd !== null ? formatKn(check.lrfd) : 'pending'} />
+            <SummaryItem label="ASD" value={check.asd !== null ? formatKn(check.asd) : 'pending'} />
+          </>
+        ) : null}
       </div>
+      {check.area?.source ? (
+        <p className="solution-check-source">Source: {check.area.source}</p>
+      ) : null}
       {check.equations.length ? (
         <pre className="solution-equations">{check.equations.join('\n')}</pre>
       ) : null}

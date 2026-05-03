@@ -32,7 +32,7 @@ export function formatKn(value) {
 }
 
 export function formatMm2(value) {
-  return `${formatNumber(value, 1)} mm2`
+  return `${formatNumber(value, 1)} mm²`
 }
 
 export function parseBoltLabel(label) {

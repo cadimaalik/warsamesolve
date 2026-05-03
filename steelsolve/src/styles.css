@@ -776,6 +776,13 @@ p {
   margin: 4px 0 0;
 }
 
+.solution-check-source {
+  margin: 8px 0 0;
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+}
+
 .solution-check-grid {
   display: grid;
   gap: calc(var(--grid) * 1);
