@@ -2,7 +2,11 @@ import MemberInputPanel from './MemberInputPanel'
 import GussetInputPanel from './GussetInputPanel'
 import ConnectionInputPanel from './ConnectionInputPanel'
 import BoltInputPanel from './BoltInputPanel'
-import FailurePathPanel from './FailurePathPanel'
+
+function getDisplayProblem(problem) {
+  const { failurePath, ...displayProblem } = problem
+  return displayProblem
+}
 
 export default function DescriptorPanel({ steelProblem }) {
   const { problem } = steelProblem
@@ -19,12 +23,11 @@ export default function DescriptorPanel({ steelProblem }) {
         {problem.member.memberType ? <GussetInputPanel steelProblem={steelProblem} /> : null}
         <ConnectionInputPanel steelProblem={steelProblem} />
         <BoltInputPanel steelProblem={steelProblem} />
-        <FailurePathPanel steelProblem={steelProblem} />
       </div>
 
       <details className="model-json">
         <summary>Model JSON</summary>
-        <pre>{JSON.stringify(problem, null, 2)}</pre>
+        <pre>{JSON.stringify(getDisplayProblem(problem), null, 2)}</pre>
       </details>
     </aside>
   )

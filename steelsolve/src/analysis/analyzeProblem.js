@@ -161,10 +161,6 @@ export function analyzeProblem(problem) {
       connectedElement: problem.connection.connectedElement,
     },
     bolts: getBoltInputSummary(problem),
-    failurePath: {
-      mode: problem.failurePath.mode,
-      pointCount: problem.failurePath.points.length,
-    },
   }
 
   const grossArea = buildGrossAreaCheck(inputs.member)

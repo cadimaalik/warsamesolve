@@ -7,6 +7,7 @@ const MARGINS = { left: 112, top: 74, right: 62, bottom: 74 }
 const STROKE = '#202020'
 const MUTED = '#6b7280'
 const WARNING = '#9a6500'
+const I_SHAPE_FAMILIES = ['IPN', 'IPE', 'HEA', 'HEB', 'HEM', 'HD']
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max)
@@ -31,6 +32,17 @@ function DrawingDefs() {
   return (
     <defs>
       <marker
+        id="typical-end-force-arrow"
+        markerWidth="10"
+        markerHeight="10"
+        refX="9"
+        refY="5"
+        orient="auto"
+        markerUnits="strokeWidth"
+      >
+        <path d="M 0 0 L 10 5 L 0 10 z" fill={STROKE} />
+      </marker>
+      <marker
         id="dimension-tick"
         markerWidth="8"
         markerHeight="8"
@@ -42,6 +54,82 @@ function DrawingDefs() {
         <path d="M 4 0 L 4 8" stroke={STROKE} strokeWidth="1.2" />
       </marker>
     </defs>
+  )
+}
+
+function usesRectangularGusset(problem) {
+  return (
+    problem.member.memberType === 'rolled-section'
+    && I_SHAPE_FAMILIES.includes(problem.member.sectionFamily)
+    && problem.connection.connectedElement === 'web'
+  )
+}
+
+function GussetPlate({ problem, region }) {
+  const isRectangular = usesRectangularGusset(problem)
+  const gussetWidth = clamp(region.width * 0.24, 58, 92)
+  const overlap = clamp(region.width * 0.055, 12, 22)
+  const xWide = region.x + overlap
+  const xLeft = xWide - gussetWidth
+
+  if (isRectangular) {
+    const webPlateHeight = clamp(region.height * 0.48, 38, region.height * 0.72)
+    const y = region.y + (region.height - webPlateHeight) / 2
+
+    return (
+      <rect
+        x={xLeft}
+        y={y}
+        width={gussetWidth}
+        height={webPlateHeight}
+        fill="#f8f8f8"
+        stroke={STROKE}
+        strokeWidth="1.7"
+        vectorEffect="non-scaling-stroke"
+      />
+    )
+  }
+
+  const inset = clamp(region.height * 0.18, 14, 28)
+  const points = [
+    [xLeft, region.y + inset],
+    [xWide, region.y],
+    [xWide, region.y + region.height],
+    [xLeft, region.y + region.height - inset],
+  ].map(([x, y]) => `${x},${y}`).join(' ')
+
+  return (
+    <polygon
+      points={points}
+      fill="#f8f8f8"
+      stroke={STROKE}
+      strokeWidth="1.7"
+      vectorEffect="non-scaling-stroke"
+    />
+  )
+}
+
+function ForceArrow({ region }) {
+  const y = region.y + region.height / 2
+  const x1 = region.x + region.width + 34
+  const x2 = VIEWBOX.width - 16
+
+  return (
+    <g fill="none" stroke={STROKE} strokeWidth="2" vectorEffect="non-scaling-stroke">
+      <line x1={x1} y1={y} x2={x2} y2={y} markerEnd="url(#typical-end-force-arrow)" />
+      <text
+        x={(x1 + x2) / 2}
+        y={y - 10}
+        fill={STROKE}
+        stroke="none"
+        fontFamily="JetBrains Mono, monospace"
+        fontSize="13"
+        fontWeight="700"
+        textAnchor="middle"
+      >
+        P
+      </text>
+    </g>
   )
 }
 
@@ -235,6 +323,7 @@ function ReadyEndDetail({ problem, layout }) {
 
   return (
     <>
+      <GussetPlate problem={problem} region={transform.region} />
       <RegionOutline problem={problem} region={transform.region} />
       <BoltGroup
         layout={layout}
@@ -244,6 +333,7 @@ function ReadyEndDetail({ problem, layout }) {
         region={transform.region}
       />
       <Dimensions layout={layout} transform={transform} />
+      <ForceArrow region={transform.region} />
       <Warnings warnings={layout.warnings} />
     </>
   )

@@ -40,10 +40,6 @@ export const defaultProblem = {
     topEdgeDistance_mm: 100,
     bottomEdgeDistance_mm: 100,
   },
-  failurePath: {
-    mode: 'straight',
-    points: [],
-  },
 }
 
 const materialDefaults = {
