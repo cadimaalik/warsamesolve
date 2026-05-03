@@ -625,7 +625,7 @@ p {
 }
 
 .steel-solver-body {
-  max-width: 1080px;
+  max-width: 900px;
   margin: 0 auto;
   padding: 28px 24px 80px;
 }
@@ -783,31 +783,95 @@ p {
   font-size: 0.78rem;
 }
 
-.solution-check-grid {
-  display: grid;
-  gap: calc(var(--grid) * 1);
-  margin-top: calc(var(--grid) * 1);
+.solution-step {
+  margin-bottom: 40px;
+}
+
+.step-header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+}
+
+.step-number {
+  color: var(--primary);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.step-title {
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.95rem;
+  font-weight: 700;
 }
 
 .solution-check-card {
-  border: 1px solid var(--border);
-  background: var(--surface-2);
-  padding: calc(var(--grid) * 1.5);
+  color: var(--text);
 }
 
-.solution-check-heading {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: calc(var(--grid) * 1);
+.solution-check-card-pending {
+  border-left: 2px solid rgba(156, 163, 175, 0.24);
+  padding-left: 14px;
 }
 
-.solution-equations {
-  margin: 10px 0 0;
-  overflow: auto;
+.solution-check-card-pending .solution-check-notes {
+  opacity: 0.65;
+}
+
+.solution-check-notes {
   color: var(--text-muted);
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.84rem;
+  font-style: italic;
+  line-height: 1.55;
+  margin: 8px 0 12px;
+}
+
+.solution-check-notes p {
+  margin: 0 0 6px;
+}
+
+.solution-strength-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.equation-block {
+  margin: 12px 0;
+  overflow: visible;
+  padding: 16px 0;
+}
+
+.equation-group-spaced {
+  margin-bottom: 8px;
+}
+
+mjx-container {
+  display: block !important;
+  max-width: 100% !important;
+  overflow: visible !important;
+  text-align: center !important;
+}
+
+mjx-container[jax="CHTML"] {
+  font-size: 105% !important;
+}
+
+mjx-math {
+  max-width: 100% !important;
+  overflow-wrap: break-word !important;
+}
+
+mjx-frac mjx-line {
+  border-top-color: currentColor !important;
 }
 
 .solution-governing {

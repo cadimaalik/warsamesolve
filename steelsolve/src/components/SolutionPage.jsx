@@ -1,4 +1,4 @@
-import { CheckCard, MessageList, SectionInputSummary } from './SolutionPanel'
+import { CheckCard, SectionInputSummary } from './SolutionPanel'
 
 export default function SolutionPage({ result, onBack }) {
   if (!result) {
@@ -27,15 +27,10 @@ export default function SolutionPage({ result, onBack }) {
       <div className="steel-solver-body">
         <SectionInputSummary inputs={result.inputs} />
 
-        <div className="steel-solver-message-grid">
-          <MessageList title="Warnings" items={result.warnings} tone="warning" />
-          <MessageList title="Assumptions" items={result.assumptions} />
-        </div>
-
         <section className="solution-section">
           <div className="steel-step-heading">
             <span className="step-number">Steps</span>
-            <h2>Placeholder Calculation Flow</h2>
+            <h2>Worked Calculation</h2>
           </div>
 
           {result.checks.map((check, index) => (
@@ -47,11 +42,6 @@ export default function SolutionPage({ result, onBack }) {
               <CheckCard check={check} />
             </div>
           ))}
-        </section>
-
-        <section className="solution-governing">
-          <h3>Governing Result</h3>
-          <p>Pending. Later prompts will compare completed checks and report LRFD/ASD governing strength.</p>
         </section>
       </div>
     </main>

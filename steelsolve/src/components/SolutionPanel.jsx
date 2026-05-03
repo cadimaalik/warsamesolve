@@ -1,4 +1,5 @@
 import { formatKn, formatMm2 } from '../analysis/steelUtils'
+import EquationBlock from './EquationBlock'
 
 function DisplayValue({ value }) {
   return <strong>{value === null || value === undefined || value === '' ? '-' : value}</strong>
@@ -10,23 +11,6 @@ function SummaryItem({ label, value }) {
       <span>{label}</span>
       <DisplayValue value={value} />
     </div>
-  )
-}
-
-function MessageList({ title, items, tone = 'default' }) {
-  if (!items.length) {
-    return null
-  }
-
-  return (
-    <section className={`solution-message-list solution-message-list-${tone}`}>
-      <h4>{title}</h4>
-      <ul>
-        {items.map((item) => (
-          <li key={item}>{item}</li>
-        ))}
-      </ul>
-    </section>
   )
 }
 
@@ -59,51 +43,46 @@ function SectionInputSummary({ inputs }) {
 }
 
 function CheckCard({ check }) {
-  const hasStrengthValues = check.nominal !== null || check.lrfd !== null || check.asd !== null
+  const isComplete = check.status === 'complete'
+  const notes = getCheckNotes(check)
 
   return (
-    <article className="solution-check-card">
-      <div className="solution-check-heading">
-        <h4>{check.title}</h4>
-        <span>{check.status}</span>
-      </div>
-      <div className="solution-check-values">
-        {check.area ? (
-          <SummaryItem label="Area" value={formatMm2(check.area.value_mm2)} />
-        ) : null}
-        {hasStrengthValues || !check.area ? (
-          <>
-            <SummaryItem label="Nominal" value={check.nominal !== null ? formatKn(check.nominal) : 'pending'} />
-            <SummaryItem label="LRFD" value={check.lrfd !== null ? formatKn(check.lrfd) : 'pending'} />
-            <SummaryItem label="ASD" value={check.asd !== null ? formatKn(check.asd) : 'pending'} />
-          </>
-        ) : null}
-      </div>
-      {check.area?.source ? (
-        <p className="solution-check-source">Source: {check.area.source}</p>
-      ) : null}
-      {check.equations.length ? (
-        <pre className="solution-equations">{check.equations.join('\n')}</pre>
-      ) : null}
-      <ol className="solution-step-list">
-        {check.steps.map((step) => (
-          <li key={typeof step === 'string' ? step : step.id}>
-            {typeof step === 'string' ? (
-              step
-            ) : (
-              <>
-                <span>{step.title}</span>
-                <p>{step.body}</p>
-                {step.equations?.length ? (
-                  <pre className="solution-equations">{step.equations.join('\n')}</pre>
-                ) : null}
-              </>
-            )}
-          </li>
+    <article className={`solution-check-card${isComplete ? '' : ' solution-check-card-pending'}`}>
+      <div className="solution-check-notes">
+        {notes.map((note) => (
+          <p key={note}>{note}</p>
         ))}
-      </ol>
+      </div>
+
+      {isComplete ? (
+        <EquationBlock equations={check.equations} />
+      ) : null}
+
+      {isComplete && check.nominal !== null ? (
+        <div className="solution-strength-summary">
+          <SummaryItem label="Nominal" value={formatKn(check.nominal)} />
+          <SummaryItem label="LRFD" value={formatKn(check.lrfd)} />
+          <SummaryItem label="ASD" value={formatKn(check.asd)} />
+        </div>
+      ) : null}
     </article>
   )
+}
+
+function getCheckNotes(check) {
+  if (check.id === 'gross-area') {
+    return [
+      check.area?.source === 'section database'
+        ? 'Gross area is taken directly from the selected rolled section database entry.'
+        : 'Gross area is calculated from the user-entered splice plate width and thickness.',
+    ]
+  }
+
+  if (check.id === 'gross-section-yielding') {
+    return ['AISC tension yielding uses the gross area of the member.']
+  }
+
+  return ['This check remains a placeholder for a later analysis step.']
 }
 
 export default function SolutionPanel({ result }) {
@@ -120,24 +99,25 @@ export default function SolutionPanel({ result }) {
       </div>
 
       <SectionInputSummary inputs={result.inputs} />
-      <MessageList title="Warnings" items={result.warnings} tone="warning" />
-      <MessageList title="Assumptions" items={result.assumptions} />
 
       <section className="solution-section">
-        <h3>Calculation Checks</h3>
-        <div className="solution-check-grid">
-          {result.checks.map((check) => (
-            <CheckCard key={check.id} check={check} />
-          ))}
+        <div className="steel-step-heading">
+          <span className="step-number">Steps</span>
+          <h2>Worked Calculation</h2>
         </div>
-      </section>
 
-      <section className="solution-governing">
-        <h3>Governing Result</h3>
-        <p>Pending. Later prompts will compare completed checks and report LRFD/ASD governing strength.</p>
+        {result.checks.map((check, index) => (
+          <div key={check.id} className="solution-step">
+            <div className="step-header">
+              <span className="step-number">Step {index + 1}</span>
+              <span className="step-title">{check.title}</span>
+            </div>
+            <CheckCard check={check} />
+          </div>
+        ))}
       </section>
     </section>
   )
 }
 
-export { SectionInputSummary, MessageList, CheckCard }
+export { SectionInputSummary, CheckCard }
