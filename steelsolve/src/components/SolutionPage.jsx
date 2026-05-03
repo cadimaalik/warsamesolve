@@ -28,11 +28,6 @@ export default function SolutionPage({ result, onBack }) {
         <SectionInputSummary inputs={result.inputs} />
 
         <section className="solution-section">
-          <div className="steel-step-heading">
-            <span className="step-number">Steps</span>
-            <h2>Worked Calculation</h2>
-          </div>
-
           {getOrderedChecks(result.checks).map((check, index) => (
             <div key={check.id} className="solution-step">
               <div className="step-header">
