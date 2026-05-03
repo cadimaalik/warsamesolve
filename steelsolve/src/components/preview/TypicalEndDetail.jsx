@@ -65,23 +65,27 @@ function usesRectangularGusset(problem) {
   )
 }
 
-function GussetPlate({ problem, region }) {
+function GussetPlate({ problem, layout, transform }) {
   const isRectangular = usesRectangularGusset(problem)
-  const gussetWidth = clamp(region.width * 0.24, 58, 92)
-  const overlap = clamp(region.width * 0.055, 12, 22)
-  const xWide = region.x + overlap
-  const xLeft = xWide - gussetWidth
+  const { geometry } = layout
+  const { mapX, region } = transform
+  const lastColumnX = geometry.horizontalEdge + Math.max(0, layout.boltCounts.length - 1) * geometry.pitch
+  const xLeft = Math.max(18, region.x - clamp(region.width * 0.34, 72, 118))
+  const xRight = Math.min(
+    region.x + region.width - 14,
+    mapX(lastColumnX + geometry.horizontalEdge * 0.88),
+  )
+  const memberOverlap = clamp(region.height * 0.16, 10, 18)
+  const yTop = region.y - memberOverlap
+  const yBottom = region.y + region.height + memberOverlap
 
   if (isRectangular) {
-    const webPlateHeight = clamp(region.height * 0.48, 38, region.height * 0.72)
-    const y = region.y + (region.height - webPlateHeight) / 2
-
     return (
       <rect
         x={xLeft}
-        y={y}
-        width={gussetWidth}
-        height={webPlateHeight}
+        y={yTop}
+        width={xRight - xLeft}
+        height={yBottom - yTop}
         fill="#f8f8f8"
         stroke={STROKE}
         strokeWidth="1.7"
@@ -90,12 +94,12 @@ function GussetPlate({ problem, region }) {
     )
   }
 
-  const inset = clamp(region.height * 0.18, 14, 28)
+  const inset = clamp((yBottom - yTop) * 0.16, 16, 34)
   const points = [
-    [xLeft, region.y + inset],
-    [xWide, region.y],
-    [xWide, region.y + region.height],
-    [xLeft, region.y + region.height - inset],
+    [xLeft, yTop + inset],
+    [xRight, yTop],
+    [xRight, yBottom],
+    [xLeft, yBottom - inset],
   ].map(([x, y]) => `${x},${y}`).join(' ')
 
   return (
@@ -323,7 +327,7 @@ function ReadyEndDetail({ problem, layout }) {
 
   return (
     <>
-      <GussetPlate problem={problem} region={transform.region} />
+      <GussetPlate problem={problem} layout={layout} transform={transform} />
       <RegionOutline problem={problem} region={transform.region} />
       <BoltGroup
         layout={layout}
@@ -333,8 +337,8 @@ function ReadyEndDetail({ problem, layout }) {
         region={transform.region}
       />
       <Dimensions layout={layout} transform={transform} />
-      <ForceArrow region={transform.region} />
       <Warnings warnings={layout.warnings} />
+      <ForceArrow region={transform.region} />
     </>
   )
 }
