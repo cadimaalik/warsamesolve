@@ -96,10 +96,10 @@ function GussetPlate({ problem, layout, transform }) {
 
   const inset = clamp((yBottom - yTop) * 0.16, 16, 34)
   const points = [
-    [xLeft, yTop + inset],
-    [xRight, yTop],
-    [xRight, yBottom],
-    [xLeft, yBottom - inset],
+    [xLeft, yTop],
+    [xRight, yTop + inset],
+    [xRight, yBottom - inset],
+    [xLeft, yBottom],
   ].map(([x, y]) => `${x},${y}`).join(' ')
 
   return (
