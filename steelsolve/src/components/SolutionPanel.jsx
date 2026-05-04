@@ -110,6 +110,9 @@ function NetAreaCheckCard({ check, notes }) {
             netArea={check.netArea}
           />
           <EquationBlock equations={check.netArea.straight.equations} />
+          {check.netArea.straight.note ? (
+            <p className="solution-case-note">{check.netArea.straight.note}</p>
+          ) : null}
         </section>
 
         <section>
@@ -119,6 +122,9 @@ function NetAreaCheckCard({ check, notes }) {
             netArea={check.netArea}
           />
           <EquationBlock equations={check.netArea.zigzag.equations} />
+          {check.netArea.zigzag.note ? (
+            <p className="solution-case-note">{check.netArea.zigzag.note}</p>
+          ) : null}
         </section>
 
         <section className="net-area-critical">

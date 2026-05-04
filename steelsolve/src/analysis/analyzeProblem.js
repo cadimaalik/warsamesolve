@@ -279,6 +279,26 @@ function buildZigzagTerm(jumpCount, pitch_mm, gage_mm, thickness_mm) {
   return `${jumpCount}\\left(\\frac{${formatEquationNumber(pitch_mm)}^2}{4(${formatEquationNumber(gage_mm)})}\\right)(${formatEquationNumber(thickness_mm)})`
 }
 
+function wrapDoubleFlangeTerm(term) {
+  return `2\\left[${term}\\right]`
+}
+
+function isDoubleFlangeNetAreaCase(inputs) {
+  if (
+    inputs.member.type !== 'rolled-section'
+    || inputs.gusset.arrangement !== 'double'
+    || inputs.connection.connectedElement !== 'flange'
+  ) {
+    return false
+  }
+
+  const section = inputs.member.section
+  const isIShape = section?.shapeType === 'i-shape' || I_SHAPE_FAMILIES.includes(section?.family)
+  const isUpn = section?.family === 'UPN'
+
+  return isIShape || isUpn
+}
+
 function buildPathPoints(pathKind, holeCount, primaryColumnIndex, secondaryColumnIndex = Math.max(0, primaryColumnIndex - 1)) {
   if (holeCount <= 0) {
     return []
@@ -331,6 +351,10 @@ function buildNetAreaCheck(problem, inputs, grossArea) {
   const standardHoleDiameter_mm = inputs.bolts.standardHoleDiameter_mm
   const netHoleDiameter_mm = standardHoleDiameter_mm + 2
   const Ag_mm2 = grossArea.Ag_mm2
+  const netAreaMultiplier = isDoubleFlangeNetAreaCase(inputs) ? 2 : 1
+  const doubleFlangeNote = netAreaMultiplier === 2
+    ? 'The connection is through two flanges, so the net-area deduction is applied to both flanges.'
+    : null
   const straightHoleCount = Math.max(...boltCounts, 0)
   const firstTwoBoltCounts = boltCounts.slice(0, 2)
   const outerColumnIndex = firstTwoBoltCounts.length >= 2 ? 1 : 0
@@ -346,21 +370,27 @@ function buildNetAreaCheck(problem, inputs, grossArea) {
   const zigzagJumpCount = firstTwoBoltCounts.length >= 2 && inputs.bolts.pitch_s_mm > 0 && inputs.bolts.gage_g_mm > 0
     ? Math.max(0, zigzagHoleCount - 1)
     : 0
-  const zigzagAddition_mm2 = zigzagJumpCount
+  const straightHoleDeduction_mm2 = netAreaMultiplier * straightHoleCount * netHoleDiameter_mm * thickness_mm
+  const zigzagHoleDeduction_mm2 = netAreaMultiplier * zigzagHoleCount * netHoleDiameter_mm * thickness_mm
+  const zigzagAdditionBase_mm2 = zigzagJumpCount
     ? zigzagJumpCount * ((inputs.bolts.pitch_s_mm ** 2) / (4 * inputs.bolts.gage_g_mm)) * thickness_mm
     : 0
-  const straightArea_mm2 = Ag_mm2 - straightHoleCount * netHoleDiameter_mm * thickness_mm
-  const zigzagArea_mm2 = Ag_mm2 - zigzagHoleCount * netHoleDiameter_mm * thickness_mm + zigzagAddition_mm2
+  const zigzagAddition_mm2 = netAreaMultiplier * zigzagAdditionBase_mm2
+  const straightArea_mm2 = Ag_mm2 - straightHoleDeduction_mm2
+  const zigzagArea_mm2 = Ag_mm2 - zigzagHoleDeduction_mm2 + zigzagAddition_mm2
   const criticalPath = straightArea_mm2 <= zigzagArea_mm2 ? 'straight' : 'zigzag'
   const criticalArea_mm2 = Math.min(straightArea_mm2, zigzagArea_mm2)
+  const straightHoleTerm = buildHoleTerm(straightHoleCount, netHoleDiameter_mm, thickness_mm)
+  const zigzagHoleTerm = buildHoleTerm(zigzagHoleCount, netHoleDiameter_mm, thickness_mm)
+  const zigzagStaggerTerm = buildZigzagTerm(zigzagJumpCount, inputs.bolts.pitch_s_mm, inputs.bolts.gage_g_mm, thickness_mm)
   const straightEquations = [
     'A_n = A_g - \\sum d_n t',
     `d_n = ${formatEquationNumber(standardHoleDiameter_mm)} + 2 = ${formatEquationNumber(netHoleDiameter_mm)} \\text{ mm}`,
-    `A_n = ${formatEquationNumber(Ag_mm2)} - ${buildHoleTerm(straightHoleCount, netHoleDiameter_mm, thickness_mm)} = ${formatEquationNumber(straightArea_mm2)} \\text{ mm}^2`,
+    `A_n = ${formatEquationNumber(Ag_mm2)} - ${netAreaMultiplier === 2 ? wrapDoubleFlangeTerm(straightHoleTerm) : straightHoleTerm} = ${formatEquationNumber(straightArea_mm2)} \\text{ mm}^2`,
   ]
   const zigzagEquations = [
     'A_n = A_g - \\sum d_n t + \\sum \\frac{s^2}{4g}t',
-    `A_n = ${formatEquationNumber(Ag_mm2)} - ${buildHoleTerm(zigzagHoleCount, netHoleDiameter_mm, thickness_mm)} + ${buildZigzagTerm(zigzagJumpCount, inputs.bolts.pitch_s_mm, inputs.bolts.gage_g_mm, thickness_mm)} = ${formatEquationNumber(zigzagArea_mm2)} \\text{ mm}^2`,
+    `A_n = ${formatEquationNumber(Ag_mm2)} - ${netAreaMultiplier === 2 ? wrapDoubleFlangeTerm(zigzagHoleTerm) : zigzagHoleTerm} + ${netAreaMultiplier === 2 ? wrapDoubleFlangeTerm(zigzagStaggerTerm) : zigzagStaggerTerm} = ${formatEquationNumber(zigzagArea_mm2)} \\text{ mm}^2`,
   ]
   const criticalEquations = [
     `A_{n,crit} = \\min(${formatEquationNumber(straightArea_mm2)}, ${formatEquationNumber(zigzagArea_mm2)}) = ${formatEquationNumber(criticalArea_mm2)} \\text{ mm}^2`,
@@ -382,6 +412,8 @@ function buildNetAreaCheck(problem, inputs, grossArea) {
       connectedThickness,
       standardHoleDiameter_mm,
       netHoleDiameter_mm,
+      netAreaMultiplier,
+      doubleFlangeNote,
       straight: {
         pathId: 'straight',
         title: 'Straight path',
@@ -391,6 +423,7 @@ function buildNetAreaCheck(problem, inputs, grossArea) {
         columnIndex: outerColumnIndex,
         pathPoints: buildPathPoints('straight', straightHoleCount, outerColumnIndex),
         equations: straightEquations,
+        note: doubleFlangeNote,
         isCritical: criticalPath === 'straight',
       },
       zigzag: {
@@ -401,6 +434,7 @@ function buildNetAreaCheck(problem, inputs, grossArea) {
         jumpCount: zigzagJumpCount,
         pathPoints: buildPathPoints('zigzag', zigzagDiagramPointCount, zigzagStartColumnIndex, zigzagNextColumnIndex),
         equations: zigzagEquations,
+        note: doubleFlangeNote,
         isCritical: criticalPath === 'zigzag',
       },
       critical: {
