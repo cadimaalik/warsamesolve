@@ -217,22 +217,48 @@ function buildZigzagTerm(jumpCount, pitch_mm, gage_mm, thickness_mm) {
   return `${jumpCount}\\left(\\frac{${formatEquationNumber(pitch_mm)}^2}{4(${formatEquationNumber(gage_mm)})}\\right)(${formatEquationNumber(thickness_mm)})`
 }
 
-function buildPathPoints(pathKind, holeCount, outerColumnIndex) {
+function buildPathPoints(pathKind, holeCount, primaryColumnIndex, secondaryColumnIndex = Math.max(0, primaryColumnIndex - 1)) {
   if (holeCount <= 0) {
     return []
   }
 
   if (pathKind === 'zigzag') {
     return Array.from({ length: holeCount }, (_, index) => ({
-      columnIndex: index % 2 === 0 ? outerColumnIndex : Math.max(0, outerColumnIndex - 1),
+      columnIndex: index % 2 === 0 ? primaryColumnIndex : secondaryColumnIndex,
       rowIndex: index,
     }))
   }
 
   return Array.from({ length: holeCount }, (_, index) => ({
-    columnIndex: outerColumnIndex,
+    columnIndex: primaryColumnIndex,
     rowIndex: index,
   }))
+}
+
+function getTopBoltLineLevel(layout, columnIndex) {
+  if (layout.status !== 'ready' || !layout.boltPoints.length) {
+    return 0
+  }
+
+  const gage = layout.geometry.gage
+  const topEdge = layout.geometry.topEdge
+  const columnRows = layout.boltPoints
+    .filter((point) => point.columnIndex === columnIndex)
+    .map((point) => (
+      gage > 0
+        ? Math.round((point.y - topEdge) / gage)
+        : point.boltIndex
+    ))
+
+  return columnRows.length ? Math.min(...columnRows) : 0
+}
+
+function getZigzagStartColumn(layout, outerColumnIndex) {
+  const adjacentColumnIndex = Math.max(0, outerColumnIndex - 1)
+  const outerTopRow = getTopBoltLineLevel(layout, outerColumnIndex)
+  const adjacentTopRow = getTopBoltLineLevel(layout, adjacentColumnIndex)
+
+  return adjacentTopRow < outerTopRow ? adjacentColumnIndex : outerColumnIndex
 }
 
 function buildNetAreaCheck(problem, inputs, grossArea) {
@@ -246,9 +272,15 @@ function buildNetAreaCheck(problem, inputs, grossArea) {
   const straightHoleCount = Math.max(...boltCounts, 0)
   const firstTwoBoltCounts = boltCounts.slice(0, 2)
   const outerColumnIndex = firstTwoBoltCounts.length >= 2 ? 1 : 0
+  const adjacentColumnIndex = Math.max(0, outerColumnIndex - 1)
+  const zigzagStartColumnIndex = getZigzagStartColumn(layout, outerColumnIndex)
+  const zigzagNextColumnIndex = zigzagStartColumnIndex === outerColumnIndex ? adjacentColumnIndex : outerColumnIndex
   const zigzagHoleCount = firstTwoBoltCounts.length >= 2
     ? Math.max(...firstTwoBoltCounts, 0)
     : straightHoleCount
+  const zigzagDiagramPointCount = layout.status === 'ready' && layout.isStaggered
+    ? Math.max(zigzagHoleCount, layout.maxBoltLineLevel + 1)
+    : zigzagHoleCount
   const zigzagJumpCount = firstTwoBoltCounts.length >= 2 && inputs.bolts.pitch_s_mm > 0 && inputs.bolts.gage_g_mm > 0
     ? Math.max(0, zigzagHoleCount - 1)
     : 0
@@ -305,7 +337,7 @@ function buildNetAreaCheck(problem, inputs, grossArea) {
         area_mm2: zigzagArea_mm2,
         holeCount: zigzagHoleCount,
         jumpCount: zigzagJumpCount,
-        pathPoints: buildPathPoints('zigzag', zigzagHoleCount, outerColumnIndex),
+        pathPoints: buildPathPoints('zigzag', zigzagDiagramPointCount, zigzagStartColumnIndex, zigzagNextColumnIndex),
         equations: zigzagEquations,
         isCritical: criticalPath === 'zigzag',
       },

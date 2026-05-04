@@ -1,9 +1,19 @@
 const STROKE = '#202020'
 const MUTED = '#8f8f8f'
 const PATH = '#b45309'
-const MEMBER_FREE_EDGE_X = 288
+const MEMBER_TOP_Y = 42
+const MEMBER_BOTTOM_Y = 192
 
 function getRows(netArea) {
+  if (netArea.diagram.layout) {
+    return Math.max(
+      2,
+      netArea.diagram.layout.maxBoltLineLevel + 1,
+      netArea.straight.holeCount,
+      netArea.zigzag.holeCount,
+    )
+  }
+
   const counts = netArea.diagram.boltCounts.slice(0, 2)
   return Math.max(2, netArea.straight.holeCount, netArea.zigzag.holeCount, ...counts)
 }
@@ -13,6 +23,39 @@ function getPointCoordinates(pathPoint, geometry) {
     x: geometry.columnXs[pathPoint.columnIndex] ?? geometry.columnXs[0],
     y: geometry.rowYs[pathPoint.rowIndex] ?? geometry.rowYs[geometry.rowYs.length - 1],
   }
+}
+
+function getBoltRowsByColumn(netArea) {
+  const layout = netArea.diagram.layout
+
+  if (layout?.boltPoints?.length) {
+    const rowsByColumn = [[], []]
+    const gage = layout.geometry.gage
+    const topEdge = layout.geometry.topEdge
+
+    layout.boltPoints.forEach((point) => {
+      if (point.columnIndex > 1) {
+        return
+      }
+
+      rowsByColumn[point.columnIndex].push(
+        gage > 0
+          ? Math.round((point.y - topEdge) / gage)
+          : point.boltIndex,
+      )
+    })
+
+    return rowsByColumn.map((rows, columnIndex) => (
+      rows.length ? rows.sort((first, second) => first - second) : getFallbackBoltRows(netArea, columnIndex)
+    ))
+  }
+
+  return [0, 1].map((columnIndex) => getFallbackBoltRows(netArea, columnIndex))
+}
+
+function getFallbackBoltRows(netArea, columnIndex) {
+  const count = netArea.diagram.boltCounts[columnIndex] || 0
+  return Array.from({ length: count }, (_, rowIndex) => rowIndex)
 }
 
 function DimensionLabel({ x, y, children, rotate = 0 }) {
@@ -80,9 +123,7 @@ function Dimensions({ netArea, geometry }) {
   )
 }
 
-function BoltGrid({ netArea, geometry }) {
-  const counts = netArea.diagram.boltCounts.slice(0, 2)
-
+function BoltGrid({ boltRowsByColumn, geometry }) {
   return (
     <g>
       {geometry.columnXs.map((x) => (
@@ -109,20 +150,19 @@ function BoltGrid({ netArea, geometry }) {
           strokeDasharray="6 6"
         />
       ))}
-      {geometry.columnXs.flatMap((x, columnIndex) => {
-        const count = counts[columnIndex] || geometry.rowYs.length
-        return geometry.rowYs.slice(0, count).map((y, rowIndex) => (
+      {geometry.columnXs.flatMap((x, columnIndex) => (
+        boltRowsByColumn[columnIndex].map((rowIndex) => (
           <circle
             key={`${columnIndex}-${rowIndex}`}
             cx={x}
-            cy={y}
+            cy={geometry.rowYs[rowIndex] ?? geometry.rowYs[geometry.rowYs.length - 1]}
             r="7"
             fill="#ffffff"
             stroke={STROKE}
             strokeWidth="1.6"
           />
         ))
-      })}
+      ))}
     </g>
   )
 }
@@ -139,13 +179,11 @@ function RupturePath({ path, geometry }) {
     return null
   }
 
-  const rupturePoints = path.pathId === 'zigzag'
-    ? [
-      { x: MEMBER_FREE_EDGE_X, y: points[0].y },
-      ...points,
-      { x: MEMBER_FREE_EDGE_X, y: points[points.length - 1].y },
-    ]
-    : points
+  const rupturePoints = [
+    { x: points[0].x, y: MEMBER_TOP_Y },
+    ...points,
+    { x: points[points.length - 1].x, y: MEMBER_BOTTOM_Y },
+  ]
 
   if (rupturePoints.length === 1) {
     const point = rupturePoints[0]
@@ -177,9 +215,10 @@ function RupturePath({ path, geometry }) {
 export default function NetAreaPathDiagram({ title, path, netArea }) {
   const rowCount = getRows(netArea)
   const rowSpacing = 150 / (rowCount + 1)
+  const boltRowsByColumn = getBoltRowsByColumn(netArea)
   const geometry = {
     columnXs: [158, 218],
-    rowYs: Array.from({ length: rowCount }, (_, index) => 42 + rowSpacing * (index + 1)),
+    rowYs: Array.from({ length: rowCount }, (_, index) => MEMBER_TOP_Y + rowSpacing * (index + 1)),
   }
 
   return (
@@ -187,8 +226,8 @@ export default function NetAreaPathDiagram({ title, path, netArea }) {
       <figcaption>{title}</figcaption>
       <svg viewBox="0 0 360 250" role="img" aria-label={`${title} net area path`}>
         <GussetPlate rectangular={netArea.diagram.rectangularGusset} />
-        <rect x="118" y="42" width="170" height="150" fill="none" stroke={STROKE} strokeWidth="1.7" />
-        <BoltGrid netArea={netArea} geometry={geometry} />
+        <rect x="118" y={MEMBER_TOP_Y} width="170" height="150" fill="none" stroke={STROKE} strokeWidth="1.7" />
+        <BoltGrid boltRowsByColumn={boltRowsByColumn} geometry={geometry} />
         <RupturePath path={path} geometry={geometry} />
         <Dimensions netArea={netArea} geometry={geometry} />
       </svg>

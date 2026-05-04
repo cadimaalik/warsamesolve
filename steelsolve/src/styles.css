@@ -850,8 +850,8 @@ p {
 }
 
 .net-area-diagram-card {
-  margin: 14px 0 6px;
-  width: min(170px, 100%);
+  margin: 14px auto 6px;
+  width: min(340px, 100%);
   border: 1px solid rgba(64, 64, 64, 0.78);
   background: #ffffff;
   color: #202020;
