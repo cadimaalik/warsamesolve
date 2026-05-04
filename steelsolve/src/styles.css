@@ -844,6 +844,34 @@ p {
   margin-top: 14px;
 }
 
+.shear-lag-workout {
+  display: grid;
+  gap: 24px;
+}
+
+.shear-lag-case {
+  min-width: 0;
+}
+
+.solution-check-card .solution-case-heading {
+  margin: 0 0 8px;
+  color: var(--accent);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.86rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+
+.solution-case-note {
+  margin: -8px 0 0;
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+  font-style: italic;
+  line-height: 1.55;
+}
+
 .net-area-workout {
   display: grid;
   gap: 26px;
@@ -881,6 +909,10 @@ p {
     linear-gradient(90deg, rgba(16, 32, 24, 0.045) 1px, transparent 1px),
     #ffffff;
   background-size: 18px 18px;
+}
+
+.shear-lag-centroid-card {
+  margin-bottom: 12px;
 }
 
 .net-area-critical {

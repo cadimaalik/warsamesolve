@@ -1,6 +1,7 @@
 import { formatKn, formatMm2 } from '../analysis/steelUtils'
 import EquationBlock from './EquationBlock'
 import NetAreaPathDiagram from './preview/NetAreaPathDiagram'
+import ShearLagCentroidDiagram from './preview/ShearLagCentroidDiagram'
 
 const solutionCheckOrder = [
   'gross-area',
@@ -136,16 +137,20 @@ function formatU(value) {
 
 function EffectiveNetAreaCheckCard({ check, notes }) {
   const effectiveNetArea = check.effectiveNetArea
+  const sections = effectiveNetArea.sections ?? []
 
   return (
     <article className="solution-check-card">
-      <div className="solution-check-notes">
-        {notes.map((note) => (
-          <p key={note}>{note}</p>
+      <div className="shear-lag-workout">
+        {sections.map((section) => (
+          <section key={section.id} className="shear-lag-case">
+            <h4 className="solution-case-heading">{section.heading}</h4>
+            <ShearLagCentroidDiagram diagram={section.diagram} />
+            <EquationBlock equations={section.equations} />
+            {section.note ? <p className="solution-case-note">{section.note}</p> : null}
+          </section>
         ))}
       </div>
-
-      <EquationBlock equations={check.equations} />
 
       <div className="solution-strength-summary">
         <SummaryItem label="Selected U" value={formatU(effectiveNetArea.U)} />
