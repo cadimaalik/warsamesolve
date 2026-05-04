@@ -66,6 +66,10 @@ function CheckCard({ check }) {
     return <EffectiveNetAreaCheckCard check={check} notes={notes} />
   }
 
+  if (check.id === 'net-section-rupture' && check.netSectionRupture) {
+    return <NetSectionRuptureCheckCard check={check} />
+  }
+
   return (
     <article className={`solution-check-card${isComplete ? '' : ' solution-check-card-pending'}`}>
       <div className="solution-check-notes">
@@ -161,6 +165,28 @@ function EffectiveNetAreaCheckCard({ check, notes }) {
   )
 }
 
+function NetSectionRuptureCheckCard({ check }) {
+  const rupture = check.netSectionRupture
+
+  return (
+    <article className="solution-check-card">
+      <section className="shear-lag-case">
+        <h4 className="solution-case-heading">{rupture.heading}</h4>
+        <EquationBlock equations={check.equations} />
+        <p className="solution-case-note">{rupture.note}</p>
+      </section>
+
+      <div className="solution-strength-summary">
+        <SummaryItem label="Effective net area" value={formatMm2(rupture.Ae_mm2)} />
+        <SummaryItem label="Fu" value={`${rupture.Fu_MPa} MPa`} />
+        <SummaryItem label="Nominal" value={formatKn(check.nominal)} />
+        <SummaryItem label="LRFD" value={formatKn(check.lrfd)} />
+        <SummaryItem label="ASD" value={formatKn(check.asd)} />
+      </div>
+    </article>
+  )
+}
+
 function getCheckNotes(check) {
   if (check.id === 'gross-area') {
     return [
@@ -188,6 +214,10 @@ function getCheckNotes(check) {
     ].filter(Boolean)
 
     return [...new Set(notes)]
+  }
+
+  if (check.id === 'net-section-rupture') {
+    return ['AISC D2(b) uses Fu and the effective net area for tensile rupture in the net section.']
   }
 
   return ['This check remains a placeholder for a later analysis step.']

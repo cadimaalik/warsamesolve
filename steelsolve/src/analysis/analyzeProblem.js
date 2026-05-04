@@ -11,6 +11,11 @@ const grossYieldingFactors = {
   omega_t: 1.67,
 }
 
+const netSectionRuptureFactors = {
+  phi_t: 0.75,
+  omega_t: 2,
+}
+
 const I_SHAPE_FAMILIES = ['IPN', 'IPE', 'HEA', 'HEB', 'HEM', 'HD']
 
 function formatEquationNumber(value, maximumFractionDigits = 2) {
@@ -132,6 +137,62 @@ function buildGrossSectionYieldingCheck(material, grossArea) {
         title: 'Design strengths',
         body: 'Apply the LRFD resistance factor and ASD safety factor for tensile yielding.',
         equations: equations.slice(2),
+      },
+    ],
+  }
+}
+
+function buildNetSectionRuptureCheck(material, effectiveNetAreaCheck) {
+  const Fu_MPa = material.Fu_MPa
+  const Ae_mm2 = effectiveNetAreaCheck?.effectiveNetArea?.Ae_mm2
+
+  if (!Number.isFinite(Fu_MPa) || !Number.isFinite(Ae_mm2)) {
+    return placeholderCheck(
+      'net-section-rupture',
+      'Net section rupture',
+      'Net section rupture tensile strength check',
+    )
+  }
+
+  const Pn_kN = (Fu_MPa * Ae_mm2) / 1000
+  const lrfd_kN = netSectionRuptureFactors.phi_t * Pn_kN
+  const asd_kN = Pn_kN / netSectionRuptureFactors.omega_t
+  const equations = [
+    'P_n = F_u A_e',
+    `P_n = ${formatEquationNumber(Fu_MPa)}(${formatEquationNumber(Ae_mm2)}) / 1000 = ${formatEquationNumber(Pn_kN)} \\text{ kN}`,
+    `\\phi_t P_n = 0.75(${formatEquationNumber(Pn_kN)}) = ${formatEquationNumber(lrfd_kN)} \\text{ kN}`,
+    `\\frac{P_n}{\\Omega_t} = \\frac{${formatEquationNumber(Pn_kN)}}{2.00} = ${formatEquationNumber(asd_kN)} \\text{ kN}`,
+  ]
+
+  return {
+    id: 'net-section-rupture',
+    title: 'Net section rupture',
+    status: 'complete',
+    area: {
+      value_mm2: Ae_mm2,
+      source: 'effective net area',
+    },
+    nominal: Pn_kN,
+    lrfd: lrfd_kN,
+    asd: asd_kN,
+    equations,
+    netSectionRupture: {
+      Fu_MPa,
+      Ae_mm2,
+      Pn_kN,
+      phi_t: netSectionRuptureFactors.phi_t,
+      omega_t: netSectionRuptureFactors.omega_t,
+      lrfd_kN,
+      asd_kN,
+      heading: 'AISC D2(b) — Tensile rupture in net section',
+      note: 'Use the effective net area from the shear lag calculation.',
+    },
+    steps: [
+      {
+        id: 'net-section-rupture-strength',
+        title: 'Tensile rupture strength',
+        body: 'Calculate net section rupture strength using Fu and the effective net area Ae.',
+        equations,
       },
     ],
   }
@@ -375,7 +436,7 @@ function buildNetAreaCheck(problem, inputs, grossArea) {
 
 function buildWarnings(inputs) {
   const warnings = [
-    'Gross area, net area, effective net area, and gross section yielding are implemented.',
+    'Gross area, net area, effective net area, gross section yielding, and net section rupture are implemented.',
     'Do not use this outline for design decisions.',
   ]
 
@@ -405,13 +466,14 @@ export function analyzeProblem(problem) {
 
   const grossArea = buildGrossAreaCheck(inputs.member)
   const netAreaCheck = buildNetAreaCheck(problem, inputs, grossArea)
+  const effectiveNetAreaCheck = buildEffectiveNetAreaCheck({ inputs, grossArea, netAreaCheck })
 
   const checks = [
     grossArea.check,
     netAreaCheck,
-    buildEffectiveNetAreaCheck({ inputs, grossArea, netAreaCheck }),
+    effectiveNetAreaCheck,
     buildGrossSectionYieldingCheck(inputs.material, grossArea),
-    placeholderCheck('net-section-rupture', 'Net section rupture', 'Net section rupture tensile strength check'),
+    buildNetSectionRuptureCheck(inputs.material, effectiveNetAreaCheck),
     placeholderCheck('block-shear', 'Block shear', 'Block shear rupture/yielding path check'),
     placeholderCheck('governing-result', 'Governing result', 'Governing tensile design strength selection'),
   ]
@@ -433,7 +495,7 @@ export function analyzeProblem(problem) {
       'Material strengths are interpreted in MPa.',
       'Bolt holes are treated as standard holes for now.',
       'Gusset plates are mirrored at both ends and modeled as rigid descriptor assumptions.',
-      'Net rupture, block shear, and governing comparison are not evaluated yet.',
+      'Block shear and governing comparison are not evaluated yet.',
     ],
   }
 }
