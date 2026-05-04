@@ -80,7 +80,7 @@ function GussetPlate({ rectangular }) {
       <rect
         x="42"
         y="28"
-        width="172"
+        width="210"
         height="184"
         fill="#f8f8f8"
         stroke={STROKE}
@@ -91,7 +91,7 @@ function GussetPlate({ rectangular }) {
 
   return (
     <polygon
-      points="42,28 214,54 214,186 42,212"
+      points="42,28 252,60 252,180 42,212"
       fill="#f8f8f8"
       stroke={STROKE}
       strokeWidth="1.5"
