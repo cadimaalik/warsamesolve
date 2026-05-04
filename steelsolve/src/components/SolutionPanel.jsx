@@ -61,6 +61,10 @@ function CheckCard({ check }) {
     return <NetAreaCheckCard check={check} notes={notes} />
   }
 
+  if (check.id === 'effective-net-area' && check.effectiveNetArea) {
+    return <EffectiveNetAreaCheckCard check={check} notes={notes} />
+  }
+
   return (
     <article className={`solution-check-card${isComplete ? '' : ' solution-check-card-pending'}`}>
       <div className="solution-check-notes">
@@ -126,6 +130,32 @@ function NetAreaCheckCard({ check, notes }) {
   )
 }
 
+function formatU(value) {
+  return value === null || value === undefined ? '-' : Number(value).toLocaleString(undefined, { maximumFractionDigits: 3 })
+}
+
+function EffectiveNetAreaCheckCard({ check, notes }) {
+  const effectiveNetArea = check.effectiveNetArea
+
+  return (
+    <article className="solution-check-card">
+      <div className="solution-check-notes">
+        {notes.map((note) => (
+          <p key={note}>{note}</p>
+        ))}
+      </div>
+
+      <EquationBlock equations={check.equations} />
+
+      <div className="solution-strength-summary">
+        <SummaryItem label="Selected U" value={formatU(effectiveNetArea.U)} />
+        <SummaryItem label="Selected case" value={effectiveNetArea.selectedCase ?? '-'} />
+        <SummaryItem label="Effective net area" value={formatMm2(effectiveNetArea.Ae_mm2)} />
+      </div>
+    </article>
+  )
+}
+
 function getCheckNotes(check) {
   if (check.id === 'gross-area') {
     return [
@@ -143,6 +173,16 @@ function getCheckNotes(check) {
     return [
       'Straight and zigzag net-area paths are checked automatically; the smaller net area is used as critical.',
     ]
+  }
+
+  if (check.id === 'effective-net-area') {
+    const notes = [
+      check.effectiveNetArea?.selectedReason
+        ?? 'Effective net area is calculated from the critical net area and selected shear lag factor.',
+      ...(check.effectiveNetArea?.notes ?? []),
+    ].filter(Boolean)
+
+    return [...new Set(notes)]
   }
 
   return ['This check remains a placeholder for a later analysis step.']

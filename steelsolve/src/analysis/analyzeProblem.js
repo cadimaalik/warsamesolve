@@ -3,6 +3,7 @@ import {
   getMemberInputSummary,
   normalizeMaterialStrength,
 } from './steelUtils'
+import { buildEffectiveNetAreaCheck } from './shearLag'
 import { getTypicalEndDetailLayout } from '../utils/boltLayout'
 
 const grossYieldingFactors = {
@@ -374,7 +375,7 @@ function buildNetAreaCheck(problem, inputs, grossArea) {
 
 function buildWarnings(inputs) {
   const warnings = [
-    'Only gross area, net area, and gross section yielding are implemented.',
+    'Gross area, net area, effective net area, and gross section yielding are implemented.',
     'Do not use this outline for design decisions.',
   ]
 
@@ -403,11 +404,12 @@ export function analyzeProblem(problem) {
   }
 
   const grossArea = buildGrossAreaCheck(inputs.member)
+  const netAreaCheck = buildNetAreaCheck(problem, inputs, grossArea)
 
   const checks = [
     grossArea.check,
-    buildNetAreaCheck(problem, inputs, grossArea),
-    placeholderCheck('effective-net-area', 'Effective net area', 'Shear lag and effective net area calculation'),
+    netAreaCheck,
+    buildEffectiveNetAreaCheck({ inputs, grossArea, netAreaCheck }),
     buildGrossSectionYieldingCheck(inputs.material, grossArea),
     placeholderCheck('net-section-rupture', 'Net section rupture', 'Net section rupture tensile strength check'),
     placeholderCheck('block-shear', 'Block shear', 'Block shear rupture/yielding path check'),
@@ -431,7 +433,7 @@ export function analyzeProblem(problem) {
       'Material strengths are interpreted in MPa.',
       'Bolt holes are treated as standard holes for now.',
       'Gusset plates are mirrored at both ends and modeled as rigid descriptor assumptions.',
-      'Effective net area, rupture, block shear, and governing comparison are not evaluated yet.',
+      'Net rupture, block shear, and governing comparison are not evaluated yet.',
     ],
   }
 }
