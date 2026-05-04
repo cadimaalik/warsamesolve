@@ -1,5 +1,6 @@
 import { formatKn, formatMm2 } from '../analysis/steelUtils'
 import EquationBlock from './EquationBlock'
+import NetAreaPathDiagram from './preview/NetAreaPathDiagram'
 
 const solutionCheckOrder = [
   'gross-area',
@@ -56,6 +57,10 @@ function CheckCard({ check }) {
   const isComplete = check.status === 'complete'
   const notes = getCheckNotes(check)
 
+  if (check.id === 'net-area' && check.netArea) {
+    return <NetAreaCheckCard check={check} notes={notes} />
+  }
+
   return (
     <article className={`solution-check-card${isComplete ? '' : ' solution-check-card-pending'}`}>
       <div className="solution-check-notes">
@@ -79,6 +84,48 @@ function CheckCard({ check }) {
   )
 }
 
+function NetAreaCheckCard({ check, notes }) {
+  return (
+    <article className="solution-check-card">
+      <div className="solution-check-notes">
+        {notes.map((note) => (
+          <p key={note}>{note}</p>
+        ))}
+      </div>
+
+      <div className="net-area-workout">
+        <section>
+          <NetAreaPathDiagram
+            title="Straight path"
+            path={check.netArea.straight}
+            netArea={check.netArea}
+          />
+          <EquationBlock equations={check.netArea.straight.equations} />
+        </section>
+
+        <section>
+          <NetAreaPathDiagram
+            title="Zigzag path"
+            path={check.netArea.zigzag}
+            netArea={check.netArea}
+          />
+          <EquationBlock equations={check.netArea.zigzag.equations} />
+        </section>
+
+        <section className="net-area-critical">
+          <p>Critical net area is the smaller of the straight and zigzag path results.</p>
+          <EquationBlock equations={check.netArea.critical.equations} />
+          <div className="solution-strength-summary">
+            <SummaryItem label="Critical net area" value={formatMm2(check.netArea.critical.area_mm2)} />
+            <SummaryItem label="Critical path" value={check.netArea.critical.pathId} />
+            <SummaryItem label="Connected thickness" value={`${check.netArea.connectedThickness.value_mm} mm`} />
+          </div>
+        </section>
+      </div>
+    </article>
+  )
+}
+
 function getCheckNotes(check) {
   if (check.id === 'gross-area') {
     return [
@@ -90,6 +137,12 @@ function getCheckNotes(check) {
 
   if (check.id === 'gross-section-yielding') {
     return ['AISC tension yielding uses the gross area of the member.']
+  }
+
+  if (check.id === 'net-area') {
+    return [
+      'Straight and zigzag net-area paths are checked automatically; the smaller net area is used as critical.',
+    ]
   }
 
   return ['This check remains a placeholder for a later analysis step.']

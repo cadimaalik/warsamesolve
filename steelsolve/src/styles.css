@@ -844,6 +844,57 @@ p {
   margin-top: 14px;
 }
 
+.net-area-workout {
+  display: grid;
+  gap: 26px;
+}
+
+.net-area-diagram-card {
+  margin: 14px 0 6px;
+  border: 1px solid rgba(64, 64, 64, 0.78);
+  background: #ffffff;
+  color: #202020;
+}
+
+.net-area-diagram-card figcaption {
+  border-bottom: 1px solid #d0d0d0;
+  margin: 0;
+  padding: 8px 10px;
+  color: #202020;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.net-area-diagram-critical {
+  border-color: rgba(251, 191, 36, 0.75);
+}
+
+.net-area-diagram-card svg {
+  display: block;
+  width: 100%;
+  background:
+    linear-gradient(rgba(16, 32, 24, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(16, 32, 24, 0.045) 1px, transparent 1px),
+    #ffffff;
+  background-size: 18px 18px;
+}
+
+.net-area-critical {
+  border-left: 2px solid rgba(251, 191, 36, 0.75);
+  padding-left: 14px;
+}
+
+.net-area-critical p {
+  margin: 0 0 8px;
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
 .equation-block {
   margin: 16px 0;
   overflow: visible;
