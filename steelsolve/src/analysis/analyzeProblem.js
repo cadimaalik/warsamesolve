@@ -217,20 +217,20 @@ function buildZigzagTerm(jumpCount, pitch_mm, gage_mm, thickness_mm) {
   return `${jumpCount}\\left(\\frac{${formatEquationNumber(pitch_mm)}^2}{4(${formatEquationNumber(gage_mm)})}\\right)(${formatEquationNumber(thickness_mm)})`
 }
 
-function buildPathPoints(pathKind, holeCount) {
+function buildPathPoints(pathKind, holeCount, outerColumnIndex) {
   if (holeCount <= 0) {
     return []
   }
 
   if (pathKind === 'zigzag') {
     return Array.from({ length: holeCount }, (_, index) => ({
-      columnIndex: index % 2,
+      columnIndex: index % 2 === 0 ? outerColumnIndex : Math.max(0, outerColumnIndex - 1),
       rowIndex: index,
     }))
   }
 
   return Array.from({ length: holeCount }, (_, index) => ({
-    columnIndex: 0,
+    columnIndex: outerColumnIndex,
     rowIndex: index,
   }))
 }
@@ -244,8 +244,8 @@ function buildNetAreaCheck(problem, inputs, grossArea) {
   const netHoleDiameter_mm = standardHoleDiameter_mm + 2
   const Ag_mm2 = grossArea.Ag_mm2
   const straightHoleCount = Math.max(...boltCounts, 0)
-  const straightColumnIndex = Math.max(0, boltCounts.indexOf(straightHoleCount))
   const firstTwoBoltCounts = boltCounts.slice(0, 2)
+  const outerColumnIndex = firstTwoBoltCounts.length >= 2 ? 1 : 0
   const zigzagHoleCount = firstTwoBoltCounts.length >= 2
     ? Math.max(...firstTwoBoltCounts, 0)
     : straightHoleCount
@@ -294,8 +294,8 @@ function buildNetAreaCheck(problem, inputs, grossArea) {
         area_mm2: straightArea_mm2,
         holeCount: straightHoleCount,
         jumpCount: 0,
-        columnIndex: straightColumnIndex,
-        pathPoints: buildPathPoints('straight', straightHoleCount),
+        columnIndex: outerColumnIndex,
+        pathPoints: buildPathPoints('straight', straightHoleCount, outerColumnIndex),
         equations: straightEquations,
         isCritical: criticalPath === 'straight',
       },
@@ -305,7 +305,7 @@ function buildNetAreaCheck(problem, inputs, grossArea) {
         area_mm2: zigzagArea_mm2,
         holeCount: zigzagHoleCount,
         jumpCount: zigzagJumpCount,
-        pathPoints: buildPathPoints('zigzag', zigzagHoleCount),
+        pathPoints: buildPathPoints('zigzag', zigzagHoleCount, outerColumnIndex),
         equations: zigzagEquations,
         isCritical: criticalPath === 'zigzag',
       },

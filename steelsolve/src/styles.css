@@ -851,6 +851,7 @@ p {
 
 .net-area-diagram-card {
   margin: 14px 0 6px;
+  width: min(170px, 100%);
   border: 1px solid rgba(64, 64, 64, 0.78);
   background: #ffffff;
   color: #202020;
@@ -859,10 +860,10 @@ p {
 .net-area-diagram-card figcaption {
   border-bottom: 1px solid #d0d0d0;
   margin: 0;
-  padding: 8px 10px;
+  padding: 5px 6px;
   color: #202020;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.76rem;
+  font-size: 0.62rem;
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;

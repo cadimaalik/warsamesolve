@@ -1,6 +1,7 @@
 const STROKE = '#202020'
 const MUTED = '#8f8f8f'
 const PATH = '#b45309'
+const MEMBER_FREE_EDGE_X = 288
 
 function getRows(netArea) {
   const counts = netArea.diagram.boltCounts.slice(0, 2)
@@ -138,8 +139,16 @@ function RupturePath({ path, geometry }) {
     return null
   }
 
-  if (points.length === 1) {
-    const point = points[0]
+  const rupturePoints = path.pathId === 'zigzag'
+    ? [
+      { x: MEMBER_FREE_EDGE_X, y: points[0].y },
+      ...points,
+      { x: MEMBER_FREE_EDGE_X, y: points[points.length - 1].y },
+    ]
+    : points
+
+  if (rupturePoints.length === 1) {
+    const point = rupturePoints[0]
     return (
       <line
         x1={point.x}
@@ -155,7 +164,7 @@ function RupturePath({ path, geometry }) {
 
   return (
     <polyline
-      points={points.map((point) => `${point.x},${point.y}`).join(' ')}
+      points={rupturePoints.map((point) => `${point.x},${point.y}`).join(' ')}
       fill="none"
       stroke={PATH}
       strokeWidth="3"
