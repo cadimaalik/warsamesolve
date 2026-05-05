@@ -193,16 +193,12 @@ p {
 }
 
 .workspace {
-  --descriptor-width: 66.67%;
   flex: 1;
   min-height: 0;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(320px, 31vw, 430px);
   background: var(--bg);
-}
-
-.workspace.is-resizing {
-  cursor: col-resize;
-  user-select: none;
+  overflow: hidden;
 }
 
 .workspace-panel {
@@ -212,13 +208,11 @@ p {
 }
 
 .workspace-panel-left {
-  flex: 0 0 var(--descriptor-width);
-  min-width: 360px;
+  min-width: 0;
 }
 
 .workspace-panel-right {
-  flex: 1 1 auto;
-  min-width: 320px;
+  min-width: 0;
 }
 
 .workspace-panel-left,
@@ -227,30 +221,13 @@ p {
   min-height: calc(100vh - 64px);
 }
 
-.splitter {
-  width: 10px;
-  min-height: 100%;
-  padding: 0;
-  border: 0;
-  border-left: 1px solid var(--border);
-  border-right: 1px solid var(--border);
-  background:
-    linear-gradient(var(--primary), var(--primary)) center / 2px 44px no-repeat,
-    var(--surface-2);
-  cursor: col-resize;
-}
-
-.splitter:hover,
-.workspace.is-resizing .splitter {
-  background:
-    linear-gradient(var(--accent), var(--accent)) center / 2px 52px no-repeat,
-    #151515;
-}
-
 .descriptor-panel,
 .diagram-sheet {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .descriptor-panel {
@@ -297,11 +274,13 @@ p {
 
 .descriptor-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
   gap: calc(var(--grid) * 1.5);
+  min-width: 0;
 }
 
 .descriptor-group {
+  min-width: 0;
   background: var(--surface);
   border: 1px solid var(--border);
   padding: calc(var(--grid) * 1.5);
@@ -320,21 +299,25 @@ p {
 .descriptor-fields {
   display: grid;
   gap: calc(var(--grid) * 1);
+  min-width: 0;
 }
 
 .descriptor-row {
   display: grid;
-  grid-template-columns: minmax(112px, 0.42fr) minmax(150px, 1fr);
+  grid-template-columns: minmax(96px, 0.38fr) minmax(0, 1fr);
   align-items: center;
   gap: calc(var(--grid) * 1);
+  min-width: 0;
   color: var(--text-muted);
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.72rem;
 }
 
 .descriptor-row span {
+  min-width: 0;
   color: var(--text);
   font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 .descriptor-row select,
@@ -342,6 +325,8 @@ p {
 .descriptor-row button,
 .fixed-value {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   min-height: 34px;
   border: 1px solid var(--border);
   border-radius: 0;
@@ -412,6 +397,7 @@ p {
 .control-stack {
   display: grid;
   gap: 4px;
+  min-width: 0;
 }
 
 .control-stack small {
@@ -427,6 +413,7 @@ p {
 
 .fixed-value {
   color: var(--text-muted);
+  overflow-wrap: anywhere;
 }
 
 .checkbox-row {
@@ -454,6 +441,7 @@ p {
 }
 
 .section-properties {
+  min-width: 0;
   border: 1px solid rgba(74, 222, 128, 0.24);
   background: #101010;
   padding: calc(var(--grid) * 1.25);
@@ -461,8 +449,9 @@ p {
 
 .section-properties-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(126px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(118px, 100%), 1fr));
   gap: 8px;
+  min-width: 0;
 }
 
 .section-property {
@@ -487,7 +476,8 @@ p {
   font-size: 0.72rem;
   font-weight: 800;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .section-warning {
@@ -528,6 +518,8 @@ p {
   font-size: 0.68rem;
   line-height: 1.5;
   padding: calc(var(--grid) * 1.5);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 .drawing-stack {
@@ -972,7 +964,22 @@ mjx-frac mjx-line {
   line-height: 1.5;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
+  .workspace {
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 36vw);
+  }
+
+  .descriptor-panel,
+  .diagram-sheet {
+    padding: calc(var(--grid) * 2);
+  }
+
+  .descriptor-row {
+    grid-template-columns: minmax(88px, 0.34fr) minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 840px) {
   .app-header {
     min-height: 72px;
     align-items: flex-start;
@@ -981,16 +988,14 @@ mjx-frac mjx-line {
   }
 
   .workspace {
-    display: block;
+    display: grid;
+    grid-template-columns: 1fr;
+    overflow: visible;
   }
 
   .workspace-panel-left,
   .workspace-panel-right {
     min-height: auto;
-  }
-
-  .splitter {
-    display: none;
   }
 
   .descriptor-panel,

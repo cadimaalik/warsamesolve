@@ -2,7 +2,6 @@ import { useState } from 'react'
 import Header from './components/Header'
 import DescriptorPanel from './components/DescriptorPanel'
 import DiagramSheet from './components/DiagramSheet'
-import ResizableSplit from './components/ResizableSplit'
 import SolutionPage from './components/SolutionPage'
 import useSteelProblem from './state/useSteelProblem'
 import { validateProblem } from './utils/problemValidation'
@@ -47,10 +46,14 @@ export default function App() {
   return (
     <div className="app-shell">
       <Header onAnalyze={handleAnalyze} onClear={handleClear} />
-      <ResizableSplit>
-        <DescriptorPanel steelProblem={steelProblem} />
-        <DiagramSheet problem={steelProblem.problem} />
-      </ResizableSplit>
+      <main className="workspace" aria-label="SteelSolve tension member problem builder">
+        <div className="workspace-panel workspace-panel-left">
+          <DescriptorPanel steelProblem={steelProblem} />
+        </div>
+        <div className="workspace-panel workspace-panel-right">
+          <DiagramSheet problem={steelProblem.problem} />
+        </div>
+      </main>
     </div>
   )
 }
